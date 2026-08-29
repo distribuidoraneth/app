@@ -5,16 +5,16 @@
 import { CartItem, CompanyTaxProfile } from '@/types';
 
 export const DEFAULT_TAX_PROFILE: CompanyTaxProfile = {
-  ruc: '1792345678001',
-  razonSocial: 'DISTRIBUIDORA ANETH BEVERAGES S.A.S.',
+  ruc: '1803013810001',
+  razonSocial: 'ANDRADE CONSTANTE ANA ELIZABETH',
   nombreComercial: 'DISTRIBUIDORA ANETH',
-  dirMatriz: 'Av. 6 de Diciembre y Orellana, Quito - Ecuador',
-  dirEstablecimiento: 'Av. 6 de Diciembre y Orellana, Quito - Ecuador',
+  dirMatriz: 'AV. ATAHUALPA S/N Y TEODORO SOLIS, AMBATO, TUNGURAHUA',
+  dirEstablecimiento: 'AV. ATAHUALPA S/N Y TEODORO SOLIS, AMBATO, TUNGURAHUA',
   establecimiento: '001',
   puntoEmision: '001',
   ambiente: '1', // Por defecto pruebas
   obligadoContabilidad: 'NO',
-  regimenRimpe: true,
+  regimenRimpe: false,
 };
 
 function escapeXml(unsafe: string): string {

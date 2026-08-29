@@ -56,47 +56,77 @@ export function InvoiceModal({ invoice, isOpen, onClose }: InvoiceModalProps) {
     window.open(link, '_blank');
   };
 
-  const handleDownloadXml = () => {
+  const handleDownloadXml = async () => {
     const seq = parseInt(invoice.invoiceNumber.replace(/\D/g, '').slice(-9), 10) || 1;
-    const xml = buildFacturaXml({
-      claveAcceso,
-      secuencial: seq,
-      fechaEmision: new Date(invoice.issuedAt),
-      company: DEFAULT_TAX_PROFILE,
-      cliente: {
-        razonSocial: invoice.clientName,
-        identificacion: invoice.clientTaxId || '9999999999999',
-        tipoIdentificacion: invoice.clientTaxIdType || '07',
-        direccion: invoice.clientAddress,
-        telefono: invoice.clientWhatsapp,
-        email: invoice.clientEmail,
-      },
-      items: invoice.items,
-      paymentMethod: 'cash',
-      ivaRate: 15,
-    });
+    let xmlContent = '';
 
-    const blob = new Blob([xml], { type: 'text/xml;charset=utf-8' });
+    try {
+      const res = await fetch('/api/sri/facturar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          order: {
+            id: invoice.orderId,
+            items: invoice.items,
+            paymentMethod: 'cash',
+          },
+          client: {
+            fullName: invoice.clientName,
+            businessName: invoice.businessName,
+            taxId: invoice.clientTaxId,
+            taxIdType: invoice.clientTaxIdType,
+            whatsappNumber: invoice.clientWhatsapp,
+            email: invoice.clientEmail,
+            addressReference: invoice.clientAddress,
+          },
+          secuencial: seq,
+        }),
+      });
+      const data = await res.json();
+      if (data.xml) {
+        xmlContent = data.xml;
+      }
+    } catch {
+      xmlContent = buildFacturaXml({
+        claveAcceso,
+        secuencial: seq,
+        fechaEmision: new Date(invoice.issuedAt),
+        company: DEFAULT_TAX_PROFILE,
+        cliente: {
+          razonSocial: invoice.clientName,
+          identificacion: invoice.clientTaxId || '9999999999999',
+          tipoIdentificacion: invoice.clientTaxIdType || '07',
+          direccion: invoice.clientAddress,
+          telefono: invoice.clientWhatsapp,
+          email: invoice.clientEmail,
+        },
+        items: invoice.items,
+        paymentMethod: 'cash',
+        ivaRate: 15,
+      });
+    }
+
+    const blob = new Blob([xmlContent], { type: 'text/xml;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `Factura_${invoice.invoiceNumber}_SRI.xml`;
+    link.download = `FACTURA_${invoice.invoiceNumber}_SRI.xml`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
-      <div className="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-200 my-8">
-        {/* Top Action Bar (Light Theme) */}
-        <div className="print:hidden bg-slate-50 border-b border-slate-200 px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-2">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs overflow-y-auto print:p-0 print:bg-white">
+      <div className="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-200 my-8 print:border-none print:shadow-none print:m-0 print:rounded-none">
+        {/* Top bar */}
+        <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center justify-between print:hidden">
           <div className="flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold">
               <FileText className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="font-black text-sm text-slate-900 leading-none">
+              <h3 className="font-extrabold text-sm text-slate-900">
                 Factura Electrónica #{invoice.invoiceNumber}
               </h3>
               <p className="text-[11px] text-slate-500 mt-0.5">Comprobante Oficial SRI Ecuador</p>
@@ -127,7 +157,7 @@ export function InvoiceModal({ invoice, isOpen, onClose }: InvoiceModalProps) {
               className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl text-xs font-bold transition-all"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span>Imprimir RIDE</span>
+              <span>Imprimir / PDF</span>
             </button>
             <button
               type="button"
@@ -152,7 +182,7 @@ export function InvoiceModal({ invoice, isOpen, onClose }: InvoiceModalProps) {
               <p className="text-xs text-slate-500">RUC: {DEFAULT_TAX_PROFILE.ruc}</p>
               <p className="text-xs text-slate-500">Matriz: {DEFAULT_TAX_PROFILE.dirMatriz}</p>
               <p className="text-xs text-slate-500">Obligado a llevar contabilidad: {DEFAULT_TAX_PROFILE.obligadoContabilidad}</p>
-              <p className="text-[11px] text-blue-700 font-bold">CONTRIBUYENTE RÉGIMEN RIMPE</p>
+              <p className="text-[11px] text-blue-700 font-bold">RÉGIMEN GENERAL</p>
             </div>
 
             {/* Cuadro Oficial SRI */}

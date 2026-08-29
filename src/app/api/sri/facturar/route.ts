@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generarClaveAcceso } from '@/lib/sri/claveAcceso';
 import { buildFacturaXml, DEFAULT_TAX_PROFILE } from '@/lib/sri/xmlBuilder';
+import { signXmlXadesBes } from '@/lib/sri/signer';
 import { enviarRecepcionSRI, consultarAutorizacionSRI } from '@/lib/sri/soapClient';
 
 export async function POST(req: NextRequest) {
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest) {
     });
 
     // 2. Construir XML Oficial SRI v1.1.0
-    const xml = buildFacturaXml({
+    const rawXml = buildFacturaXml({
       claveAcceso,
       secuencial,
       fechaEmision,
@@ -47,7 +48,10 @@ export async function POST(req: NextRequest) {
       ivaRate: 15,
     });
 
-    // 3. Enviar a Recepción del SRI (SOAP)
+    // 3. Firmar Digitalmente con XAdES-BES (.p12)
+    const xml = signXmlXadesBes(rawXml);
+
+    // 4. Enviar a Recepción del SRI (SOAP)
     let sriRecepcion = await enviarRecepcionSRI(xml, ambiente);
     let sriAutorizacion = null;
 

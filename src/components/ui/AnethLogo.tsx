@@ -1,202 +1,214 @@
+'use client';
+
 import React from 'react';
 
-interface AnethLogoProps {
+export interface LogoProps {
   className?: string;
-  variant?: 'light' | 'dark'; // 'light' for light backgrounds (navy text), 'dark' for dark backgrounds (white text)
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+  variant?: 'color' | 'white' | 'dark' | 'monochrome';
   showSubtitle?: boolean;
-  subtitleText?: string;
+  subtitleText?: 'DISTRIBUIDORA' | 'Distribuciones' | string;
 }
 
+const sizeMap = {
+  xs: 'h-6',
+  sm: 'h-8',
+  md: 'h-10',
+  lg: 'h-14',
+  xl: 'h-20',
+  '2xl': 'h-28',
+};
+
 /**
- * Official Isotipo "A" of Distribuidora Aneth
+ * Isotipo Oficial "A" Vectorial (Exacto al Manual de Marca)
  */
 export function AnethIsotype({
   className = '',
-  variant = 'light',
   size = 'md',
-}: {
-  className?: string;
-  variant?: 'light' | 'dark';
-  size?: 'sm' | 'md' | 'lg' | 'xl';
-}) {
-  const mainColor = variant === 'light' ? '#0B132B' : '#FFFFFF';
-  const blueAccent = '#1A62EA';
-
-  const sizeMap = {
-    sm: 'h-6 w-auto',
-    md: 'h-8 w-auto',
-    lg: 'h-11 w-auto',
-    xl: 'h-14 w-auto',
-  };
+  variant = 'color',
+}: Omit<LogoProps, 'showSubtitle' | 'subtitleText'>) {
+  // Color configuration
+  const topColor = variant === 'white' ? '#FFFFFF' : '#081225';
+  const accentColor =
+    variant === 'white'
+      ? '#FFFFFF'
+      : variant === 'monochrome' || variant === 'dark'
+      ? '#081225'
+      : '#0066FF';
 
   return (
     <svg
-      viewBox="0 0 100 90"
-      className={`${sizeMap[size]} ${className}`}
-      style={{ maxHeight: size === 'sm' ? '24px' : size === 'md' ? '32px' : size === 'lg' ? '44px' : '56px' }}
+      viewBox="0 0 100 100"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
+      className={`${sizeMap[size]} w-auto inline-block ${className}`}
+      aria-label="Isotipo Aneth"
     >
-      {/* Right Leg & Apex */}
+      {/* Arco Superior y Pata Derecha de la 'A' */}
       <path
-        d="M48 6L54 6C58 6 61 8 63 11L92 84H72L53 35L42 16L48 6Z"
-        fill={mainColor}
+        d="M34.5 45.8L51.8 19.2C53.6 16.4 57.5 15.5 60.5 17.2C62.1 18.2 63.2 19.8 63.7 21.6L87.2 81.5C88.1 83.8 87.0 86.4 84.7 87.3C83.8 87.7 82.8 87.7 81.8 87.4L67.5 82.8C65.5 82.2 64.1 80.5 63.5 78.5L47.5 37.8L34.5 45.8Z"
+        fill={topColor}
       />
-      {/* Left Leg & Crossbar Ribbon */}
+      {/* Pata Izquierda Dinámica y Travesaño (Azul Eléctrico / Blanco) */}
       <path
-        d="M44 14L28 42L8 84H28L36 67H64L60 56H31L44 14Z"
-        fill={blueAccent}
+        d="M34.2 46.2L13.8 81.2C12.5 83.4 13.3 86.3 15.6 87.5C16.5 88.0 17.6 88.1 18.6 87.8L31.8 83.2C33.7 82.6 35.1 81.0 35.7 79.1L42.8 57.2H58.6C60.8 57.2 62.6 55.4 62.6 53.2C62.6 51.5 61.5 50.0 59.9 49.4L37.2 46.1C36.2 45.9 35.1 46.0 34.2 46.2Z"
+        fill={accentColor}
       />
     </svg>
   );
 }
 
 /**
- * Complete Official Logotype of Distribuidora Aneth
- * Features the signature "ANETH" wordmark with the delivery truck transition.
+ * Logotipo Completo "ANETH" con Camión Integrado en la "H" (Exacto al Manual de Marca)
  */
 export function AnethFullLogo({
   className = '',
-  variant = 'light',
   size = 'md',
+  variant = 'color',
   showSubtitle = true,
   subtitleText = 'DISTRIBUIDORA',
-}: AnethLogoProps) {
-  const textColor = variant === 'light' ? '#0B132B' : '#FFFFFF';
-  const blueAccent = '#1A62EA';
-  const subtitleColor = variant === 'light' ? '#64748B' : '#94A3B8';
-
-  const heightStyles = {
-    sm: 'h-7',
-    md: 'h-9',
-    lg: 'h-12',
-    xl: 'h-16',
-  };
-
-  const maxHeights = {
-    sm: '28px',
-    md: '36px',
-    lg: '48px',
-    xl: '64px',
-  };
+}: LogoProps) {
+  const isWhite = variant === 'white';
+  const textColor = isWhite ? '#FFFFFF' : '#081225';
+  const blueColor = isWhite ? '#FFFFFF' : variant === 'monochrome' || variant === 'dark' ? '#081225' : '#0066FF';
+  const subtextColor = isWhite ? '#94A3B8' : '#475569';
 
   return (
     <div className={`inline-flex flex-col items-start ${className}`}>
       <svg
-        viewBox="0 0 420 90"
-        className={`${heightStyles[size]} w-auto`}
-        style={{ maxHeight: maxHeights[size] }}
+        viewBox="0 0 380 90"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
+        className={`${sizeMap[size]} w-auto block`}
+        aria-label="Logo Distribuidora Aneth"
       >
-        {/* --- LETTER A --- */}
+        {/* ================= LETRA 'A' ================= */}
         <g id="letter-A">
+          {/* Parte superior de la A */}
           <path
-            d="M44 8L50 8C54 8 57 10 59 13L84 80H66L49 35L39 17L44 8Z"
+            d="M30 38L44 16.5C45.5 14.2 48.6 13.5 51 14.9C52.3 15.7 53.2 17 53.6 18.5L72.5 67.5C73.2 69.4 72.3 71.5 70.4 72.2C69.7 72.5 68.9 72.5 68.1 72.3L56.5 68.6C54.9 68.1 53.8 66.7 53.3 65.1L40.3 31.8L30 38Z"
             fill={textColor}
           />
+          {/* Parte inferior y travesaño azul */}
           <path
-            d="M40 15L26 42L8 80H26L33 64H59L55 54H28L40 15Z"
-            fill={blueAccent}
+            d="M29.8 38.3L13.5 66.5C12.5 68.2 13.1 70.5 14.8 71.5C15.5 71.9 16.4 72.0 17.2 71.8L27.8 68.1C29.3 67.6 30.4 66.3 30.9 64.8L36.6 47.2H49.5C51.3 47.2 52.7 45.8 52.7 44C52.7 42.6 51.8 41.4 50.5 40.9L32.2 38.2C31.4 38.1 30.5 38.1 29.8 38.3Z"
+            fill={blueColor}
           />
         </g>
 
-        {/* --- LETTER N --- */}
-        <g id="letter-N">
-          <path
-            d="M98 14H114L140 62V14H156V80H140L114 32V80H98V14Z"
-            fill={textColor}
+        {/* ================= LETRA 'N' ================= */}
+        <g id="letter-N" fill={textColor}>
+          <path d="M84 15H98.5L127 54.5V15H140V72H126.5L97 31.5V72H84V15Z" />
+        </g>
+
+        {/* ================= LETRA 'E' ================= */}
+        <g id="letter-E" fill={textColor}>
+          <path d="M152 15H195V27H166V37.5H191V49H166V60H196V72H152V15Z" />
+        </g>
+
+        {/* ================= LETRA 'T' ================= */}
+        <g id="letter-T" fill={textColor}>
+          <path d="M203 15H249V27H233V72H219V27H203V15Z" />
+        </g>
+
+        {/* ================= LETRA 'H' + CAMIÓN DE REPARTO ================= */}
+        <g id="letter-H-truck">
+          {/* Palo izquierdo de la H */}
+          <rect x="257" y="15" width="13" height="57" fill={textColor} />
+          {/* Travesaño central de la H */}
+          <rect x="270" y="37.5" width="22" height="12" fill={textColor} />
+          {/* Palo derecho de la H */}
+          <rect x="292" y="15" width="13" height="57" fill={textColor} />
+
+          {/* Líneas de Velocidad (Speed Lines del Camión) */}
+          <line
+            x1="272"
+            y1="16"
+            x2="315"
+            y2="16"
+            stroke={blueColor}
+            strokeWidth="3.5"
+            strokeLinecap="round"
           />
-        </g>
-
-        {/* --- LETTER E --- */}
-        <g id="letter-E">
-          <path
-            d="M172 14H222V28H188V40H218V54H188V66H224V80H172V14Z"
-            fill={textColor}
+          <line
+            x1="272"
+            y1="71"
+            x2="315"
+            y2="71"
+            stroke={blueColor}
+            strokeWidth="3.5"
+            strokeLinecap="round"
           />
-        </g>
 
-        {/* --- LETTER T --- */}
-        <g id="letter-T">
+          {/* Cabina y Carrocería del Camión */}
           <path
-            d="M234 14H286V28H268V80H252V28H234V14Z"
-            fill={textColor}
-          />
-        </g>
-
-        {/* --- LETTER H --- */}
-        <g id="letter-H">
-          <path d="M298 14H314V80H298V14Z" fill={textColor} />
-          <path d="M314 40H336V54H314V40Z" fill={textColor} />
-          <path d="M336 14H352V80H336V14Z" fill={textColor} />
-        </g>
-
-        {/* --- TRUCK SILHOUETTE & SPEEDLINES --- */}
-        <g id="delivery-truck">
-          {/* Top speedline connecting H top to cab roof */}
-          <path
-            d="M336 17H382C386 17 390 19 392 23L404 42C406 45 407 48 407 52V67C407 70 405 72 402 72H398"
-            stroke={blueAccent}
+            d="M315 16H340C344 16 347.5 18 349.5 21.5L359.5 38.5C361 41 364 42.5 367 42.5H372C374.2 42.5 376 44.3 376 46.5V67C376 69.2 374.2 71 372 71H358.5"
+            stroke={blueColor}
             strokeWidth="4"
             strokeLinecap="round"
             strokeLinejoin="round"
           />
 
-          {/* Middle speedline */}
+          {/* Ventana de la Cabina */}
           <path
-            d="M352 47H384"
-            stroke={blueAccent}
-            strokeWidth="3.5"
-            strokeLinecap="round"
+            d="M346 22H338V38H356.5L348.5 24C347.8 22.8 346.5 22 346 22Z"
+            fill={blueColor}
+            opacity="0.25"
           />
 
-          {/* Bottom chassis line from H bottom */}
-          <path
-            d="M336 77H374"
-            stroke={blueAccent}
-            strokeWidth="4"
-            strokeLinecap="round"
-          />
+          {/* Luz Delantera */}
+          <rect x="366" y="50" width="8" height="4" rx="2" fill={blueColor} />
 
-          {/* Front Bumper */}
-          <path
-            d="M392 72H406"
-            stroke={blueAccent}
-            strokeWidth="4"
-            strokeLinecap="round"
-          />
-
-          {/* Truck Window */}
-          <path
-            d="M388 27H394C396 27 397 28 398 30L402 41H388V27Z"
-            fill={blueAccent}
-            opacity="0.85"
-          />
-
-          {/* Front Wheel */}
-          <circle
-            cx="384"
-            cy="72"
-            r="8.5"
-            stroke={blueAccent}
-            strokeWidth="3.5"
-            fill={variant === 'light' ? '#FFFFFF' : '#0B132B'}
-          />
-          <circle cx="384" cy="72" r="3" fill={blueAccent} />
+          {/* Rueda del Camión */}
+          <circle cx="340" cy="71" r="11" fill={isWhite ? '#081225' : '#FFFFFF'} stroke={blueColor} strokeWidth="4" />
+          <circle cx="340" cy="71" r="4.5" fill={blueColor} />
         </g>
       </svg>
 
-      {/* Subtitle */}
+      {/* Subtítulo Oficial con Kerning Amplio */}
       {showSubtitle && (
         <span
-          className="text-[10px] sm:text-[11px] font-black tracking-[0.26em] uppercase -mt-0.5 pl-1 font-sans"
-          style={{ color: subtitleColor }}
+          className={`text-[9px] sm:text-[10px] font-black uppercase tracking-[0.34em] pl-1.5 -mt-0.5 select-none`}
+          style={{ color: subtextColor }}
         >
           {subtitleText}
         </span>
       )}
     </div>
+  );
+}
+
+/**
+ * Icono de Camión de Reparto Rápido Aneth
+ */
+export function AnethDeliveryIcon({
+  className = '',
+  size = 'md',
+  color = '#0066FF',
+}: {
+  className?: string;
+  size?: 'xs' | 'sm' | 'md' | 'lg';
+  color?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 100 70"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={`${sizeMap[size]} w-auto inline-block ${className}`}
+    >
+      <line x1="10" y1="12" x2="45" y2="12" stroke={color} strokeWidth="4" strokeLinecap="round" opacity="0.6" />
+      <line x1="5" y1="60" x2="45" y2="60" stroke={color} strokeWidth="4" strokeLinecap="round" opacity="0.6" />
+      <path
+        d="M45 12H68C72 12 75.5 14 77.5 17.5L87.5 34.5C89 37 92 38.5 95 38.5H98C99.1 38.5 100 39.4 100 40.5V58C100 59.1 99.1 60 98 60H84.5"
+        stroke={color}
+        strokeWidth="4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx="68" cy="60" r="9" fill="#FFFFFF" stroke={color} strokeWidth="4" />
+      <circle cx="68" cy="60" r="3.5" fill={color} />
+      <rect x="91" y="44" width="7" height="3" rx="1.5" fill={color} />
+    </svg>
   );
 }

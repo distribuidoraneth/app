@@ -80,17 +80,23 @@ export default function EntryHubPage() {
                   <Store className="w-3.5 h-3.5 mr-1 text-slate-400" />
                   Simular QR de:
                 </label>
-                <select
-                  value={selectedClientToken}
-                  onChange={(e) => setSelectedClientToken(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-blue-600 focus:outline-hidden"
-                >
-                  {clients.map((c) => (
-                    <option key={c.id} value={c.qrToken}>
-                      {c.fullName} • {c.businessName || 'Local'}
-                    </option>
-                  ))}
-                </select>
+                {clients.length > 0 ? (
+                  <select
+                    value={selectedClientToken}
+                    onChange={(e) => setSelectedClientToken(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-blue-600 focus:outline-hidden"
+                  >
+                    {clients.map((c) => (
+                      <option key={c.id} value={c.qrToken}>
+                        {c.fullName} • {c.businessName || 'Local'}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="text-xs text-slate-500 italic bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                    Aún no hay clientes registrados. Puedes registrar uno en el Panel de Administración o probar con el token de acceso directo.
+                  </p>
+                )}
               </div>
             </div>
 
