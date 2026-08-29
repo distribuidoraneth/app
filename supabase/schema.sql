@@ -1,9 +1,8 @@
 -- ============================================================================
--- DISTRIBUIDORA ANETH - ESQUEMA CANÓNICO DE BASE DE DATOS (SUPABASE / POSTGRESQL)
--- Incluye: Clientes, Catálogo, Venta Mixta (Javas + Unidades), Pedidos y Facturación Electrónica SRI
+-- DISTRIBUIDORA ANETH - ESQUEMA INTEGRAL DE BASE DE DATOS (SUPABASE / POSTGRESQL)
+-- Incluye: Clientes, Créditos/Deudas, Venta Mixta, Preventa/Autoventa, Pagos DeUna/Transferencia y Facturación SRI
 -- ============================================================================
 
--- Extensión para UUIDs
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- 1. Perfil Fiscal de la Empresa Emisora (SRI Ecuador)
@@ -20,12 +19,12 @@ CREATE TABLE IF NOT EXISTS public.company_tax_profiles (
   ambiente VARCHAR(1) NOT NULL DEFAULT '1', -- '1': Pruebas Sandbox, '2': Producción
   obligado_contabilidad VARCHAR(2) NOT NULL DEFAULT 'NO', -- 'SI' o 'NO'
   regimen_rimpe BOOLEAN NOT NULL DEFAULT true,
-  p12_storage_path TEXT, -- Ruta en Supabase Storage para certificado .p12
+  p12_storage_path TEXT,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Insertar perfil por defecto
+-- Insertar perfil fiscal inicial
 INSERT INTO public.company_tax_profiles (
   ruc,
   razon_social,
@@ -48,7 +47,7 @@ INSERT INTO public.company_tax_profiles (
   true
 ) ON CONFLICT (ruc) DO NOTHING;
 
--- 2. Directorio de Clientes Comerciales
+-- 2. Directorio de Clientes Comerciales (Con Control de Crédito y Deuda)
 CREATE TABLE IF NOT EXISTS public.clients (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   qr_token VARCHAR(100) NOT NULL UNIQUE,
@@ -59,9 +58,11 @@ CREATE TABLE IF NOT EXISTS public.clients (
   latitude DOUBLE PRECISION NOT NULL,
   longitude DOUBLE PRECISION NOT NULL,
   address_reference TEXT NOT NULL,
-  tax_id VARCHAR(20), -- RUC o Cédula
+  tax_id VARCHAR(20), -- Cédula o RUC
   tax_id_type VARCHAR(2) DEFAULT '07', -- '04': RUC, '05': Cédula, '07': Consumidor Final
   email TEXT,
+  credit_limit NUMERIC(10,2) NOT NULL DEFAULT 0.00, -- Cupo máximo de fiado/crédito
+  current_debt NUMERIC(10,2) NOT NULL DEFAULT 0.00, -- Deuda acumulada total
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
@@ -81,7 +82,7 @@ CREATE TABLE IF NOT EXISTS public.products (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
--- 4. Registro de Pedidos
+-- 4. Registro de Pedidos (Preventa, Autoventa, Entregas Programadas y Saldos Deudores)
 CREATE TABLE IF NOT EXISTS public.orders (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   order_number VARCHAR(50) NOT NULL UNIQUE, -- ej: 'ORD-00101'
@@ -92,13 +93,26 @@ CREATE TABLE IF NOT EXISTS public.orders (
   latitude DOUBLE PRECISION NOT NULL,
   longitude DOUBLE PRECISION NOT NULL,
   address_reference TEXT,
+  
+  -- Modalidades de Venta y Despacho
+  sale_type VARCHAR(20) NOT NULL DEFAULT 'preventa', -- 'preventa', 'autoventa'
+  scheduled_delivery_date TIMESTAMPTZ, -- Fecha y hora específica de despacho
+  scheduled_time_slot VARCHAR(50), -- ej: 'Mañana 09:00 - 11:00'
+  
+  -- Cantidades Mixtas
   total_javas INT NOT NULL DEFAULT 0,
   total_units INT NOT NULL DEFAULT 0,
   total_bottles INT NOT NULL DEFAULT 0,
   total_amount NUMERIC(10,2) NOT NULL,
-  status VARCHAR(20) NOT NULL DEFAULT 'pending', -- 'pending', 'delivered', 'cancelled'
-  payment_status VARCHAR(20) NOT NULL DEFAULT 'pending', -- 'pending', 'paid'
-  payment_method VARCHAR(20) NOT NULL DEFAULT 'cash', -- 'cash', 'transfer'
+  
+  -- Estado y Pagos
+  status VARCHAR(20) NOT NULL DEFAULT 'pending', -- 'pending', 'scheduled', 'delivered', 'cancelled'
+  payment_status VARCHAR(20) NOT NULL DEFAULT 'pending', -- 'pending', 'partial', 'paid'
+  payment_method VARCHAR(20) NOT NULL DEFAULT 'cash', -- 'cash', 'transfer', 'deuna', 'credit'
+  amount_paid NUMERIC(10,2) NOT NULL DEFAULT 0.00, -- Monto pagado / abonado
+  debt_balance NUMERIC(10,2) NOT NULL DEFAULT 0.00, -- Saldo pendiente por cobrar
+  payment_proof_url TEXT, -- Comprobante DeUna o Transferencia bancaria
+  
   notes TEXT,
   created_at TIMESTAMPTZ DEFAULT now(),
   delivered_at TIMESTAMPTZ,
@@ -125,7 +139,20 @@ CREATE TABLE IF NOT EXISTS public.order_items (
   subtotal NUMERIC(10,2) NOT NULL
 );
 
--- 6. Facturas Electrónicas SRI Ecuador
+-- 6. Historial de Pagos y Abonos (Comprobantes DeUna / Transferencia / Efectivo)
+CREATE TABLE IF NOT EXISTS public.payments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_id UUID REFERENCES public.orders(id) ON DELETE CASCADE,
+  client_id UUID REFERENCES public.clients(id) ON DELETE SET NULL,
+  amount NUMERIC(10,2) NOT NULL,
+  payment_method VARCHAR(20) NOT NULL DEFAULT 'cash', -- 'cash', 'transfer', 'deuna'
+  payment_proof_url TEXT, -- Enlace o foto del comprobante
+  reference_number VARCHAR(100), -- Número de referencia o código de transacción
+  notes TEXT,
+  recorded_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 7. Facturas Electrónicas SRI Ecuador
 CREATE TABLE IF NOT EXISTS public.invoices (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   invoice_number VARCHAR(30) NOT NULL UNIQUE, -- ej: '001-001-000000099'
@@ -164,7 +191,7 @@ CREATE TABLE IF NOT EXISTS public.invoices (
   issued_at TIMESTAMPTZ DEFAULT now()
 );
 
--- 7. Items de la Factura
+-- 8. Items de la Factura
 CREATE TABLE IF NOT EXISTS public.invoice_items (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   invoice_id UUID NOT NULL REFERENCES public.invoices(id) ON DELETE CASCADE,
@@ -180,18 +207,19 @@ CREATE TABLE IF NOT EXISTS public.invoice_items (
   total NUMERIC(10,2) NOT NULL
 );
 
--- Habilitar Row Level Security (RLS)
+-- 9. Políticas de Seguridad RLS
 ALTER TABLE public.company_tax_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.clients ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.payments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.invoices ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.invoice_items ENABLE ROW LEVEL SECURITY;
 
--- Políticas de lectura pública para catálogo y pedidos vinculados por token
 CREATE POLICY "Public read products" ON public.products FOR SELECT USING (true);
 CREATE POLICY "Public read clients" ON public.clients FOR SELECT USING (true);
 CREATE POLICY "Public insert orders" ON public.orders FOR INSERT WITH CHECK (true);
 CREATE POLICY "Public read own orders" ON public.orders FOR SELECT USING (true);
 CREATE POLICY "Public read invoices" ON public.invoices FOR SELECT USING (true);
+CREATE POLICY "Public insert payments" ON public.payments FOR INSERT WITH CHECK (true);

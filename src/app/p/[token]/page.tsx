@@ -34,13 +34,25 @@ export default function ClientExperiencePage({
 
   // Match client by QR token
   const client =
-    clients.find((c) => c.qrToken === resolvedParams.token) || clients[0];
+    clients.find((c) => c.qrToken === resolvedParams.token) ||
+    clients[0] || {
+      id: `cli-${resolvedParams.token}`,
+      qrToken: resolvedParams.token,
+      fullName: 'Cliente Comercial',
+      businessName: 'Local Registrado',
+      gender: 'Hombre' as const,
+      whatsappNumber: '+593',
+      latitude: -0.180653,
+      longitude: -78.467834,
+      addressReference: 'Ubicación de entrega',
+      createdAt: new Date().toISOString(),
+    };
 
   const [activeTab, setActiveTab] = useState<'order' | 'history'>('order');
   const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
   const [activeInvoice, setActiveInvoice] = useState<Invoice | null>(null);
 
-  const clientOrders = orders.filter((o) => o.clientId === client?.id);
+  const clientOrders = orders.filter((o) => o.clientId === client?.id || o.whatsappNumber === client?.whatsappNumber);
   const clientInvoices = invoices.filter((i) => i.clientId === client?.id);
 
   const handleOrderCancel = (orderId: string) => {

@@ -58,12 +58,15 @@ export interface Client {
   taxId?: string; // Cédula o RUC
   taxIdType?: '04' | '05' | '06' | '07';
   email?: string;
+  creditLimit?: number; // Límite de crédito permitido
+  currentDebt?: number; // Deuda acumulada actual
   createdAt: string;
 }
 
-export type OrderStatus = 'pending' | 'delivered' | 'cancelled';
-export type PaymentStatus = 'pending' | 'paid';
-export type PaymentMethod = 'cash' | 'transfer';
+export type OrderStatus = 'pending' | 'scheduled' | 'delivered' | 'cancelled';
+export type PaymentStatus = 'pending' | 'partial' | 'paid';
+export type PaymentMethod = 'cash' | 'transfer' | 'deuna' | 'credit';
+export type SaleType = 'preventa' | 'autoventa'; // preventa: pedido anticipado, autoventa: venta directa en ruta
 
 export interface Order {
   id: string;
@@ -81,12 +84,30 @@ export interface Order {
   totalBottles: number;
   totalAmount: number;
   status: OrderStatus;
+  saleType: SaleType;
+  scheduledDeliveryDate?: string; // Fecha y hora programada
+  scheduledTimeSlot?: string; // e.g. "Mañana 09:00 - 11:00"
   paymentStatus: PaymentStatus;
   paymentMethod: PaymentMethod;
+  amountPaid: number; // Monto efectivamente abonado/pagado
+  debtBalance: number; // Saldo deudor pendiente
+  paymentProofUrl?: string; // Comprobante DeUna o Transferencia
   notes?: string;
   createdAt: string;
   deliveredAt?: string;
   invoiceId?: string;
+}
+
+export interface PaymentTransaction {
+  id: string;
+  orderId: string;
+  clientId: string;
+  amount: number;
+  paymentMethod: PaymentMethod;
+  paymentProofUrl?: string;
+  referenceNumber?: string;
+  notes?: string;
+  recordedAt: string;
 }
 
 export type SriEnvironment = '1' | '2'; // 1: Sandbox/Pruebas, 2: Producción

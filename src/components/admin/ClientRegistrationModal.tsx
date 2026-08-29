@@ -27,6 +27,10 @@ export function ClientRegistrationModal({
     lat: -0.180653,
     lng: -78.467834,
   });
+  const [taxId, setTaxId] = useState<string>('');
+  const [taxIdType, setTaxIdType] = useState<'04' | '05' | '06' | '07'>('05');
+  const [email, setEmail] = useState<string>('');
+  const [creditLimit, setCreditLimit] = useState<number>(0);
   const [addressReference, setAddressReference] = useState<string>('');
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
@@ -54,12 +58,19 @@ export function ClientRegistrationModal({
       latitude: coords.lat,
       longitude: coords.lng,
       addressReference,
+      taxId: taxId.trim() || undefined,
+      taxIdType,
+      email: email.trim() || undefined,
+      creditLimit,
     });
 
     // Reset form
     setFullName('');
     setBusinessName('');
     setWhatsappNumber('+593');
+    setTaxId('');
+    setEmail('');
+    setCreditLimit(0);
     setAddressReference('');
     setErrors({});
 
@@ -155,6 +166,55 @@ export function ClientRegistrationModal({
                 <option value="Otro">Otro</option>
               </select>
             </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="space-y-1 sm:col-span-1">
+              <label className="text-xs font-bold text-slate-700 block">Tipo Identificación</label>
+              <select
+                value={taxIdType}
+                onChange={(e) => setTaxIdType(e.target.value as any)}
+                className="w-full text-xs px-3 py-2.5 border border-slate-300 rounded-xl bg-white focus:ring-2 focus:ring-blue-600 font-medium"
+              >
+                <option value="05">Cédula (05)</option>
+                <option value="04">RUC (04)</option>
+                <option value="07">Consumidor Final (07)</option>
+              </select>
+            </div>
+
+            <div className="space-y-1 sm:col-span-1">
+              <label className="text-xs font-bold text-slate-700 block">RUC / Cédula</label>
+              <input
+                type="text"
+                value={taxId}
+                onChange={(e) => setTaxId(e.target.value)}
+                placeholder="1792345678001"
+                className="w-full text-xs px-3 py-2.5 border border-slate-300 rounded-xl font-mono focus:ring-2 focus:ring-blue-600"
+              />
+            </div>
+
+            <div className="space-y-1 sm:col-span-1">
+              <label className="text-xs font-bold text-slate-700 block">Cupo Crédito ($)</label>
+              <input
+                type="number"
+                step="5"
+                value={creditLimit}
+                onChange={(e) => setCreditLimit(Number(e.target.value))}
+                placeholder="0.00"
+                className="w-full text-xs px-3 py-2.5 border border-slate-300 rounded-xl font-mono focus:ring-2 focus:ring-blue-600"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-slate-700 block">Correo Electrónico (Facturación Electrónica SRI)</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="cliente@gmail.com"
+              className="w-full text-xs px-3.5 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600"
+            />
           </div>
 
           {/* Interactive GPS Map Picker */}

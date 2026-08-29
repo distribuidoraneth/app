@@ -19,7 +19,18 @@ export default function StandaloneOrderPage() {
   } = useDistribution();
 
   const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
-  const activeClient = clients.find((c) => c.id === selectedClientId) || clients[0];
+  const activeClient = clients.find((c) => c.id === selectedClientId) || clients[0] || {
+    id: 'mostrador',
+    qrToken: 'mostrador-directo',
+    fullName: 'Venta Directa / Mostrador',
+    businessName: 'Venta Inmediata',
+    gender: 'Hombre' as const,
+    whatsappNumber: '+593',
+    latitude: -0.180653,
+    longitude: -78.467834,
+    addressReference: 'Mostrador Central',
+    createdAt: new Date().toISOString(),
+  };
 
   return (
     <div className="min-h-screen bg-[#fafbfc] text-slate-900 pb-24">

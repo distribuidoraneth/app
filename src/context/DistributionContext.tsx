@@ -10,6 +10,7 @@ import {
   OrderStatus,
   PaymentStatus,
   PaymentMethod,
+  SaleType,
 } from '@/types';
 import {
   INITIAL_CLIENTS,
@@ -17,6 +18,7 @@ import {
   INITIAL_ORDERS,
   INITIAL_INVOICES,
 } from '@/lib/mockData';
+import { saveOrderToDb } from '@/lib/supabase/syncService';
 
 interface DistributionContextType {
   // Data
@@ -46,19 +48,26 @@ interface DistributionContextType {
     clientId: string;
     items: CartItem[];
     paymentMethod: PaymentMethod;
+    saleType?: SaleType;
+    scheduledDeliveryDate?: string;
+    scheduledTimeSlot?: string;
+    amountPaid?: number;
+    paymentProofUrl?: string;
     notes?: string;
     customLocation?: { latitude: number; longitude: number; addressReference?: string };
   }) => Order;
   cancelOrder: (orderId: string) => boolean;
   updateOrderStatus: (orderId: string, status: OrderStatus) => void;
   updatePaymentStatus: (orderId: string, status: PaymentStatus) => void;
+  updateOrderSchedule: (orderId: string, date: string, timeSlot?: string) => void;
+  recordOrderPayment: (orderId: string, amount: number, method: PaymentMethod, proofUrl?: string) => void;
   generateInvoice: (orderId: string) => Invoice | null;
   updateStock: (optionId: string, newStock: number) => void;
 }
 
 const DistributionContext = createContext<DistributionContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'distribuidora_aneth_oficial_v8';
+const STORAGE_KEY = 'distribuidora_aneth_oficial_v9';
 
 export function DistributionProvider({ children }: { children: React.ReactNode }) {
   const [clients, setClients] = useState<Client[]>(INITIAL_CLIENTS);
@@ -66,7 +75,7 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
   const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS);
   const [invoices, setInvoices] = useState<Invoice[]>(INITIAL_INVOICES);
 
-  const [selectedClientId, setSelectedClientId] = useState<string>(INITIAL_CLIENTS[0]?.id || '');
+  const [selectedClientId, setSelectedClientId] = useState<string>('');
   const [cart, setCart] = useState<CartItem[]>([]);
 
   // Load from local storage
@@ -79,6 +88,9 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
         if (parsed.catalog) setCatalog(parsed.catalog);
         if (parsed.orders) setOrders(parsed.orders);
         if (parsed.invoices) setInvoices(parsed.invoices);
+        if (parsed.clients && parsed.clients.length > 0 && !selectedClientId) {
+          setSelectedClientId(parsed.clients[0].id);
+        }
       }
     } catch {
       // ignore
@@ -98,84 +110,90 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
   }, [clients, catalog, orders, invoices]);
 
   // Cart operations
-  const addToCart = (item: CartItem) => {
+  const addToCart = (newItem: CartItem) => {
     setCart((prev) => {
-      // Check if identical item already exists (same option, container, size, flavor)
-      const existingIdx = prev.findIndex((i) => {
-        if (i.productOptionId !== item.productOptionId) return false;
-        if (i.flavorType !== item.flavorType) return false;
-        if (i.flavorType === 'single') {
-          return i.selectedFlavor === item.selectedFlavor;
-        }
-        // Surtido check
-        return JSON.stringify(i.surtidoDetails) === JSON.stringify(item.surtidoDetails);
-      });
+      const existingIndex = prev.findIndex(
+        (item) =>
+          item.productOptionId === newItem.productOptionId &&
+          item.flavorType === newItem.flavorType &&
+          item.selectedFlavor === newItem.selectedFlavor &&
+          JSON.stringify(item.surtidoDetails || {}) === JSON.stringify(newItem.surtidoDetails || {})
+      );
 
-      if (existingIdx > -1) {
+      if (existingIndex > -1) {
         const updated = [...prev];
-        const existing = updated[existingIdx];
-        const newJavas = existing.quantityJavas + item.quantityJavas;
-        const newUnits = (existing.quantityUnits || 0) + (item.quantityUnits || 0);
-        const newSubtotal = (newJavas * item.pricePerJava) + (newUnits * item.pricePerUnit);
-        const newTotalBottles = (newJavas * item.unitsPerJava) + newUnits;
+        const existing = updated[existingIndex];
+        const combinedJavas = existing.quantityJavas + newItem.quantityJavas;
+        const combinedUnits = (existing.quantityUnits || 0) + (newItem.quantityUnits || 0);
+        const combinedBottles = (combinedJavas * existing.unitsPerJava) + combinedUnits;
+        const combinedSubtotal = Number(
+          ((combinedJavas * existing.pricePerJava) + (combinedUnits * existing.pricePerUnit)).toFixed(2)
+        );
 
-        updated[existingIdx] = {
+        updated[existingIndex] = {
           ...existing,
-          quantityJavas: newJavas,
-          quantityUnits: newUnits,
-          totalBottles: newTotalBottles,
-          subtotal: Number(newSubtotal.toFixed(2)),
+          quantityJavas: combinedJavas,
+          quantityUnits: combinedUnits,
+          totalBottles: combinedBottles,
+          subtotal: combinedSubtotal,
         };
         return updated;
       }
 
-      return [...prev, item];
+      return [...prev, newItem];
     });
   };
 
   const removeFromCart = (itemId: string) => {
-    setCart((prev) => prev.filter((i) => i.id !== itemId));
+    setCart((prev) => prev.filter((item) => item.id !== itemId));
   };
 
-  const updateCartQuantity = (itemId: string, quantityJavas: number, quantityUnits?: number) => {
-    const units = quantityUnits !== undefined ? quantityUnits : 0;
-    if (quantityJavas <= 0 && units <= 0) {
+  const updateCartQuantity = (
+    itemId: string,
+    quantityJavas: number,
+    quantityUnits?: number
+  ) => {
+    if (quantityJavas <= 0 && (quantityUnits === undefined || quantityUnits <= 0)) {
       removeFromCart(itemId);
       return;
     }
+
     setCart((prev) =>
-      prev.map((i) => {
-        if (i.id !== itemId) return i;
-        const finalJavas = Math.max(0, quantityJavas);
-        const finalUnits = Math.max(0, units);
-        const subtotal = (finalJavas * i.pricePerJava) + (finalUnits * i.pricePerUnit);
-        const totalBottles = (finalJavas * i.unitsPerJava) + finalUnits;
-        return {
-          ...i,
-          quantityJavas: finalJavas,
-          quantityUnits: finalUnits,
-          totalBottles,
-          subtotal: Number(subtotal.toFixed(2)),
-        };
+      prev.map((item) => {
+        if (item.id === itemId) {
+          const qJ = Math.max(0, quantityJavas);
+          const qU = quantityUnits !== undefined ? Math.max(0, quantityUnits) : (item.quantityUnits || 0);
+          const totalBottles = (qJ * item.unitsPerJava) + qU;
+          const subtotal = Number(((qJ * item.pricePerJava) + (qU * item.pricePerUnit)).toFixed(2));
+          return {
+            ...item,
+            quantityJavas: qJ,
+            quantityUnits: qU,
+            totalBottles,
+            subtotal,
+          };
+        }
+        return item;
       })
     );
   };
 
-  const clearCart = () => setCart([]);
+  const clearCart = () => {
+    setCart([]);
+  };
 
   const cartTotalAmount = Number(cart.reduce((sum, item) => sum + item.subtotal, 0).toFixed(2));
   const cartTotalJavas = cart.reduce((sum, item) => sum + item.quantityJavas, 0);
   const cartTotalUnits = cart.reduce((sum, item) => sum + (item.quantityUnits || 0), 0);
   const cartTotalBottles = cart.reduce((sum, item) => sum + (item.totalBottles || (item.quantityJavas * item.unitsPerJava)), 0);
 
-  // Client registration
+  // Add Client
   const addClient = (clientData: Omit<Client, 'id' | 'qrToken' | 'createdAt'>): Client => {
     const slug = clientData.fullName
       .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
+      .trim()
       .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
+      .slice(0, 20);
     const randomSuffix = Math.floor(10 + Math.random() * 90);
     const qrToken = `aneth-${slug}-${randomSuffix}`;
 
@@ -183,10 +201,13 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
       ...clientData,
       id: `cli-${Date.now()}`,
       qrToken,
+      creditLimit: clientData.creditLimit || 0.00,
+      currentDebt: 0.00,
       createdAt: new Date().toISOString(),
     };
 
     setClients((prev) => [newClient, ...prev]);
+    setSelectedClientId(newClient.id);
     return newClient;
   };
 
@@ -195,12 +216,22 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
     clientId,
     items,
     paymentMethod,
+    saleType = 'preventa',
+    scheduledDeliveryDate,
+    scheduledTimeSlot,
+    amountPaid = 0,
+    paymentProofUrl,
     notes,
     customLocation,
   }: {
     clientId: string;
     items: CartItem[];
     paymentMethod: PaymentMethod;
+    saleType?: SaleType;
+    scheduledDeliveryDate?: string;
+    scheduledTimeSlot?: string;
+    amountPaid?: number;
+    paymentProofUrl?: string;
     notes?: string;
     customLocation?: { latitude: number; longitude: number; addressReference?: string };
   }): Order => {
@@ -209,6 +240,19 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
     const totalJavas = items.reduce((sum, item) => sum + item.quantityJavas, 0);
     const totalUnits = items.reduce((sum, item) => sum + (item.quantityUnits || 0), 0);
     const totalBottles = items.reduce((sum, item) => sum + (item.totalBottles || (item.quantityJavas * item.unitsPerJava)), 0);
+
+    const actualAmountPaid = paymentMethod === 'cash' || paymentMethod === 'deuna' || paymentMethod === 'transfer'
+      ? (amountPaid > 0 ? amountPaid : totalAmount)
+      : (amountPaid || 0);
+
+    const debtBalance = Math.max(0, Number((totalAmount - actualAmountPaid).toFixed(2)));
+
+    let paymentStatus: PaymentStatus = 'pending';
+    if (actualAmountPaid >= totalAmount) {
+      paymentStatus = 'paid';
+    } else if (actualAmountPaid > 0) {
+      paymentStatus = 'partial';
+    }
 
     const orderNum = `ORD-${String(orders.length + 101).padStart(5, '0')}`;
 
@@ -227,12 +271,30 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
       totalUnits,
       totalBottles,
       totalAmount,
-      status: 'pending',
-      paymentStatus: 'pending',
+      status: saleType === 'autoventa' ? 'delivered' : (scheduledDeliveryDate ? 'scheduled' : 'pending'),
+      saleType,
+      scheduledDeliveryDate,
+      scheduledTimeSlot,
+      paymentStatus,
       paymentMethod,
+      amountPaid: actualAmountPaid,
+      debtBalance,
+      paymentProofUrl,
       notes,
       createdAt: new Date().toISOString(),
+      deliveredAt: saleType === 'autoventa' ? new Date().toISOString() : undefined,
     };
+
+    // Update client debt if applicable
+    if (client && debtBalance > 0) {
+      setClients((prev) =>
+        prev.map((c) =>
+          c.id === client.id
+            ? { ...c, currentDebt: Number(((c.currentDebt || 0) + debtBalance).toFixed(2)) }
+            : c
+        )
+      );
+    }
 
     // Deduct stock
     items.forEach((item) => {
@@ -247,6 +309,10 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
 
     setOrders((prev) => [newOrder, ...prev]);
     clearCart();
+
+    // Async save to Supabase
+    saveOrderToDb(newOrder).catch((err) => console.warn('Sync DB error:', err));
+
     return newOrder;
   };
 
@@ -288,7 +354,67 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
 
   const updatePaymentStatus = (orderId: string, status: PaymentStatus) => {
     setOrders((prev) =>
-      prev.map((o) => (o.id === orderId ? { ...o, paymentStatus: status } : o))
+      prev.map((o) => {
+        if (o.id === orderId) {
+          const amountPaid = status === 'paid' ? o.totalAmount : o.amountPaid;
+          const debtBalance = status === 'paid' ? 0 : o.debtBalance;
+          return { ...o, paymentStatus: status, amountPaid, debtBalance };
+        }
+        return o;
+      })
+    );
+  };
+
+  const updateOrderSchedule = (orderId: string, date: string, timeSlot?: string) => {
+    setOrders((prev) =>
+      prev.map((o) =>
+        o.id === orderId
+          ? {
+              ...o,
+              status: 'scheduled',
+              scheduledDeliveryDate: date,
+              scheduledTimeSlot: timeSlot || o.scheduledTimeSlot,
+            }
+          : o
+      )
+    );
+  };
+
+  const recordOrderPayment = (
+    orderId: string,
+    amount: number,
+    method: PaymentMethod,
+    proofUrl?: string
+  ) => {
+    setOrders((prev) =>
+      prev.map((o) => {
+        if (o.id === orderId) {
+          const newPaid = Number((o.amountPaid + amount).toFixed(2));
+          const newDebt = Math.max(0, Number((o.totalAmount - newPaid).toFixed(2)));
+          const paymentStatus: PaymentStatus = newDebt === 0 ? 'paid' : 'partial';
+
+          // Update client debt balance
+          if (o.clientId) {
+            setClients((cPrev) =>
+              cPrev.map((c) =>
+                c.id === o.clientId
+                  ? { ...c, currentDebt: Math.max(0, Number(((c.currentDebt || 0) - amount).toFixed(2))) }
+                  : c
+              )
+            );
+          }
+
+          return {
+            ...o,
+            amountPaid: newPaid,
+            debtBalance: newDebt,
+            paymentStatus,
+            paymentMethod: method,
+            paymentProofUrl: proofUrl || o.paymentProofUrl,
+          };
+        }
+        return o;
+      })
     );
   };
 
@@ -358,6 +484,8 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
         cancelOrder,
         updateOrderStatus,
         updatePaymentStatus,
+        updateOrderSchedule,
+        recordOrderPayment,
         generateInvoice,
         updateStock,
       }}
