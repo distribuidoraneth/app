@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useDistribution } from '@/context/DistributionContext';
 import { OrderDispatchBoard } from './OrderDispatchBoard';
 import { CatalogManager } from './CatalogManager';
@@ -8,6 +9,8 @@ import { ClientRegistrationModal } from './ClientRegistrationModal';
 import { QRCodeModal } from './QRCodeModal';
 import { InvoiceModal } from '@/components/invoice/InvoiceModal';
 import { VectorMap } from '@/components/maps/VectorMap';
+import { LiquidMobileTabPill, TabItem } from '@/components/ui/LiquidMobileTabPill';
+import { MobileFloatingDock, DockNavItem } from '@/components/ui/MobileFloatingDock';
 import { formatCurrency, formatDate } from '@/lib/utils/formatters';
 import { Client, Invoice } from '@/types';
 import { AnethFullLogo } from '@/components/ui/AnethLogo';
@@ -30,12 +33,18 @@ import {
   ArrowRight,
   Download,
   CheckCircle2,
+  LogOut,
+  CreditCard,
+  AlertTriangle,
+  Receipt,
+  Sparkles,
 } from 'lucide-react';
 
 export function AdminDashboard() {
-  const { clients, orders, invoices, catalog } = useDistribution();
+  const router = useRouter();
+  const { clients, orders, invoices, catalog, recordDebtPayment } = useDistribution();
 
-  const [activeTab, setActiveTab] = useState<'dispatch' | 'clients' | 'catalog' | 'invoices'>('dispatch');
+  const [activeTab, setActiveTab] = useState<'dispatch' | 'clients' | 'debts' | 'invoices' | 'catalog'>('dispatch');
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState<boolean>(false);
   const [selectedQRClient, setSelectedQRClient] = useState<Client | null>(null);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
@@ -49,6 +58,7 @@ export function AdminDashboard() {
     .reduce((sum, o) => sum + o.totalJavas, 0);
   const pendingOrders = orders.filter((o) => o.status === 'pending');
   const deliveredOrders = orders.filter((o) => o.status === 'delivered');
+  const totalDebt = clients.reduce((sum, c) => sum + (c.currentDebt || 0), 0);
 
   // Prepare map markers
   const clientMarkers = clients.map((c) => ({
@@ -60,172 +70,203 @@ export function AdminDashboard() {
     color: 'blue-600',
   }));
 
+  const handleLogout = () => {
+    localStorage.removeItem('aneth_admin_authenticated');
+    sessionStorage.removeItem('aneth_admin_authenticated');
+    router.push('/');
+  };
+
+  // Tab definitions for Liquid Pill and Dock
+  const tabsList: TabItem[] = [
+    {
+      id: 'dispatch',
+      label: 'Despachos',
+      icon: <Truck className="w-4 h-4" />,
+      badge: pendingOrders.length > 0 ? pendingOrders.length : undefined,
+    },
+    {
+      id: 'clients',
+      label: 'Locales QR',
+      icon: <Users className="w-4 h-4" />,
+      badge: clients.length,
+    },
+    {
+      id: 'debts',
+      label: 'Deudas',
+      icon: <CreditCard className="w-4 h-4" />,
+      badge: totalDebt > 0 ? `$${Math.round(totalDebt)}` : undefined,
+    },
+    {
+      id: 'invoices',
+      label: 'Facturación',
+      icon: <FileText className="w-4 h-4" />,
+      badge: invoices.length,
+    },
+    {
+      id: 'catalog',
+      label: 'Inventario',
+      icon: <Layers className="w-4 h-4" />,
+    },
+  ];
+
+  const dockNavItems: DockNavItem[] = [
+    {
+      id: 'dispatch',
+      label: 'Pedidos',
+      icon: <Truck className="w-5 h-5" />,
+      badge: pendingOrders.length > 0 ? pendingOrders.length : undefined,
+    },
+    {
+      id: 'clients',
+      label: 'Clientes',
+      icon: <Users className="w-5 h-5" />,
+    },
+    {
+      id: 'debts',
+      label: 'Deudas',
+      icon: <CreditCard className="w-5 h-5" />,
+    },
+    {
+      id: 'invoices',
+      label: 'Facturas',
+      icon: <FileText className="w-5 h-5" />,
+    },
+    {
+      id: 'catalog',
+      label: 'Stock',
+      icon: <Layers className="w-5 h-5" />,
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-[#f8fafc] pb-24 text-slate-900">
+    <div className="min-h-screen bg-[#f8fafc] pb-28 text-slate-900">
       {/* Top Header - Clean Light Surface */}
       <header className="bg-white border-b border-slate-200/90 sticky top-0 z-40 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div className="flex items-center space-x-4">
             <AnethFullLogo size="md" showSubtitle={true} subtitleText="DISTRIBUIDORA" />
             <div className="hidden sm:block pl-4 border-l border-slate-200">
               <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-lg border border-blue-200">
-                Panel de Ventas & Despacho
+                Panel Administrativo
               </span>
             </div>
           </div>
 
           <div className="flex items-center space-x-2">
             <Link
-              href="/"
-              className="text-xs text-slate-600 hover:text-slate-900 px-3.5 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors font-bold"
-            >
-              Cambiar Portal
-            </Link>
-
-            <Link
               href="/pedido"
-              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-xl text-xs font-extrabold border border-slate-300 flex items-center space-x-1.5 transition-colors"
+              className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-xl text-xs font-extrabold border border-slate-300 flex items-center space-x-1.5 transition-colors"
             >
               <Package className="w-3.5 h-3.5 text-blue-600" />
-              <span>Tomar Pedido</span>
+              <span className="hidden sm:inline">Nueva Venta Directa</span>
+              <span className="sm:hidden">Vender</span>
             </Link>
 
             <button
               type="button"
               onClick={() => setIsRegisterModalOpen(true)}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl text-xs font-extrabold shadow-sm flex items-center space-x-1.5 transition-all"
+              className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl text-xs font-extrabold shadow-xs flex items-center space-x-1.5 transition-all"
             >
               <Plus className="w-4 h-4" />
-              <span>Registrar Cliente QR</span>
+              <span className="hidden sm:inline">Nuevo Local QR</span>
+              <span className="sm:hidden">Local</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl border border-slate-200 transition-colors"
+              title="Cerrar sesión"
+            >
+              <LogOut className="w-4 h-4" />
             </button>
           </div>
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-        {/* KPI Metrics - Clean Light Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-1">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5 space-y-5">
+        {/* KPI Metrics */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
+          <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs space-y-1">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-extrabold text-slate-500 uppercase tracking-wider">
+              <span className="text-[11px] sm:text-xs font-extrabold text-slate-500 uppercase tracking-wider">
                 Ventas Totales
               </span>
               <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
                 <DollarSign className="w-4 h-4" />
               </div>
             </div>
-            <div className="text-2xl sm:text-3xl font-black font-mono text-slate-900">
+            <div className="text-xl sm:text-3xl font-black font-mono text-slate-900">
               {formatCurrency(totalSales)}
             </div>
-            <p className="text-xs text-emerald-700 font-bold">
+            <p className="text-[11px] sm:text-xs text-emerald-700 font-bold">
               {totalJavasSold} javas despachadas
             </p>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-1">
+          <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs space-y-1">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-extrabold text-slate-500 uppercase tracking-wider">
+              <span className="text-[11px] sm:text-xs font-extrabold text-slate-500 uppercase tracking-wider">
                 Por Despachar
               </span>
               <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
                 <Package className="w-4 h-4" />
               </div>
             </div>
-            <div className="text-2xl sm:text-3xl font-black font-mono text-slate-900">
+            <div className="text-xl sm:text-3xl font-black font-mono text-slate-900">
               {pendingOrders.length}
             </div>
-            <p className="text-xs text-amber-700 font-bold">
+            <p className="text-[11px] sm:text-xs text-amber-700 font-bold">
               {deliveredOrders.length} pedidos entregados
             </p>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-1">
+          <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs space-y-1">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-extrabold text-slate-500 uppercase tracking-wider">
-                Establecimientos QR
+              <span className="text-[11px] sm:text-xs font-extrabold text-slate-500 uppercase tracking-wider">
+                Locales QR
               </span>
               <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
                 <Users className="w-4 h-4" />
               </div>
             </div>
-            <div className="text-2xl sm:text-3xl font-black font-mono text-slate-900">
+            <div className="text-xl sm:text-3xl font-black font-mono text-slate-900">
               {clients.length}
             </div>
-            <p className="text-xs text-blue-700 font-bold">
-              Locales comerciales activos
+            <p className="text-[11px] sm:text-xs text-blue-700 font-bold">
+              Clientes con QR activo
             </p>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-1">
+          <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs space-y-1">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-extrabold text-slate-500 uppercase tracking-wider">
-                Facturas Emitidas
+              <span className="text-[11px] sm:text-xs font-extrabold text-slate-500 uppercase tracking-wider">
+                Cuentas por Cobrar
               </span>
               <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-                <FileText className="w-4 h-4" />
+                <CreditCard className="w-4 h-4" />
               </div>
             </div>
-            <div className="text-2xl sm:text-3xl font-black font-mono text-slate-900">
-              {invoices.length}
+            <div className="text-xl sm:text-3xl font-black font-mono text-slate-900">
+              {formatCurrency(totalDebt)}
             </div>
-            <p className="text-xs text-indigo-700 font-bold">
-              Comprobantes generados
+            <p className="text-[11px] sm:text-xs text-indigo-700 font-bold">
+              Saldo pendiente total
             </p>
           </div>
         </div>
 
-        {/* Tab Navigation - Clean Tactile Pills */}
-        <div className="flex items-center space-x-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200 overflow-x-auto">
-          <button
-            type="button"
-            onClick={() => setActiveTab('dispatch')}
-            className={`flex-1 py-3 px-5 rounded-xl text-sm font-extrabold transition-all whitespace-nowrap ${
-              activeTab === 'dispatch'
-                ? 'bg-white text-blue-700 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            Tablero de Despachos ({pendingOrders.length} pendientes)
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('clients')}
-            className={`flex-1 py-3 px-5 rounded-xl text-sm font-extrabold transition-all whitespace-nowrap ${
-              activeTab === 'clients'
-                ? 'bg-white text-blue-700 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            Directorio de Locales QR ({clients.length})
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('invoices')}
-            className={`flex-1 py-3 px-5 rounded-xl text-sm font-extrabold transition-all whitespace-nowrap ${
-              activeTab === 'invoices'
-                ? 'bg-white text-blue-700 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            Módulo de Facturación ({invoices.length})
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('catalog')}
-            className={`flex-1 py-3 px-5 rounded-xl text-sm font-extrabold transition-all whitespace-nowrap ${
-              activeTab === 'catalog'
-                ? 'bg-white text-blue-700 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            Inventario & Stock de Javas
-          </button>
+        {/* Liquid Material Tab Pill Selector */}
+        <div className="hidden md:flex justify-center w-full">
+          <LiquidMobileTabPill
+            tabs={tabsList}
+            activeTab={activeTab}
+            onChange={(id) => setActiveTab(id as any)}
+            layoutId="admin-desktop-tabs"
+          />
         </div>
 
-        {/* TAB 1: DESPACHOS */}
+        {/* TAB 1: TABLERO DE DESPACHOS */}
         {activeTab === 'dispatch' && <OrderDispatchBoard />}
 
         {/* TAB 2: CLIENTES / LOCALES QR */}
@@ -237,7 +278,7 @@ export function AdminDashboard() {
                   Directorio de Locales y Códigos QR
                 </h2>
                 <p className="text-xs text-slate-500">
-                  Cada establecimiento cuenta con su propio enlace permanente para realizar pedidos de javas.
+                  Genera credenciales QR impresas para cada local comercial. Los clientes escanean y piden directamente.
                 </p>
               </div>
 
@@ -256,82 +297,98 @@ export function AdminDashboard() {
               <div className="flex items-center justify-between">
                 <span className="text-xs font-extrabold text-slate-700 uppercase tracking-wider flex items-center">
                   <MapPin className="w-4 h-4 mr-1 text-red-600" />
-                  Mapa de Distribución y Cobertura de Locales
+                  Mapa de Locales Registrados
                 </span>
-                <span className="text-xs text-slate-500 font-medium">
-                  {clients.length} puntos de entrega geolocalizados
+                <span className="text-xs text-slate-500 font-mono font-bold">
+                  {clients.length} ubicaciones
                 </span>
               </div>
-              <VectorMap
-                markers={clientMarkers}
-                latitude={-0.180653}
-                longitude={-78.467834}
-                zoom={12}
-                className="h-72 w-full rounded-2xl"
-              />
+              <div className="h-64 rounded-2xl overflow-hidden border border-slate-200">
+                <VectorMap
+                  latitude={clients[0]?.latitude || -1.24908}
+                  longitude={clients[0]?.longitude || -78.61675}
+                  markers={clientMarkers}
+                  zoom={13}
+                />
+              </div>
             </div>
 
             {/* Clients Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {clients.map((c) => (
+              {clients.map((client) => (
                 <div
-                  key={c.id}
-                  className="bg-white rounded-3xl border border-slate-200 p-5 shadow-xs flex flex-col justify-between space-y-4 hover:border-slate-300 transition-all"
+                  key={client.id}
+                  className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs flex flex-col justify-between space-y-4 hover:border-blue-300 transition-all"
                 >
                   <div className="space-y-2">
-                    <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-start justify-between">
                       <div>
-                        <span className="text-xs font-extrabold text-blue-700 uppercase tracking-wider block">
-                          Local Registrado
+                        <span className="text-[10px] font-black uppercase tracking-wider text-blue-700 bg-blue-50 px-2 py-0.5 rounded">
+                          {client.gender}
                         </span>
-                        <h3 className="font-extrabold text-slate-900 text-base leading-snug">
-                          {c.businessName || c.fullName}
+                        <h3 className="font-extrabold text-base text-slate-900 mt-1">
+                          {client.businessName || client.fullName}
                         </h3>
+                        <p className="text-xs text-slate-500">{client.fullName}</p>
                       </div>
-
                       <button
                         type="button"
-                        onClick={() => setSelectedQRClient(c)}
-                        className="p-2 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-xl border border-blue-200 transition-colors"
+                        onClick={() => setSelectedQRClient(client)}
+                        className="p-2 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-600 rounded-xl transition-colors"
                         title="Ver Código QR"
                       >
-                        <QrCode className="w-4 h-4" />
+                        <QrCode className="w-5 h-5" />
                       </button>
                     </div>
 
-                    <div className="space-y-1 text-xs text-slate-600">
-                      <p className="flex items-center font-medium">
-                        <Users className="w-3.5 h-3.5 mr-1.5 text-slate-400" />
-                        {c.fullName}
+                    <div className="text-xs text-slate-600 space-y-1 pt-1">
+                      <p className="flex items-center">
+                        <Phone className="w-3.5 h-3.5 mr-1 text-slate-400" />
+                        <span className="font-mono">{client.whatsappNumber}</span>
                       </p>
-                      <p className="flex items-center font-mono">
-                        <Phone className="w-3.5 h-3.5 mr-1.5 text-slate-400" />
-                        {c.whatsappNumber}
-                      </p>
-                      <p className="flex items-start text-slate-500">
-                        <MapPin className="w-3.5 h-3.5 mr-1.5 text-slate-400 flex-shrink-0 mt-0.5" />
-                        <span>{c.addressReference}</span>
+                      {client.taxId && (
+                        <p className="text-[11px] text-slate-500 font-mono">
+                          RUC/CI: {client.taxId} ({client.taxIdType === '04' ? 'RUC' : 'Cédula'})
+                        </p>
+                      )}
+                      <p className="flex items-start text-slate-500 text-[11px]">
+                        <MapPin className="w-3.5 h-3.5 mr-1 text-slate-400 shrink-0 mt-0.5" />
+                        <span>{client.addressReference}</span>
                       </p>
                     </div>
+
+                    {/* Credit Status */}
+                    {(client.creditLimit || 0) > 0 && (
+                      <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-xs flex justify-between items-center">
+                        <div>
+                          <span className="text-[10px] text-slate-500 block">Cupo Crédito</span>
+                          <span className="font-bold font-mono text-slate-800">${client.creditLimit || 0}</span>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-[10px] text-slate-500 block">Deuda Actual</span>
+                          <span className={`font-bold font-mono ${(client.currentDebt || 0) > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                            ${(client.currentDebt || 0).toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
-                  <div className="flex items-center space-x-2 pt-3 border-t border-slate-100">
+                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
                     <button
                       type="button"
-                      onClick={() => setSelectedQRClient(c)}
-                      className="flex-1 py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-extrabold flex items-center justify-center space-x-1.5 transition-colors"
+                      onClick={() => setSelectedQRClient(client)}
+                      className="text-xs font-extrabold text-blue-600 hover:text-blue-700 flex items-center space-x-1"
                     >
-                      <QrCode className="w-3.5 h-3.5" />
-                      <span>Ver QR</span>
+                      <span>Imprimir Sticker QR</span>
+                      <ArrowRight className="w-3 h-3" />
                     </button>
-
                     <Link
-                      href={`/p/${c.qrToken}`}
+                      href={`/p/${client.qrToken}`}
                       target="_blank"
-                      className="py-2 px-3 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-extrabold flex items-center justify-center space-x-1 transition-colors"
+                      className="text-xs text-slate-500 hover:text-slate-900 font-medium"
                     >
-                      <span>Abrir Portal</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
+                      Abrir Portal ↗
                     </Link>
                   </div>
                 </div>
@@ -340,111 +397,210 @@ export function AdminDashboard() {
           </div>
         )}
 
-        {/* TAB 3: FACTURACIÓN */}
-        {activeTab === 'invoices' && (
-          <div className="space-y-4">
+        {/* TAB 3: CUENTAS POR COBRAR Y DEUDAS */}
+        {activeTab === 'debts' && (
+          <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <h2 className="text-lg font-extrabold text-slate-900">
-                  Módulo de Facturación Electrónica
+                  Control de Créditos y Cuentas por Cobrar
                 </h2>
                 <p className="text-xs text-slate-500">
-                  Registro de facturas emitidas por pedidos despachados con opción de impresión y envío digital.
+                  Monitoreo de deudas pendientes por cliente, límites autorizados y registro de abonos en efectivo/transferencia.
                 </p>
               </div>
             </div>
 
-            {invoices.length === 0 ? (
-              <div className="text-center py-16 bg-white rounded-3xl border border-slate-200 p-8 space-y-3">
-                <FileText className="w-12 h-12 text-slate-300 mx-auto" />
-                <h3 className="font-extrabold text-slate-800 text-base">No hay facturas emitidas aún</h3>
-                <p className="text-xs text-slate-500">
-                  Las facturas se generarán automáticamente al marcar los pedidos como despachados.
-                </p>
-              </div>
-            ) : (
-              <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead>
-                      <tr className="bg-slate-50 text-slate-700 font-extrabold uppercase tracking-wider border-b border-slate-200">
-                        <th className="py-3.5 px-4">Nº Factura</th>
-                        <th className="py-3.5 px-4">Fecha de Emisión</th>
-                        <th className="py-3.5 px-4">Establecimiento / Cliente</th>
-                        <th className="py-3.5 px-4">Javas Facturadas</th>
-                        <th className="py-3.5 px-4">Total</th>
-                        <th className="py-3.5 px-4">Estado</th>
-                        <th className="py-3.5 px-4 text-right">Acciones</th>
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+                      <th className="py-3 px-4">Cliente / Local</th>
+                      <th className="py-3 px-4">Contacto</th>
+                      <th className="py-3 px-4 text-right">Cupo Asignado</th>
+                      <th className="py-3 px-4 text-right">Deuda Actual</th>
+                      <th className="py-3 px-4 text-right">Disponible</th>
+                      <th className="py-3 px-4 text-center">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-slate-800">
+                    {clients.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="py-8 text-center text-slate-400">
+                          No hay clientes registrados aún.
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 text-slate-800">
-                      {invoices.map((inv) => (
-                        <tr key={inv.id} className="hover:bg-slate-50/60">
-                          <td className="py-3.5 px-4 font-mono font-extrabold text-blue-700 text-sm">
-                            {inv.invoiceNumber}
-                          </td>
-                          <td className="py-3.5 px-4 text-slate-600 font-medium">
-                            {formatDate(inv.issuedAt)}
-                          </td>
-                          <td className="py-3.5 px-4">
-                            <span className="font-extrabold text-slate-900 block">
-                              {inv.businessName || inv.clientName}
-                            </span>
-                            <span className="text-slate-500 text-xs">{inv.clientName}</span>
-                          </td>
-                          <td className="py-3.5 px-4 font-bold text-slate-700">
-                            {inv.totalJavas} javas
-                          </td>
-                          <td className="py-3.5 px-4 font-mono font-black text-slate-900 text-sm">
-                            {formatCurrency(inv.total)}
-                          </td>
-                          <td className="py-3.5 px-4">
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-emerald-100 text-emerald-900 capitalize">
-                              <CheckCircle2 className="w-3 h-3 mr-1" />
-                              {inv.status}
-                            </span>
-                          </td>
-                          <td className="py-3.5 px-4 text-right">
-                            <button
-                              type="button"
-                              onClick={() => setSelectedInvoice(inv)}
-                              className="py-1.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-900 font-extrabold text-xs rounded-xl transition-colors inline-flex items-center space-x-1"
-                            >
-                              <FileText className="w-3.5 h-3.5" />
-                              <span>Ver Factura</span>
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                    ) : (
+                      clients.map((client) => {
+                        const debt = client.currentDebt || 0;
+                        const available = Math.max(0, (client.creditLimit || 0) - debt);
+
+                        return (
+                          <tr key={client.id} className="hover:bg-slate-50">
+                            <td className="py-3 px-4">
+                              <p className="font-extrabold text-slate-900">{client.businessName || client.fullName}</p>
+                              <p className="text-[11px] text-slate-500">{client.fullName}</p>
+                            </td>
+                            <td className="py-3 px-4 font-mono">{client.whatsappNumber}</td>
+                            <td className="py-3 px-4 text-right font-mono font-bold">
+                              ${(client.creditLimit || 0).toFixed(2)}
+                            </td>
+                            <td className="py-3 px-4 text-right font-mono font-extrabold text-amber-600">
+                              ${debt.toFixed(2)}
+                            </td>
+                            <td className="py-3 px-4 text-right font-mono font-bold text-emerald-600">
+                              ${available.toFixed(2)}
+                            </td>
+                            <td className="py-3 px-4 text-center">
+                              {debt > 0 ? (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const amountStr = prompt(`Registrar abono para ${client.fullName}.\nDeuda actual: $${debt.toFixed(2)}\n\nIngrese monto a abonar:`, debt.toString());
+                                    if (amountStr) {
+                                      const amount = parseFloat(amountStr);
+                                      if (amount > 0) {
+                                        recordDebtPayment(client.id, amount, 'cash', 'Abono registrado en panel');
+                                        alert(`Abono de $${amount.toFixed(2)} registrado con éxito.`);
+                                      }
+                                    }
+                                  }}
+                                  className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs"
+                                >
+                                  Registrar Abono
+                                </button>
+                              ) : (
+                                <span className="text-[11px] text-emerald-600 font-bold bg-emerald-50 px-2 py-1 rounded-lg">
+                                  Al día ✓
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
               </div>
-            )}
+            </div>
           </div>
         )}
 
-        {/* TAB 4: CATÁLOGO & INVENTARIO */}
+        {/* TAB 4: FACTURACIÓN SRI */}
+        {activeTab === 'invoices' && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-extrabold text-slate-900">
+                  Comprobantes Electrónicos SRI
+                </h2>
+                <p className="text-xs text-slate-500">
+                  Emisión de facturas con firma digital XAdES-BES y generación de RIDE PDF oficial.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+                      <th className="py-3 px-4">No. Factura</th>
+                      <th className="py-3 px-4">Cliente</th>
+                      <th className="py-3 px-4">Fecha Emisión</th>
+                      <th className="py-3 px-4 text-right">Subtotal</th>
+                      <th className="py-3 px-4 text-right">Total</th>
+                      <th className="py-3 px-4 text-center">Estado SRI</th>
+                      <th className="py-3 px-4 text-center">Portal Web</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-slate-800">
+                    {invoices.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className="py-8 text-center text-slate-400">
+                          Aún no se han emitido facturas electrónicas.
+                        </td>
+                      </tr>
+                    ) : (
+                      invoices.map((inv) => (
+                        <tr key={inv.id} className="hover:bg-slate-50">
+                          <td className="py-3 px-4 font-mono font-bold text-blue-700">
+                            {inv.invoiceNumber}
+                          </td>
+                          <td className="py-3 px-4">
+                            <p className="font-bold text-slate-900">{inv.clientName}</p>
+                            <p className="text-[11px] text-slate-500 font-mono">{inv.clientTaxId || 'Consumidor Final'}</p>
+                          </td>
+                          <td className="py-3 px-4">{formatDate(inv.issuedAt)}</td>
+                          <td className="py-3 px-4 text-right font-mono font-medium">
+                            {formatCurrency(inv.subtotal)}
+                          </td>
+                          <td className="py-3 px-4 text-right font-mono font-extrabold text-slate-900">
+                            {formatCurrency(inv.total)}
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              AUTORIZADA SRI
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            <div className="flex items-center justify-center space-x-1.5">
+                              <button
+                                type="button"
+                                onClick={() => setSelectedInvoice(inv)}
+                                className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-xs font-bold transition-colors"
+                              >
+                                Ver RIDE
+                              </button>
+                              <Link
+                                href={`/factura/${inv.invoiceNumber}`}
+                                target="_blank"
+                                className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-bold transition-colors"
+                              >
+                                Portal ↗
+                              </Link>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 5: CATÁLOGO & INVENTARIO */}
         {activeTab === 'catalog' && <CatalogManager />}
       </div>
 
-      {/* Registration Modal */}
+      {/* Mobile Floating Bottom Dock (Liquid Material) */}
+      <div className="md:hidden">
+        <MobileFloatingDock
+          items={dockNavItems}
+          activeId={activeTab}
+          onChange={(id) => setActiveTab(id as any)}
+          layoutId="mobile-admin-dock"
+        />
+      </div>
+
+      {/* Modals */}
       <ClientRegistrationModal
         isOpen={isRegisterModalOpen}
         onClose={() => setIsRegisterModalOpen(false)}
-        onClientCreated={(newCli) => {
-          setSelectedQRClient(newCli);
+        onClientCreated={(client) => {
+          setSelectedQRClient(client);
         }}
       />
 
-      {/* QR Code Modal */}
       <QRCodeModal
         client={selectedQRClient}
         isOpen={!!selectedQRClient}
         onClose={() => setSelectedQRClient(null)}
       />
 
-      {/* Invoice Modal */}
       <InvoiceModal
         invoice={selectedInvoice}
         isOpen={!!selectedInvoice}

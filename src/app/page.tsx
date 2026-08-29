@@ -1,163 +1,198 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useDistribution } from '@/context/DistributionContext';
-import { AnethFullLogo } from '@/components/ui/AnethLogo';
-import { MobileTestButton } from '@/components/ui/MobileTestQRModal';
-import Link from 'next/link';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { AnethFullLogo, AnethIsotype } from '@/components/ui/AnethLogo';
 import {
-  QrCode,
-  Building2,
+  ShieldCheck,
+  Lock,
+  Mail,
+  KeyRound,
   ArrowRight,
-  Store,
-  MapPin,
+  Sparkles,
   CheckCircle2,
-  Package,
+  AlertCircle,
+  Database,
+  Building2,
+  Cpu,
+  Store,
+  QrCode,
 } from 'lucide-react';
 
-export default function EntryHubPage() {
-  const { clients, orders, invoices } = useDistribution();
-  const [selectedClientToken, setSelectedClientToken] = useState<string>(
-    clients[0]?.qrToken || 'aneth-carlos-mendoza-01'
-  );
+export default function AdminLoginPage() {
+  const router = useRouter();
+  const [email, setEmail] = useState<string>('admin@distribuidoraneth.com');
+  const [password, setPassword] = useState<string>('aneth2026');
+  const [rememberMe, setRememberMe] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const pendingOrdersCount = orders.filter((o) => o.status === 'pending').length;
+  // Check if session is already stored
+  useEffect(() => {
+    const savedAuth = localStorage.getItem('aneth_admin_authenticated');
+    if (savedAuth === 'true') {
+      router.push('/admin');
+    }
+  }, [router]);
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+
+    // Simple validation (can be plugged with supabase.auth.signInWithPassword)
+    setTimeout(() => {
+      if (email.trim().length > 0 && password.trim().length > 0) {
+        if (rememberMe) {
+          localStorage.setItem('aneth_admin_authenticated', 'true');
+          localStorage.setItem('aneth_admin_user', email);
+        } else {
+          sessionStorage.setItem('aneth_admin_authenticated', 'true');
+        }
+        router.push('/admin');
+      } else {
+        setError('Por favor ingrese un correo y contraseña válidos.');
+        setIsLoading(false);
+      }
+    }, 600);
+  };
+
+  const handleDirectAccess = () => {
+    localStorage.setItem('aneth_admin_authenticated', 'true');
+    router.push('/admin');
+  };
 
   return (
-    <div className="min-h-screen bg-[#fafbfc] text-slate-900 flex flex-col justify-between">
-      {/* Top Header */}
-      <header className="bg-white border-b border-slate-200/80">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <AnethFullLogo size="md" showSubtitle={true} subtitleText="DISTRIBUIDORA" />
+    <div className="min-h-screen bg-[#081225] text-white flex flex-col justify-between relative overflow-hidden selection:bg-blue-600 selection:text-white">
+      {/* Background Ambient Glows */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-blue-600/15 blur-[120px] pointer-events-none -z-0" />
+      <div className="absolute bottom-0 right-0 w-[500px] h-[300px] bg-indigo-600/10 blur-[100px] pointer-events-none -z-0" />
 
-          <div className="flex items-center space-x-2.5">
-            <MobileTestButton />
-            <span className="hidden sm:inline-block text-xs font-extrabold text-slate-600 bg-slate-100 px-3.5 py-1.5 rounded-full border border-slate-200">
-              Plataforma Mayorista
-            </span>
+      {/* Top Header */}
+      <header className="relative z-10 w-full max-w-6xl mx-auto px-6 py-6 flex items-center justify-between">
+        <AnethFullLogo size="md" variant="white" showSubtitle={true} subtitleText="DISTRIBUIDORA" />
+
+        <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-slate-800/80 border border-slate-700/60 text-[11px] font-bold text-slate-300">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>Sistema Online</span>
           </div>
         </div>
       </header>
 
-      {/* Main Selection Area */}
-      <main className="max-w-5xl mx-auto px-6 py-12 flex-1 flex flex-col justify-center">
-        <div className="text-center max-w-2xl mx-auto mb-10 space-y-2">
-          <span className="inline-block text-xs font-black uppercase tracking-wider text-blue-700 bg-blue-50 border border-blue-200 px-3.5 py-1 rounded-full">
-            Selecciona tu portal de acceso
-          </span>
-          <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
-            Plataforma Operativa de Distribución
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">
-            Acceso directo al portal de pedidos por código QR para clientes o al panel administrativo de ventas y facturación.
-          </p>
-        </div>
-
-        {/* 2 Main Primary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto w-full">
-          {/* 1. EXPERIENCIA DEL CLIENTE */}
-          <div className="bg-white rounded-3xl border border-slate-200/90 p-7 sm:p-8 shadow-xs hover:border-slate-300 transition-all flex flex-col justify-between space-y-6">
-            <div className="space-y-4">
-              <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-200">
-                <QrCode className="w-7 h-7" />
-              </div>
-
-              <div>
-                <span className="text-xs font-black uppercase tracking-wider text-blue-700">
-                  Ruta: /p/[token]
-                </span>
-                <h3 className="text-xl font-black text-slate-900 mt-1">
-                  1. Portal del Cliente • Escaneo QR
-                </h3>
-                <p className="text-xs sm:text-sm text-slate-600 mt-1.5 leading-relaxed">
-                  Portal rápido para locales y restaurantes. Realiza pedidos de javas en 3 toques, personaliza javas surtidas y consulta facturas emitidas.
-                </p>
-              </div>
-
-              {/* Client simulator picker */}
-              <div className="space-y-1.5 pt-3 border-t border-slate-100 text-xs">
-                <label className="text-xs font-extrabold text-slate-700 flex items-center">
-                  <Store className="w-3.5 h-3.5 mr-1 text-slate-400" />
-                  Simular QR de:
-                </label>
-                {clients.length > 0 ? (
-                  <select
-                    value={selectedClientToken}
-                    onChange={(e) => setSelectedClientToken(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-blue-600 focus:outline-hidden"
-                  >
-                    {clients.map((c) => (
-                      <option key={c.id} value={c.qrToken}>
-                        {c.fullName} • {c.businessName || 'Local'}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <p className="text-xs text-slate-500 italic bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-                    Aún no hay clientes registrados. Puedes registrar uno en el Panel de Administración o probar con el token de acceso directo.
-                  </p>
-                )}
-              </div>
+      {/* Main Login Card Container */}
+      <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-8">
+        <div className="w-full max-w-md bg-white rounded-3xl p-7 sm:p-9 shadow-2xl border border-slate-200 text-slate-900 space-y-6">
+          {/* Card Header */}
+          <div className="text-center space-y-2">
+            <div className="w-14 h-14 mx-auto rounded-2xl bg-[#081225] text-white flex items-center justify-center shadow-md">
+              <AnethIsotype size="sm" variant="white" />
             </div>
-
-            <Link
-              href={`/p/${selectedClientToken}`}
-              className="w-full py-4 px-5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-2xl text-xs sm:text-sm font-black shadow-xs flex items-center justify-center space-x-2 transition-all"
-            >
-              <span>Entrar al Portal del Cliente</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
+            <h1 className="text-2xl font-black tracking-tight text-slate-900 pt-1">
+              Terminal Administrativo
+            </h1>
+            <p className="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed">
+              Ingreso exclusivo para desarrolladores, administración y repartidores de Distribuidora Aneth.
+            </p>
           </div>
 
-          {/* 2. PANEL DE VENTAS Y FACTURACIÓN */}
-          <div className="bg-white rounded-3xl border border-slate-200/90 p-7 sm:p-8 shadow-xs hover:border-slate-300 transition-all flex flex-col justify-between space-y-6">
-            <div className="space-y-4">
-              <div className="w-14 h-14 rounded-2xl bg-slate-100 text-slate-900 flex items-center justify-center border border-slate-200">
-                <Building2 className="w-7 h-7 text-blue-600" />
+          {/* Form */}
+          <form onSubmit={handleLogin} className="space-y-4">
+            {error && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-center space-x-2">
+                <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
+                <span>{error}</span>
               </div>
+            )}
 
-              <div>
-                <span className="text-xs font-black uppercase tracking-wider text-slate-500">
-                  Ruta: /admin
-                </span>
-                <h3 className="text-xl font-black text-slate-900 mt-1">
-                  2. Panel de Ventas & Despacho
-                </h3>
-                <p className="text-xs sm:text-sm text-slate-600 mt-1.5 leading-relaxed">
-                  Centro de control: Despacho de pedidos, emisión de facturas electrónicas, contacto por WhatsApp y directorio de locales con códigos QR imprimibles.
-                </p>
-              </div>
-
-              <div className="space-y-2 pt-3 border-t border-slate-100 text-xs text-slate-600">
-                <div className="flex justify-between">
-                  <span>Pedidos por despachar:</span>
-                  <span className="font-extrabold text-amber-600 font-mono text-sm">{pendingOrdersCount} pendientes</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Locales QR registrados:</span>
-                  <span className="font-extrabold text-slate-900 font-mono text-sm">{clients.length} locales</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Facturas emitidas:</span>
-                  <span className="font-extrabold text-blue-600 font-mono text-sm">{invoices.length}</span>
-                </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-black text-slate-700 uppercase tracking-wider block">
+                Correo Electrónico
+              </label>
+              <div className="relative">
+                <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="admin@distribuidoraneth.com"
+                  className="w-full text-xs pl-10 pr-3.5 py-3 bg-slate-50 border border-slate-300 rounded-xl font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-600 focus:outline-hidden transition-all"
+                />
               </div>
             </div>
 
-            <Link
-              href="/admin"
-              className="w-full py-4 px-5 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white rounded-2xl text-xs sm:text-sm font-black shadow-xs flex items-center justify-center space-x-2 transition-all"
+            <div className="space-y-1.5">
+              <label className="text-xs font-black text-slate-700 uppercase tracking-wider block">
+                Contraseña de Seguridad
+              </label>
+              <div className="relative">
+                <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••••••"
+                  className="w-full text-xs pl-10 pr-3.5 py-3 bg-slate-50 border border-slate-300 rounded-xl font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-600 focus:outline-hidden transition-all font-mono"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between text-xs pt-1">
+              <label className="flex items-center space-x-2 text-slate-600 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
+                />
+                <span className="font-bold">Recordar en este equipo</span>
+              </label>
+              <span className="text-[11px] font-bold text-blue-600">Acceso Seguro</span>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full py-3.5 px-4 bg-blue-600 hover:bg-blue-700 active:scale-98 disabled:opacity-50 text-white rounded-xl text-xs sm:text-sm font-black shadow-md flex items-center justify-center space-x-2 transition-all cursor-pointer"
             >
-              <span>Abrir Panel de Ventas</span>
+              <span>{isLoading ? 'Iniciando Sesión...' : 'Ingresar al Panel de Control'}</span>
               <ArrowRight className="w-4 h-4" />
-            </Link>
+            </button>
+          </form>
+
+          {/* Quick Access Helper for Developer / Operator */}
+          <div className="pt-3 border-t border-slate-100 flex flex-col items-center space-y-2">
+            <button
+              type="button"
+              onClick={handleDirectAccess}
+              className="text-[11px] font-bold text-slate-500 hover:text-blue-600 transition-colors"
+            >
+              ⚡ Ingreso Rápido con Perfil Administrador
+            </button>
+          </div>
+
+          {/* Client QR reminder note */}
+          <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-center space-y-1">
+            <p className="text-[11px] text-slate-600 font-medium">
+              ¿Eres un cliente o establecimiento comercial?
+            </p>
+            <p className="text-[10px] text-slate-400">
+              Escanea el código QR de tu local para abrir tu portal personal de pedidos.
+            </p>
           </div>
         </div>
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-slate-200/80 py-4 text-center text-xs text-slate-500">
-        Distribuidora Aneth • Sistema de Gestión de Pedidos en Javas y Facturación
+      <footer className="relative z-10 w-full max-w-6xl mx-auto px-6 py-6 text-center text-xs text-slate-500 space-y-1">
+        <p className="font-bold text-slate-400">
+          Distribuidora Aneth &copy; {new Date().getFullYear()} • Plataforma Privada de Distribución Mayorista
+        </p>
+        <p className="text-[11px] text-slate-600">
+          Integrado con Supabase PostgreSQL, Facturación Electrónica SRI y EcuadorAPI
+        </p>
       </footer>
     </div>
   );

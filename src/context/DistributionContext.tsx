@@ -61,6 +61,7 @@ interface DistributionContextType {
   updatePaymentStatus: (orderId: string, status: PaymentStatus) => void;
   updateOrderSchedule: (orderId: string, date: string, timeSlot?: string) => void;
   recordOrderPayment: (orderId: string, amount: number, method: PaymentMethod, proofUrl?: string) => void;
+  recordDebtPayment: (clientId: string, amount: number, method?: PaymentMethod, notes?: string) => void;
   generateInvoice: (orderId: string) => Invoice | null;
   updateStock: (optionId: string, newStock: number) => void;
 }
@@ -455,6 +456,23 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
     return newInvoice;
   };
 
+  const recordDebtPayment = (
+    clientId: string,
+    amount: number,
+    method: PaymentMethod = 'cash',
+    notes?: string
+  ) => {
+    setClients((prev) =>
+      prev.map((c) => {
+        if (c.id === clientId) {
+          const newDebt = Math.max(0, (c.currentDebt || 0) - amount);
+          return { ...c, currentDebt: newDebt };
+        }
+        return c;
+      })
+    );
+  };
+
   const updateStock = (optionId: string, newStock: number) => {
     setCatalog((prev) =>
       prev.map((c) => (c.id === optionId ? { ...c, stockJavas: Math.max(0, newStock) } : c))
@@ -486,6 +504,7 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
         updatePaymentStatus,
         updateOrderSchedule,
         recordOrderPayment,
+        recordDebtPayment,
         generateInvoice,
         updateStock,
       }}
