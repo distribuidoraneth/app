@@ -24,13 +24,15 @@ import {
 interface ClientRegistrationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onClientCreated: (client: Client) => void;
+  onClientCreated?: (client: Client) => void;
+  initialCoords?: { latitude: number; longitude: number };
 }
 
 export function ClientRegistrationModal({
   isOpen,
   onClose,
   onClientCreated,
+  initialCoords,
 }: ClientRegistrationModalProps) {
   const { addClient } = useDistribution();
 
@@ -39,8 +41,8 @@ export function ClientRegistrationModal({
   const [gender, setGender] = useState<Gender>('Hombre');
   const [whatsappNumber, setWhatsappNumber] = useState<string>('+593');
   const [coords, setCoords] = useState<{ lat: number; lng: number }>({
-    lat: -1.24908, // Ambato centro
-    lng: -78.61675,
+    lat: initialCoords?.latitude ?? -1.24908, // Ambato centro
+    lng: initialCoords?.longitude ?? -78.61675,
   });
   const [taxId, setTaxId] = useState<string>('');
   const [taxIdType, setTaxIdType] = useState<'04' | '05' | '06' | '07'>('05');
@@ -142,7 +144,7 @@ export function ClientRegistrationModal({
     setApiFeedback(null);
 
     onClose();
-    onClientCreated(created);
+    onClientCreated?.(created);
   };
 
   return (

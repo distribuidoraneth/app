@@ -308,6 +308,42 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
       );
     });
 
+    // Auto-generate Invoice for Autoventa
+    if (saleType === 'autoventa') {
+      const invoiceNum = `001-001-${String(invoices.length + 100).padStart(9, '0')}`;
+      const subtotal15 = Number((totalAmount / 1.15).toFixed(2));
+      const tax = Number((totalAmount - subtotal15).toFixed(2));
+      const claveAcceso = `300820260118030138100011001001${String(invoices.length + 100).padStart(9, '0')}123456781`;
+
+      const newInvoice: Invoice = {
+        id: `fac-${Date.now()}`,
+        invoiceNumber: invoiceNum,
+        orderId: newOrder.id,
+        clientId: client?.id || 'guest',
+        clientName: client?.fullName || 'Consumidor Final',
+        businessName: client?.businessName,
+        clientTaxId: client?.taxId || '9999999999999',
+        clientTaxIdType: client?.taxIdType || '07',
+        clientEmail: client?.email || '',
+        clientWhatsapp: client?.whatsappNumber || newOrder.whatsappNumber,
+        clientAddress: client?.addressReference || newOrder.addressReference,
+        items: [...items],
+        totalJavas,
+        totalUnits,
+        subtotal: subtotal15,
+        subtotal15,
+        subtotal0: 0,
+        tax,
+        total: totalAmount,
+        claveAcceso,
+        status: 'emitida',
+        issuedAt: new Date().toISOString(),
+      };
+
+      newOrder.invoiceId = newInvoice.id;
+      setInvoices((prev) => [newInvoice, ...prev]);
+    }
+
     setOrders((prev) => [newOrder, ...prev]);
     clearCart();
 
