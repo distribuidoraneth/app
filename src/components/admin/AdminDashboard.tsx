@@ -38,6 +38,8 @@ import {
   AlertTriangle,
   Receipt,
   Sparkles,
+  Zap,
+  Calendar,
 } from 'lucide-react';
 
 export function AdminDashboard() {
@@ -154,18 +156,25 @@ export function AdminDashboard() {
 
           <div className="flex items-center space-x-2">
             <Link
-              href="/pedido"
-              className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-xl text-xs font-extrabold border border-slate-300 flex items-center space-x-1.5 transition-colors"
+              href="/pedido?type=autoventa"
+              className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black shadow-xs flex items-center space-x-1.5 transition-all active:scale-95"
             >
-              <Package className="w-3.5 h-3.5 text-blue-600" />
-              <span className="hidden sm:inline">Nueva Venta Directa</span>
-              <span className="sm:hidden">Vender</span>
+              <Zap className="w-3.5 h-3.5 fill-white" />
+              <span>⚡ Autoventa</span>
+            </Link>
+
+            <Link
+              href="/pedido?type=preventa"
+              className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-xl text-xs font-black border border-slate-300 flex items-center space-x-1.5 transition-colors"
+            >
+              <Calendar className="w-3.5 h-3.5 text-emerald-600" />
+              <span className="hidden sm:inline">📅 Preventa</span>
             </Link>
 
             <button
               type="button"
               onClick={() => setIsRegisterModalOpen(true)}
-              className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl text-xs font-extrabold shadow-xs flex items-center space-x-1.5 transition-all"
+              className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white rounded-xl text-xs font-black shadow-xs flex items-center space-x-1.5 transition-all"
             >
               <Plus className="w-4 h-4" />
               <span className="hidden sm:inline">Nuevo Local QR</span>
