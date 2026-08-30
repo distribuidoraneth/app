@@ -7,35 +7,37 @@ export interface LogoProps {
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
   variant?: 'color' | 'white' | 'dark' | 'monochrome' | 'boxed' | 'black';
   showSubtitle?: boolean;
-  subtitleText?: 'DISTRIBUIDORA' | 'Distribuciones' | string;
+  subtitleText?: string;
 }
 
 const classSizeMap = {
   xs: 'h-6',
   sm: 'h-8',
-  md: 'h-11',
-  lg: 'h-14',
-  xl: 'h-18',
-  '2xl': 'h-24',
+  md: 'h-10',
+  lg: 'h-12',
+  xl: 'h-16',
+  '2xl': 'h-20',
 };
 
 /**
  * Isotipo Oficial "A" de Distribuidora Aneth
- * Conectado a los archivos vectoriales oficiales de /logos/
+ * 100% Vectorial Puro Matemático (Sin rasterizados ni desenfoques)
  */
 export function AnethIsotype({
   className = '',
   size = 'md',
   variant = 'color',
 }: Omit<LogoProps, 'showSubtitle' | 'subtitleText'>) {
-  let logoSrc = '/logos/aneth-isotype-white-blue.svg';
+  let logoSrc = '/logos/aneth-isotype-color.svg';
 
-  if (variant === 'black' || variant === 'monochrome' || variant === 'dark') {
+  if (variant === 'black' || variant === 'monochrome') {
     logoSrc = '/logos/aneth-isotype-black.svg';
   } else if (variant === 'boxed') {
     logoSrc = '/logos/aneth-isotype-white-boxed.svg';
-  } else if (variant === 'white' || variant === 'color') {
+  } else if (variant === 'white') {
     logoSrc = '/logos/aneth-isotype-white-blue.svg';
+  } else if (variant === 'color' || variant === 'dark') {
+    logoSrc = '/logos/aneth-isotype-color.svg';
   }
 
   return (
@@ -53,13 +55,13 @@ export function AnethIsotype({
 
 /**
  * Logotipo Completo "ANETH" con Camión Integrado en la "H"
- * Conectado a los archivos vectoriales oficiales de /logos/
+ * 100% Vectorial Puro Matemático de Alta Fidelidad
  */
 export function AnethFullLogo({
   className = '',
   size = 'md',
   variant = 'color',
-  showSubtitle = true,
+  showSubtitle = false,
   subtitleText = 'DISTRIBUIDORA',
 }: LogoProps) {
   let logoSrc = '/logos/aneth-logo-full.svg';
@@ -90,7 +92,7 @@ export function AnethFullLogo({
 
       {showSubtitle && (
         <span
-          className={`text-[9px] sm:text-[10px] font-black uppercase tracking-[0.34em] pl-1 select-none`}
+          className={`text-[8px] sm:text-[9px] font-black uppercase tracking-[0.3em] pl-0.5 pt-0.5 select-none`}
           style={{ color: subtextColor }}
         >
           {subtitleText}
