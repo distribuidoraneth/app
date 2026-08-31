@@ -42,19 +42,20 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="h-[100dvh] max-h-[100dvh] w-full bg-[#081225] text-slate-100 flex flex-col justify-between p-6 sm:p-8 selection:bg-blue-600 selection:text-white relative overflow-hidden select-none">
-      {/* Dynamic Background Atmospheric Glow */}
-      <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-[420px] h-[220px] bg-blue-600/20 blur-[100px] pointer-events-none -z-0" />
-      <div className="absolute -bottom-20 right-0 w-[320px] h-[220px] bg-indigo-600/15 blur-[90px] pointer-events-none -z-0" />
+    <div className="fixed inset-0 w-full h-[100dvh] bg-[#081225] text-slate-100 flex flex-col items-center justify-center p-5 select-none overflow-hidden overscroll-none touch-none">
+      {/* Ambient Lighting */}
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[340px] h-[340px] bg-blue-600/15 blur-[100px] pointer-events-none -z-0" />
+      <div className="absolute bottom-10 right-10 w-[240px] h-[240px] bg-indigo-600/10 blur-[80px] pointer-events-none -z-0" />
 
-      {/* Top Header / Brand Logo */}
-      <header className="relative z-10 w-full flex items-center justify-center pt-2">
-        <AnethFullLogo size="lg" variant="white" showSubtitle={true} subtitleText="DISTRIBUIDORA" />
-      </header>
+      {/* Unified Vertical Container - Perfectly Centered in Viewport */}
+      <div className="relative z-10 w-full max-w-sm flex flex-col items-center space-y-6 animate-in fade-in zoom-in-95 duration-200">
+        {/* Brand Logo - Centered with balanced proportions */}
+        <div className="flex flex-col items-center justify-center">
+          <AnethFullLogo size="lg" variant="white" showSubtitle={true} subtitleText="DISTRIBUIDORA" />
+        </div>
 
-      {/* Center Native Card */}
-      <main className="relative z-10 w-full max-w-sm mx-auto flex flex-col items-center justify-center my-auto">
-        <div className="w-full bg-white rounded-3xl p-7 sm:p-8 shadow-2xl shadow-black/50 text-slate-900 space-y-6 border border-slate-100">
+        {/* Login Card */}
+        <div className="w-full bg-white rounded-3xl p-7 sm:p-8 shadow-2xl shadow-black/70 text-slate-900 space-y-5 border border-slate-100">
           <div className="text-center space-y-1">
             <h1 className="text-2xl font-black tracking-tight text-slate-900">
               Iniciar Sesión
@@ -106,18 +107,18 @@ export default function LoginPage() {
               </span>
             </button>
 
-            <div className="flex items-center justify-center space-x-1 text-[11px] text-slate-400 font-medium">
+            <div className="flex items-center justify-center space-x-1.5 text-[11px] text-slate-400 font-medium">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
               <span>Autenticación oficial y segura</span>
             </div>
           </div>
         </div>
-      </main>
 
-      {/* Footer */}
-      <footer className="relative z-10 w-full text-center pb-2 text-[11px] text-slate-500 font-medium">
-        Distribuidora Aneth &copy; {new Date().getFullYear()}
-      </footer>
+        {/* Integrated Footer */}
+        <p className="text-[11px] text-slate-500 font-medium text-center">
+          Distribuidora Aneth &copy; {new Date().getFullYear()}
+        </p>
+      </div>
     </div>
   );
 }
