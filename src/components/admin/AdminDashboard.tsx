@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDistribution } from '@/context/DistributionContext';
+import { supabase } from '@/lib/supabase/client';
 import { OrderDispatchBoard } from './OrderDispatchBoard';
 import { CatalogManager } from './CatalogManager';
 import { ClientRegistrationModal } from './ClientRegistrationModal';
@@ -50,6 +51,28 @@ export function AdminDashboard() {
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState<boolean>(false);
   const [selectedQRClient, setSelectedQRClient] = useState<Client | null>(null);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [userProfile, setUserProfile] = useState<{
+    name: string;
+    email: string;
+    avatarUrl?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        const name =
+          user.user_metadata?.full_name ||
+          user.user_metadata?.name ||
+          (user.email ? user.email.split('@')[0] : 'Administrador');
+        const avatarUrl = user.user_metadata?.avatar_url || user.user_metadata?.picture;
+        setUserProfile({
+          name,
+          email: user.email || '',
+          avatarUrl,
+        });
+      }
+    });
+  }, []);
 
   // Metrics
   const totalSales = orders
@@ -184,6 +207,31 @@ export function AdminDashboard() {
               <span className="hidden sm:inline">Nuevo Local QR</span>
               <span className="sm:hidden">Local</span>
             </button>
+
+            {/* Google User Profile Chip */}
+            {userProfile && (
+              <div className="flex items-center space-x-2 pl-2 border-l border-slate-200">
+                {userProfile.avatarUrl ? (
+                  <img
+                    src={userProfile.avatarUrl}
+                    alt={userProfile.name}
+                    className="w-8 h-8 rounded-full border border-slate-200 shadow-2xs object-cover"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-black text-xs flex items-center justify-center shadow-2xs">
+                    {userProfile.name.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <div className="hidden lg:block text-left">
+                  <span className="text-xs font-black text-slate-900 block leading-tight truncate max-w-[130px]">
+                    {userProfile.name}
+                  </span>
+                  <span className="text-[10px] text-emerald-600 font-bold block leading-none">
+                    Admin Activo
+                  </span>
+                </div>
+              </div>
+            )}
 
             <button
               type="button"
