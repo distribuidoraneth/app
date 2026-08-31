@@ -9,12 +9,15 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
  * Sign in with Google using Supabase OAuth
  */
 export async function signInWithGoogle() {
-  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://distribuidora-aneth.vercel.app';
+  const isLocal = typeof window !== 'undefined' && window.location.hostname === 'localhost';
+  const redirectUrl = isLocal
+    ? 'http://localhost:3000/admin'
+    : 'https://distribuidora-aneth.vercel.app/admin';
   
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${origin}/admin`,
+      redirectTo: redirectUrl,
       queryParams: {
         access_type: 'offline',
         prompt: 'consent',
