@@ -72,7 +72,11 @@ export function AdminDashboard() {
     color: 'blue-600',
   }));
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      const { supabase } = await import('@/lib/supabase/client');
+      await supabase.auth.signOut();
+    } catch {}
     localStorage.removeItem('aneth_admin_authenticated');
     sessionStorage.removeItem('aneth_admin_authenticated');
     router.push('/');
