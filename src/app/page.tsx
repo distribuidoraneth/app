@@ -64,9 +64,17 @@ export default function LoginPage() {
 
         if (data.session) {
           router.push('/admin');
-        } else {
-          setSuccessMsg('Cuenta creada exitosamente. Ya puedes iniciar sesión.');
-          setMode('login');
+        } else if (data.user) {
+          const { data: signData } = await supabase.auth.signInWithPassword({
+            email: cleanEmail,
+            password: cleanPassword,
+          });
+          if (signData?.session) {
+            router.push('/admin');
+          } else {
+            setSuccessMsg('Cuenta creada exitosamente. Ya puedes iniciar sesión.');
+            setMode('login');
+          }
         }
       } else {
         const { data, error: signInErr } = await supabase.auth.signInWithPassword({
