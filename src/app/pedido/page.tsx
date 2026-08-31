@@ -6,7 +6,7 @@ import { BeverageOrderPasarela } from '@/components/order/BeverageOrderPasarela'
 import { CartDrawer } from '@/components/client/CartDrawer';
 import { ClientProximitySelectorModal } from '@/components/order/ClientProximitySelectorModal';
 import { SaleTypeBadgeSelector } from '@/components/order/SaleTypeBadgeSelector';
-import { AnethFullLogo } from '@/components/ui/AnethLogo';
+import { AnethFullLogo, AnethIsotype } from '@/components/ui/AnethLogo';
 import { Client, SaleType } from '@/types';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -71,7 +71,7 @@ function StandaloneOrderContent() {
       {/* Top Navbar */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-xs">
         <div className="max-w-4xl mx-auto px-4 py-3.5 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2.5 sm:space-x-3">
             <Link
               href="/admin"
               className="p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors"
@@ -79,7 +79,12 @@ function StandaloneOrderContent() {
             >
               <ArrowLeft className="w-5 h-5" />
             </Link>
-            <AnethFullLogo size="sm" showSubtitle={false} />
+            <div className="hidden sm:block">
+              <AnethFullLogo size="sm" showSubtitle={false} />
+            </div>
+            <div className="sm:hidden">
+              <AnethIsotype size="sm" variant="color" />
+            </div>
           </div>
 
           <button

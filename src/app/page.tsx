@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { AnethFullLogo } from '@/components/ui/AnethLogo';
+import { AnethFullLogo, AnethIsotype } from '@/components/ui/AnethLogo';
 import { supabase, signInWithGoogle } from '@/lib/supabase/client';
 import { Loader2, AlertCircle, Shield } from 'lucide-react';
 
@@ -49,7 +49,12 @@ export default function LoginPage() {
 
       {/* Top Header */}
       <header className="relative z-10 w-full max-w-4xl mx-auto flex items-center justify-between py-2">
-        <AnethFullLogo size="md" variant="white" showSubtitle={true} subtitleText="DISTRIBUIDORA" />
+        <div className="hidden sm:block">
+          <AnethFullLogo size="md" variant="white" showSubtitle={true} subtitleText="DISTRIBUIDORA" />
+        </div>
+        <div className="sm:hidden">
+          <AnethIsotype size="md" variant="white" />
+        </div>
       </header>
 
       {/* Main Login Card */}

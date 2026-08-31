@@ -14,7 +14,7 @@ import { LiquidMobileTabPill, TabItem } from '@/components/ui/LiquidMobileTabPil
 import { MobileFloatingDock, DockNavItem } from '@/components/ui/MobileFloatingDock';
 import { formatCurrency, formatDate } from '@/lib/utils/formatters';
 import { Client, Invoice } from '@/types';
-import { AnethFullLogo } from '@/components/ui/AnethLogo';
+import { AnethFullLogo, AnethIsotype } from '@/components/ui/AnethLogo';
 import Link from 'next/link';
 import {
   Building2,
@@ -171,10 +171,15 @@ export function AdminDashboard() {
     <div className="min-h-screen bg-[#f8fafc] pb-28 text-slate-900">
       {/* Top Header - Clean Light Surface */}
       <header className="bg-white border-b border-slate-200/90 sticky top-0 z-40 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3">
-          <div className="flex items-center space-x-4">
-            <AnethFullLogo size="md" showSubtitle={true} subtitleText="DISTRIBUIDORA" />
-            <div className="hidden sm:block pl-4 border-l border-slate-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-2 sm:gap-3">
+          <div className="flex items-center space-x-3 sm:space-x-4">
+            <div className="hidden sm:block">
+              <AnethFullLogo size="md" showSubtitle={true} subtitleText="DISTRIBUIDORA" />
+            </div>
+            <div className="sm:hidden">
+              <AnethIsotype size="md" variant="color" />
+            </div>
+            <div className="hidden md:block pl-4 border-l border-slate-200">
               <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-lg border border-blue-200">
                 Panel Administrativo
               </span>
