@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.112.4",
     "@turf/turf": "^7.2.0",
     "canvas-confetti": "^1.9.4",
     "clsx": "^2.1.1",

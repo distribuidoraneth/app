@@ -3,19 +3,19 @@
  */
 
 import { supabase } from '@/lib/supabase/client';
-import { Client, JavaProductOption, Order, Invoice } from '@/types';
+import { Client, JavaProductOption, Order } from '@/types';
 import { INITIAL_CLIENTS, JAVA_PRODUCT_CATALOG } from '@/lib/mockData';
 
 export async function getClientsFromDb(): Promise<Client[]> {
   try {
-    const { data, error } = await supabase.from('clients', 'select=*');
+    const { data, error } = await supabase.from('clients').select('*');
     if (error || !data || data.length === 0) {
       return INITIAL_CLIENTS;
     }
 
     return data.map((c: any) => ({
       id: c.id,
-      qrToken: c.qr_token,
+      qrToken: c.qr_token || `aneth-${c.id}`,
       fullName: c.full_name,
       businessName: c.business_name,
       gender: c.gender || 'Hombre',
@@ -26,6 +26,8 @@ export async function getClientsFromDb(): Promise<Client[]> {
       taxId: c.tax_id,
       taxIdType: c.tax_id_type,
       email: c.email,
+      creditLimit: Number(c.credit_limit || 0),
+      currentDebt: Number(c.current_debt || 0),
       createdAt: c.created_at,
     }));
   } catch {
@@ -35,7 +37,7 @@ export async function getClientsFromDb(): Promise<Client[]> {
 
 export async function getProductsFromDb(): Promise<JavaProductOption[]> {
   try {
-    const { data, error } = await supabase.from('products', 'select=*');
+    const { data, error } = await supabase.from('products').select('*');
     if (error || !data || data.length === 0) {
       return JAVA_PRODUCT_CATALOG;
     }
@@ -51,7 +53,7 @@ export async function getProductsFromDb(): Promise<JavaProductOption[]> {
       pricePerUnit: p.price_per_unit ? Number(p.price_per_unit) : undefined,
       imageUrl: p.image_url,
       description: p.description,
-      stockJavas: Number(p.stock_javas),
+      stockJavas: Number(p.stock_javas || 100),
     }));
   } catch {
     return JAVA_PRODUCT_CATALOG;
@@ -62,6 +64,7 @@ export async function saveOrderToDb(order: Order): Promise<{ success: boolean; e
   try {
     const orderRecord = {
       order_number: order.orderNumber,
+      client_id: order.clientId && order.clientId.startsWith('cli-') ? null : order.clientId,
       client_name: order.clientName,
       business_name: order.businessName,
       whatsapp_number: order.whatsappNumber,
@@ -73,38 +76,48 @@ export async function saveOrderToDb(order: Order): Promise<{ success: boolean; e
       total_bottles: order.totalBottles || (order.totalJavas * 12),
       total_amount: order.totalAmount,
       status: order.status,
+      sale_type: order.saleType,
+      scheduled_delivery_date: order.scheduledDeliveryDate || null,
+      scheduled_time_slot: order.scheduledTimeSlot || null,
       payment_status: order.paymentStatus,
       payment_method: order.paymentMethod,
+      amount_paid: order.amountPaid,
+      debt_balance: order.debtBalance,
       notes: order.notes,
     };
 
-    const { data: insertedOrder, error: orderErr } = await supabase.insert('orders', orderRecord);
+    const { data: insertedOrder, error: orderErr } = await supabase
+      .from('orders')
+      .insert(orderRecord)
+      .select()
+      .single();
+
     if (orderErr) {
-      console.warn('Advertencia al guardar orden en Supabase:', orderErr);
-      return { success: false, error: orderErr };
+      console.warn('Advertencia al guardar orden en Supabase:', orderErr.message);
+      return { success: false, error: orderErr.message };
     }
 
     // Insert order items
     if (insertedOrder && order.items && order.items.length > 0) {
-      for (const item of order.items) {
-        await supabase.insert('order_items', {
-          order_id: insertedOrder.id,
-          product_option_id: item.productOptionId,
-          beverage_type: item.beverageType,
-          container: item.container,
-          size: item.size,
-          flavor_type: item.flavorType,
-          selected_flavor: item.selectedFlavor,
-          surtido_details: item.surtidoDetails,
-          quantity_javas: item.quantityJavas,
-          quantity_units: item.quantityUnits || 0,
-          units_per_java: item.unitsPerJava,
-          price_per_java: item.pricePerJava,
-          price_per_unit: item.pricePerUnit || Number((item.pricePerJava / item.unitsPerJava).toFixed(4)),
-          total_bottles: item.totalBottles || (item.quantityJavas * item.unitsPerJava),
-          subtotal: item.subtotal,
-        });
-      }
+      const itemsToInsert = order.items.map((item) => ({
+        order_id: insertedOrder.id,
+        product_option_id: item.productOptionId && item.productOptionId.startsWith('opt-') ? null : item.productOptionId,
+        beverage_type: item.beverageType,
+        container: item.container,
+        size: item.size,
+        flavor_type: item.flavorType,
+        selected_flavor: item.selectedFlavor,
+        surtido_details: item.surtidoDetails,
+        quantity_javas: item.quantityJavas,
+        quantity_units: item.quantityUnits || 0,
+        units_per_java: item.unitsPerJava,
+        price_per_java: item.pricePerJava,
+        price_per_unit: item.pricePerUnit || Number((item.pricePerJava / item.unitsPerJava).toFixed(4)),
+        total_bottles: item.totalBottles || (item.quantityJavas * item.unitsPerJava),
+        subtotal: item.subtotal,
+      }));
+
+      await supabase.from('order_items').insert(itemsToInsert);
     }
 
     return { success: true };
