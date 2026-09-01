@@ -92,21 +92,21 @@ export function ClientProximitySelectorModal({
               </div>
               <div>
                 <h3 className="font-black text-sm sm:text-base text-slate-900 leading-tight">
-                  Seleccionar Cliente / Local
+                  Seleccionar Cliente
                 </h3>
                 <p className="text-[11px] text-slate-500 font-semibold flex items-center mt-0.5">
                   {userLocation ? (
                     <span className="text-emerald-700 font-bold flex items-center">
                       <Navigation className="w-3 h-3 mr-1 text-emerald-600" />
-                      Ordenados por cercanía GPS en ruta
+                      Ordenados por cercanía GPS
                     </span>
                   ) : isLocating ? (
                     <span className="text-blue-600 flex items-center">
                       <RefreshCw className="w-3 h-3 mr-1 animate-spin" />
-                      Obteniendo GPS en ruta...
+                      Detectando ubicación GPS...
                     </span>
                   ) : (
-                    <span>Directorio comercial</span>
+                    <span>Directorio de clientes</span>
                   )}
                 </p>
               </div>
@@ -148,10 +148,10 @@ export function ClientProximitySelectorModal({
               <button
                 type="button"
                 onClick={() => setIsRegisterOpen(true)}
-                className="w-full py-2 px-3 bg-blue-600 hover:bg-blue-700 active:scale-98 text-white rounded-xl text-xs font-black flex items-center justify-center space-x-1.5 shadow-xs transition-all"
+                className="w-full py-2.5 px-3 bg-blue-600 hover:bg-blue-700 active:scale-98 text-white rounded-xl text-xs font-black flex items-center justify-center space-x-1.5 shadow-xs transition-all cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
-                <span>+ Registrar Nuevo Local (EcuadorAPI)</span>
+                <span>Registrar Nuevo Cliente</span>
               </button>
             </div>
           </div>
