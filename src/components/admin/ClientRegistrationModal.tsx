@@ -7,18 +7,9 @@ import { Gender, Client, ClientTier } from '@/types';
 import {
   X,
   UserPlus,
-  MapPin,
-  Store,
-  Phone,
-  User,
-  Check,
   Search,
   Loader2,
-  Lock,
-  Mail,
-  Cake,
   CheckCircle2,
-  Tag,
 } from 'lucide-react';
 
 interface ClientRegistrationModalProps {
@@ -192,7 +183,7 @@ export function ClientRegistrationModal({
         setIsOfficialDataLocked(true);
         setApiFeedback({
           type: 'success',
-          message: 'Datos oficiales verificados y bloqueados automáticamente.',
+          message: 'Datos verificados correctamente.',
         });
       } else {
         setApiFeedback({
@@ -220,7 +211,7 @@ export function ClientRegistrationModal({
     }
 
     if (!fullName.trim()) {
-      newErrors.fullName = 'El nombre o razón social es requerido';
+      newErrors.fullName = 'El nombre es obligatorio';
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -244,7 +235,7 @@ export function ClientRegistrationModal({
       whatsappNumber: formattedPhone,
       latitude: coords.lat,
       longitude: coords.lng,
-      addressReference: addressReference.trim() || 'Ubicación GPS confirmada por Google Maps',
+      addressReference: addressReference.trim() || 'Ubicación GPS confirmada',
       taxId: taxId.trim() || undefined,
       taxIdType,
       email: email.trim() || undefined,
@@ -270,367 +261,325 @@ export function ClientRegistrationModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/70 backdrop-blur-xs overflow-y-auto">
-      <div className="relative w-full max-w-xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-200 my-auto sm:my-6 animate-in fade-in zoom-in-95 duration-150">
-        {/* Header bar - Grande y Legible */}
-        <div className="bg-slate-50/90 border-b border-slate-200 px-5 sm:px-7 py-4 sm:py-5 flex items-center justify-between sticky top-0 z-10">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/60 backdrop-blur-xs transition-opacity duration-200">
+      <div className="relative w-full max-w-xl bg-white rounded-t-[32px] sm:rounded-3xl shadow-2xl overflow-hidden border border-slate-200 flex flex-col max-h-[94vh] sm:max-h-[88vh] animate-in slide-in-from-bottom-6 sm:zoom-in-95 duration-200">
+        
+        {/* Mobile Drag Indicator Bar */}
+        <div className="pt-3 pb-1 flex justify-center sm:hidden bg-slate-50/90">
+          <div className="w-12 h-1.5 bg-slate-300 rounded-full" />
+        </div>
+
+        {/* Header Bar */}
+        <div className="bg-slate-50/90 border-b border-slate-200/90 px-5 sm:px-7 py-3.5 sm:py-4 flex items-center justify-between shrink-0">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-bold shadow-xs">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-bold shadow-xs">
               <UserPlus className="w-5 h-5" />
             </div>
-            <div>
-              <h2 className="font-black text-lg sm:text-xl text-slate-900 leading-tight">
-                Registro de Cliente
-              </h2>
-              <p className="text-xs text-slate-500 font-bold mt-0.5">
-                Alta rápida para venta y facturación
-              </p>
-            </div>
+            <h2 className="font-black text-lg sm:text-xl text-slate-900 leading-tight">
+              Registro de Cliente
+            </h2>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-2xl text-slate-400 hover:text-slate-900 hover:bg-slate-200/70 transition-colors cursor-pointer"
+            className="p-2 rounded-2xl text-slate-400 hover:text-slate-900 hover:bg-slate-200/60 transition-colors cursor-pointer"
             title="Cerrar ventana"
           >
             <X className="w-6 h-6" />
           </button>
         </div>
 
-        {/* Form - Espacioso, Cómodo y con Fuentes Grandes para Móvil */}
-        <form onSubmit={handleSubmit} className="p-5 sm:p-7 space-y-5 max-h-[80vh] overflow-y-auto">
-          {/* Cédula o RUC Input & Fast Query */}
-          <div className="p-4 sm:p-5 bg-slate-50 border border-slate-200/90 rounded-2xl space-y-3 shadow-2xs overflow-hidden">
-            <div className="flex items-center justify-between">
-              <label className="text-sm sm:text-base font-black text-slate-900 block">
-                Cédula o RUC
-              </label>
-
-              {/* Document Type Pills */}
-              <div className="flex items-center bg-slate-200/90 p-1 rounded-xl text-xs sm:text-sm font-black border border-slate-300/70">
-                <button
-                  type="button"
-                  onClick={() => setTaxIdType('05')}
-                  className={`px-3 sm:px-4 py-1.5 rounded-lg transition-all cursor-pointer ${
-                    taxIdType === '05'
-                      ? 'bg-white text-blue-700 shadow-xs font-black'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  Cédula
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTaxIdType('04')}
-                  className={`px-3 sm:px-4 py-1.5 rounded-lg transition-all cursor-pointer ${
-                    taxIdType === '04'
-                      ? 'bg-white text-blue-700 shadow-xs font-black'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  RUC
-                </button>
-              </div>
-            </div>
-
-            <div className="flex items-stretch gap-2 w-full">
-              <input
-                type="text"
-                value={taxId}
-                disabled={isOfficialDataLocked}
-                onChange={(e) => {
-                  setTaxId(e.target.value);
-                  const clean = e.target.value.replace(/\D/g, '');
-                  if (clean.length === 13) setTaxIdType('04');
-                  else if (clean.length === 10) setTaxIdType('05');
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleLookup();
-                  }
-                }}
-                placeholder={taxIdType === '04' ? 'Ingresa RUC (13 dígitos)' : 'Ingresa Cédula (10 dígitos)'}
-                className={`flex-1 min-w-0 text-sm sm:text-base px-3.5 sm:px-4 py-3 sm:py-3.5 bg-white border rounded-xl font-mono focus:ring-2 focus:ring-blue-600 focus:outline-hidden ${
-                  isOfficialDataLocked
-                    ? 'bg-slate-100 border-slate-200 text-slate-500 cursor-not-allowed'
-                    : 'border-slate-300 text-slate-900 font-bold placeholder:font-normal'
-                }`}
-              />
-
-              {isOfficialDataLocked ? (
-                <button
-                  type="button"
-                  onClick={() => setIsOfficialDataLocked(false)}
-                  className="px-3.5 py-3 sm:py-3.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl text-xs sm:text-sm font-black transition-all shrink-0 cursor-pointer"
-                  title="Desbloquear para editar número"
-                >
-                  Cambiar
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleLookup}
-                  disabled={isSearchingApi || !taxId.trim()}
-                  className="w-12 sm:w-14 shrink-0 bg-blue-600 hover:bg-blue-700 active:scale-95 disabled:opacity-50 text-white rounded-xl flex items-center justify-center transition-all shadow-xs cursor-pointer"
-                  title="Consultar Cédula o RUC"
-                >
-                  {isSearchingApi ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <Search className="w-5 h-5 stroke-[2.5]" />
-                  )}
-                </button>
-              )}
-            </div>
-
-            {apiFeedback && (
-              <p
-                className={`text-xs sm:text-sm font-bold flex items-center pt-0.5 ${
-                  apiFeedback.type === 'success' ? 'text-emerald-700' : 'text-slate-600'
-                }`}
-              >
-                {apiFeedback.type === 'success' && <CheckCircle2 className="w-4 h-4 mr-1.5 shrink-0" />}
-                {apiFeedback.message}
-              </p>
-            )}
-          </div>
-
-          {/* Nombre Oficial (Bloqueado si vino de la API) */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <label className="text-xs sm:text-sm font-black text-slate-800 flex items-center">
-                <User className="w-4 h-4 mr-1.5 text-slate-500" />
-                <span>Nombre / Razón Social *</span>
-              </label>
-              {isOfficialDataLocked && (
-                <span className="text-xs font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg flex items-center shadow-2xs">
-                  <Lock className="w-3 h-3 mr-1" />
-                  Oficial Verificado
-                </span>
-              )}
-            </div>
-
-            <input
-              type="text"
-              value={fullName}
-              readOnly={isOfficialDataLocked}
-              onChange={(e) => setFullName(e.target.value)}
-              placeholder="Ej. Carlos Mendoza"
-              className={`w-full text-sm sm:text-base px-4 py-3 sm:py-3.5 border rounded-xl font-bold ${
-                isOfficialDataLocked
-                  ? 'bg-slate-100/90 border-slate-200 text-slate-800 cursor-not-allowed select-text'
-                  : 'bg-white border-slate-300 text-slate-900 focus:ring-2 focus:ring-blue-600 focus:outline-hidden'
-              }`}
-            />
-            {errors.fullName && (
-              <p className="text-xs text-red-600 font-bold">{errors.fullName}</p>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Nombre Comercial */}
-            <div className="space-y-1.5">
-              <label className="text-xs sm:text-sm font-black text-slate-800 flex items-center">
-                <Store className="w-4 h-4 mr-1.5 text-slate-500" />
-                Nombre Comercial del Local
-              </label>
-              <input
-                type="text"
-                value={businessName}
-                onChange={(e) => setBusinessName(e.target.value)}
-                placeholder="Ej. Minimarket Los Rosales"
-                className="w-full text-sm sm:text-base px-4 py-3 sm:py-3.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-hidden font-semibold text-slate-900"
-              />
-            </div>
-
-            {/* Fecha de Cumpleaños / Fidelización */}
-            <div className="space-y-1.5">
+        {/* Form Container with Scrollable Body and Sticky Docked Footer */}
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          
+          {/* Scrollable Form Body */}
+          <div className="flex-1 overflow-y-auto px-5 sm:px-7 py-5 space-y-5">
+            
+            {/* Cédula o RUC Input & Fast Query */}
+            <div className="p-4 sm:p-5 bg-slate-50 border border-slate-200/90 rounded-2xl space-y-3 shadow-2xs overflow-hidden">
               <div className="flex items-center justify-between">
-                <label className="text-xs sm:text-sm font-black text-slate-800 flex items-center">
-                  <Cake className="w-4 h-4 mr-1.5 text-blue-600" />
-                  Fecha de Cumpleaños
+                <label className="text-sm sm:text-base font-black text-slate-900 block">
+                  Cédula o RUC
                 </label>
-                {isOfficialDataLocked && birthDate && (
-                  <span className="text-[11px] font-black text-slate-500 flex items-center">
-                    <Lock className="w-3 h-3 mr-0.5" />
-                    Bloqueado
-                  </span>
-                )}
-              </div>
-              <input
-                type="date"
-                value={birthDate}
-                readOnly={isOfficialDataLocked && !!birthDate}
-                onChange={(e) => setBirthDate(e.target.value)}
-                className={`w-full text-sm sm:text-base px-4 py-3 sm:py-3.5 border rounded-xl font-mono font-bold appearance-none [-webkit-appearance:none] [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none [&::-webkit-inner-spin-button]:hidden ${
-                  isOfficialDataLocked && birthDate
-                    ? 'bg-slate-100 border-slate-200 text-slate-700 cursor-not-allowed'
-                    : 'bg-white border-slate-300 text-slate-900 focus:ring-2 focus:ring-blue-600 focus:outline-hidden'
-                }`}
-              />
-            </div>
-          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* WhatsApp para Envíos (Editable y con fuente grande) */}
-            <div className="space-y-1.5">
-              <label className="text-xs sm:text-sm font-black text-slate-800 flex items-center">
-                <Phone className="w-4 h-4 mr-1.5 text-emerald-600" />
-                WhatsApp / Celular *
-              </label>
-              <input
-                type="tel"
-                value={whatsappNumber}
-                onChange={(e) => {
-                  const val = e.target.value.replace(/[^\d\s]/g, '');
-                  setWhatsappNumber(val);
-                }}
-                placeholder="099 123 4567"
-                className="w-full text-base sm:text-lg px-4 py-3 sm:py-3.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-hidden font-mono font-bold text-slate-900 placeholder:font-normal placeholder:text-slate-400"
-              />
-              {errors.whatsappNumber && (
-                <p className="text-xs text-red-600 font-bold">{errors.whatsappNumber}</p>
-              )}
-            </div>
-
-            {/* Email para Facturación */}
-            <div className="space-y-1.5">
-              <label className="text-xs sm:text-sm font-black text-slate-800 flex items-center">
-                <Mail className="w-4 h-4 mr-1.5 text-slate-500" />
-                Email Tributario (SRI)
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="cliente@ejemplo.com"
-                className="w-full text-sm sm:text-base px-4 py-3 sm:py-3.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-hidden font-semibold text-slate-900"
-              />
-            </div>
-          </div>
-
-          {/* Selectores de Género y Tarifa de Precios */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-xs sm:text-sm font-black text-slate-800 block">
-                Género / Tipo
-              </label>
-              <div className="grid grid-cols-3 gap-1.5 bg-slate-100 p-1.5 rounded-2xl border border-slate-200/90">
-                {(['Hombre', 'Mujer', 'Otro'] as const).map((g) => (
+                {/* Document Type Pills */}
+                <div className="flex items-center bg-slate-200/90 p-1 rounded-xl text-xs sm:text-sm font-black border border-slate-300/70">
                   <button
-                    key={g}
                     type="button"
-                    disabled={isOfficialDataLocked}
-                    onClick={() => setGender(g)}
-                    className={`py-2.5 sm:py-3 text-xs sm:text-sm font-black rounded-xl transition-all cursor-pointer ${
-                      gender === g
-                        ? 'bg-white text-blue-700 shadow-xs font-black ring-1 ring-slate-200'
-                        : 'text-slate-600 hover:text-slate-900'
-                    } ${isOfficialDataLocked ? 'cursor-not-allowed opacity-90' : ''}`}
-                  >
-                    {g === 'Otro' ? 'Empresa' : g}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Tarifa de Precios (Normal / Distribuidor / Especial) */}
-            <div className="space-y-1.5">
-              <label className="text-xs sm:text-sm font-black text-slate-800 flex items-center">
-                <Tag className="w-4 h-4 mr-1.5 text-blue-600" />
-                Tarifa de Precios
-              </label>
-              <div className="grid grid-cols-3 gap-1.5 bg-slate-100 p-1.5 rounded-2xl border border-slate-200/90">
-                {(
-                  [
-                    { id: 'normal', label: 'Normal' },
-                    { id: 'distribuidor', label: 'Distribuidor' },
-                    { id: 'especial', label: 'Especial' },
-                  ] as const
-                ).map((t) => (
-                  <button
-                    key={t.id}
-                    type="button"
-                    onClick={() => setClientTier(t.id)}
-                    className={`py-2.5 sm:py-3 text-xs sm:text-sm font-black rounded-xl transition-all cursor-pointer ${
-                      clientTier === t.id
-                        ? 'bg-white text-blue-700 shadow-xs font-black ring-1 ring-slate-200'
+                    onClick={() => setTaxIdType('05')}
+                    className={`px-3 sm:px-4 py-1.5 rounded-lg transition-all cursor-pointer ${
+                      taxIdType === '05'
+                        ? 'bg-white text-blue-700 shadow-xs font-black'
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
-                    {t.label}
+                    Cédula
                   </button>
-                ))}
+                  <button
+                    type="button"
+                    onClick={() => setTaxIdType('04')}
+                    className={`px-3 sm:px-4 py-1.5 rounded-lg transition-all cursor-pointer ${
+                      taxIdType === '04'
+                        ? 'bg-white text-blue-700 shadow-xs font-black'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    RUC
+                  </button>
+                </div>
               </div>
-            </div>
-          </div>
 
-          {/* Dirección Oficial Bloqueada de Google Maps */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <label className="text-xs sm:text-sm font-black text-slate-800 flex items-center">
-                <MapPin className="w-4 h-4 mr-1.5 text-red-500" />
-                <span>Dirección Oficial (Google Maps)</span>
-              </label>
-              {isGeocoding ? (
-                <span className="text-xs font-bold text-blue-600 flex items-center">
-                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                  Obteniendo de Google...
-                </span>
-              ) : addressReference ? (
-                <span className="text-xs font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg flex items-center shadow-2xs">
-                  <Lock className="w-3 h-3 mr-1" />
-                  Oficial Verificada
-                </span>
-              ) : (
-                <span className="text-xs text-amber-600 font-bold flex items-center">
-                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                  Ajustando GPS...
-                </span>
+              <div className="flex items-stretch gap-2 w-full">
+                <input
+                  type="text"
+                  value={taxId}
+                  disabled={isOfficialDataLocked}
+                  onChange={(e) => {
+                    setTaxId(e.target.value);
+                    const clean = e.target.value.replace(/\D/g, '');
+                    if (clean.length === 13) setTaxIdType('04');
+                    else if (clean.length === 10) setTaxIdType('05');
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleLookup();
+                    }
+                  }}
+                  placeholder={taxIdType === '04' ? 'Ingresa RUC (13 dígitos)' : 'Ingresa Cédula (10 dígitos)'}
+                  className={`flex-1 min-w-0 text-base px-4 py-3.5 bg-white border rounded-xl font-mono focus:ring-2 focus:ring-blue-600 focus:outline-hidden ${
+                    isOfficialDataLocked
+                      ? 'bg-slate-100 border-slate-200 text-slate-500 cursor-not-allowed'
+                      : 'border-slate-300 text-slate-900 font-bold placeholder:font-normal'
+                  }`}
+                />
+
+                {isOfficialDataLocked ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsOfficialDataLocked(false)}
+                    className="px-4 py-3.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl text-sm font-black transition-all shrink-0 cursor-pointer"
+                    title="Desbloquear para editar número"
+                  >
+                    Cambiar
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleLookup}
+                    disabled={isSearchingApi || !taxId.trim()}
+                    className="w-13 sm:w-14 shrink-0 bg-blue-600 hover:bg-blue-700 active:scale-95 disabled:opacity-50 text-white rounded-xl flex items-center justify-center transition-all shadow-xs cursor-pointer"
+                    title="Consultar Cédula o RUC"
+                  >
+                    {isSearchingApi ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <Search className="w-5 h-5 stroke-[2.5]" />
+                    )}
+                  </button>
+                )}
+              </div>
+
+              {apiFeedback && (
+                <p
+                  className={`text-xs sm:text-sm font-bold flex items-center pt-0.5 ${
+                    apiFeedback.type === 'success' ? 'text-emerald-700' : 'text-slate-600'
+                  }`}
+                >
+                  {apiFeedback.type === 'success' && <CheckCircle2 className="w-4 h-4 mr-1.5 shrink-0" />}
+                  {apiFeedback.message}
+                </p>
               )}
             </div>
-            <input
-              type="text"
-              value={addressReference}
-              readOnly
-              placeholder="Detectando y fijando dirección con GPS..."
-              className="w-full text-xs sm:text-sm px-4 py-3 sm:py-3.5 border border-slate-200 rounded-xl bg-slate-100/90 text-slate-850 font-semibold cursor-not-allowed select-text leading-relaxed"
-            />
+
+            {/* Nombre */}
+            <div className="space-y-1.5">
+              <label className="text-sm font-bold text-slate-800 block">
+                Nombre
+              </label>
+              <input
+                type="text"
+                value={fullName}
+                readOnly={isOfficialDataLocked}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Ej. Carlos Mendoza"
+                className={`w-full text-base px-4 py-3.5 border rounded-xl font-bold ${
+                  isOfficialDataLocked
+                    ? 'bg-slate-100/90 border-slate-200 text-slate-800 cursor-not-allowed select-text'
+                    : 'bg-white border-slate-300 text-slate-900 focus:ring-2 focus:ring-blue-600 focus:outline-hidden'
+                }`}
+              />
+              {errors.fullName && (
+                <p className="text-xs text-red-600 font-bold">{errors.fullName}</p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Nombre Comercial */}
+              <div className="space-y-1.5">
+                <label className="text-sm font-bold text-slate-800 block">
+                  Nombre Comercial
+                </label>
+                <input
+                  type="text"
+                  value={businessName}
+                  onChange={(e) => setBusinessName(e.target.value)}
+                  placeholder="Ej. Minimarket Los Rosales"
+                  className="w-full text-base px-4 py-3.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-hidden font-medium text-slate-900"
+                />
+              </div>
+
+              {/* Cumpleaños */}
+              <div className="space-y-1.5">
+                <label className="text-sm font-bold text-slate-800 block">
+                  Cumpleaños
+                </label>
+                <input
+                  type="date"
+                  value={birthDate}
+                  readOnly={isOfficialDataLocked && !!birthDate}
+                  onChange={(e) => setBirthDate(e.target.value)}
+                  className={`w-full text-base px-4 py-3.5 border rounded-xl font-mono font-bold appearance-none [-webkit-appearance:none] [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none [&::-webkit-inner-spin-button]:hidden ${
+                    isOfficialDataLocked && birthDate
+                      ? 'bg-slate-100 border-slate-200 text-slate-700 cursor-not-allowed'
+                      : 'bg-white border-slate-300 text-slate-900 focus:ring-2 focus:ring-blue-600 focus:outline-hidden'
+                  }`}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* WhatsApp */}
+              <div className="space-y-1.5">
+                <label className="text-sm font-bold text-slate-800 block">
+                  WhatsApp
+                </label>
+                <input
+                  type="tel"
+                  value={whatsappNumber}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/[^\d\s]/g, '');
+                    setWhatsappNumber(val);
+                  }}
+                  placeholder="099 123 4567"
+                  className="w-full text-base sm:text-lg px-4 py-3.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-hidden font-mono font-bold text-slate-900 placeholder:font-normal placeholder:text-slate-400"
+                />
+                {errors.whatsappNumber && (
+                  <p className="text-xs text-red-600 font-bold">{errors.whatsappNumber}</p>
+                )}
+              </div>
+
+              {/* Correo electrónico */}
+              <div className="space-y-1.5">
+                <label className="text-sm font-bold text-slate-800 block">
+                  Correo electrónico
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="cliente@ejemplo.com"
+                  className="w-full text-base px-4 py-3.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-hidden font-medium text-slate-900"
+                />
+              </div>
+            </div>
+
+            {/* Selectores de Tipo y Tarifa de Precios */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-sm font-bold text-slate-800 block">
+                  Tipo
+                </label>
+                <div className="grid grid-cols-3 gap-1.5 bg-slate-100 p-1.5 rounded-2xl border border-slate-200/90">
+                  {(['Hombre', 'Mujer', 'Otro'] as const).map((g) => (
+                    <button
+                      key={g}
+                      type="button"
+                      disabled={isOfficialDataLocked}
+                      onClick={() => setGender(g)}
+                      className={`py-3 text-sm font-bold rounded-xl transition-all cursor-pointer ${
+                        gender === g
+                          ? 'bg-white text-blue-700 shadow-xs font-black ring-1 ring-slate-200'
+                          : 'text-slate-600 hover:text-slate-900'
+                      } ${isOfficialDataLocked ? 'cursor-not-allowed opacity-90' : ''}`}
+                    >
+                      {g === 'Otro' ? 'Empresa' : g}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Tarifa de Precios */}
+              <div className="space-y-1.5">
+                <label className="text-sm font-bold text-slate-800 block">
+                  Tarifa de Precios
+                </label>
+                <div className="grid grid-cols-3 gap-1.5 bg-slate-100 p-1.5 rounded-2xl border border-slate-200/90">
+                  {(
+                    [
+                      { id: 'normal', label: 'Normal' },
+                      { id: 'distribuidor', label: 'Distribuidor' },
+                      { id: 'especial', label: 'Especial' },
+                    ] as const
+                  ).map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => setClientTier(t.id)}
+                      className={`py-3 text-sm font-bold rounded-xl transition-all cursor-pointer ${
+                        clientTier === t.id
+                          ? 'bg-white text-blue-700 shadow-xs font-black ring-1 ring-slate-200'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Dirección */}
+            <div className="space-y-1.5">
+              <label className="text-sm font-bold text-slate-800 block">
+                Dirección
+              </label>
+              <input
+                type="text"
+                value={addressReference}
+                readOnly
+                placeholder={isGeocoding ? 'Detectando dirección con Google Maps...' : 'Esperando señal GPS...'}
+                className="w-full text-base px-4 py-3.5 border border-slate-200 rounded-xl bg-slate-100/90 text-slate-800 font-medium cursor-not-allowed select-text leading-relaxed"
+              />
+            </div>
+
+            {/* Mapa de Google Maps */}
+            <div className="pt-1">
+              <GoogleMapPreview
+                latitude={coords.lat}
+                longitude={coords.lng}
+                accuracy={gpsAccuracy}
+                isCalibrating={isCalibratingGps}
+                zoom={17}
+                className="h-44 sm:h-52 w-full rounded-2xl overflow-hidden shadow-2xs border border-slate-200"
+              />
+            </div>
           </div>
 
-          {/* Mapa Oficial de Google Maps - Fijo y No Desplazable */}
-          <div className="space-y-2 pt-1">
-            <label className="text-xs sm:text-sm font-black text-slate-800 flex items-center justify-between">
-              <span>Ubicación GPS Oficial (Google Maps):</span>
-              <span className="text-xs text-slate-500 font-bold">Bloqueado para máxima precisión</span>
-            </label>
-
-            <GoogleMapPreview
-              latitude={coords.lat}
-              longitude={coords.lng}
-              accuracy={gpsAccuracy}
-              isCalibrating={isCalibratingGps}
-              zoom={17}
-              className="h-44 sm:h-52 w-full rounded-2xl overflow-hidden"
-            />
-          </div>
-
-          {/* Action buttons - Grandes y Cómodos para el Pulgar */}
-          <div className="pt-4 border-t border-slate-200 flex items-center justify-end space-x-3 sticky bottom-0 bg-white py-2">
+          {/* Sticky Docked Footer Bar - Limpio y Firme al fondo */}
+          <div className="px-5 sm:px-7 py-3.5 sm:py-4 bg-white border-t border-slate-200/90 flex items-center justify-end space-x-3 gap-2 shrink-0 z-20">
             <button
               type="button"
               onClick={onClose}
-              className="px-5 py-3.5 border border-slate-300 hover:bg-slate-100 text-slate-700 rounded-2xl text-xs sm:text-sm font-black transition-colors cursor-pointer"
+              className="px-5 py-3.5 border border-slate-200 hover:bg-slate-100 text-slate-600 rounded-2xl text-sm sm:text-base font-bold transition-colors cursor-pointer"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="px-7 py-3.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-2xl text-xs sm:text-sm font-black shadow-md flex items-center space-x-2 transition-all cursor-pointer"
+              className="flex-1 sm:flex-none px-8 py-3.5 bg-blue-600 hover:bg-blue-700 active:scale-98 text-white rounded-2xl text-sm sm:text-base font-bold shadow-xs transition-all cursor-pointer text-center"
             >
-              <Check className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span>Guardar Cliente</span>
+              Guardar
             </button>
           </div>
         </form>
