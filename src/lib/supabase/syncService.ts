@@ -28,10 +28,44 @@ export async function getClientsFromDb(): Promise<Client[]> {
       email: c.email,
       creditLimit: Number(c.credit_limit || 0),
       currentDebt: Number(c.current_debt || 0),
+      birthDate: c.birth_date,
+      economicActivity: c.economic_activity,
+      taxpayerType: c.taxpayer_type,
       createdAt: c.created_at,
     }));
   } catch {
     return INITIAL_CLIENTS;
+  }
+}
+
+export async function saveClientToDb(client: Client): Promise<{ success: boolean; error?: string }> {
+  try {
+    const clientRecord: any = {
+      id: client.id,
+      qr_token: client.qrToken,
+      full_name: client.fullName,
+      business_name: client.businessName,
+      gender: client.gender,
+      whatsapp_number: client.whatsappNumber,
+      latitude: client.latitude,
+      longitude: client.longitude,
+      address_reference: client.addressReference,
+      tax_id: client.taxId || null,
+      tax_id_type: client.taxIdType || null,
+      email: client.email || null,
+      credit_limit: client.creditLimit || 0,
+      current_debt: client.currentDebt || 0,
+      created_at: client.createdAt || new Date().toISOString(),
+    };
+
+    const { error } = await supabase.from('clients').upsert(clientRecord);
+    if (error) {
+      console.warn('Advertencia al guardar cliente en Supabase:', error.message);
+      return { success: false, error: error.message };
+    }
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
   }
 }
 

@@ -18,7 +18,7 @@ import {
   INITIAL_ORDERS,
   INITIAL_INVOICES,
 } from '@/lib/mockData';
-import { saveOrderToDb } from '@/lib/supabase/syncService';
+import { saveOrderToDb, saveClientToDb } from '@/lib/supabase/syncService';
 
 interface DistributionContextType {
   // Data
@@ -209,6 +209,12 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
 
     setClients((prev) => [newClient, ...prev]);
     setSelectedClientId(newClient.id);
+
+    // Persist to Supabase in background
+    saveClientToDb(newClient).catch((err) => {
+      console.warn('Error saving client to Supabase:', err);
+    });
+
     return newClient;
   };
 
