@@ -193,6 +193,16 @@ export function ClientProximitySelectorModal({
                         <span className="font-black text-xs sm:text-sm text-slate-900 truncate">
                           {client.businessName || client.fullName}
                         </span>
+                        {client.clientTier === 'distribuidor' && (
+                          <span className="text-[10px] font-black bg-purple-100 text-purple-800 border border-purple-200 px-2 py-0.5 rounded-full shrink-0">
+                            Distribuidor
+                          </span>
+                        )}
+                        {client.clientTier === 'especial' && (
+                          <span className="text-[10px] font-black bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-full shrink-0">
+                            Especial
+                          </span>
+                        )}
                         {client.distanceFormatted && userLocation && (
                           <span className="text-[10px] font-black bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full shrink-0 flex items-center">
                             <Navigation className="w-2.5 h-2.5 mr-0.5" />

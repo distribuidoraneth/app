@@ -13,26 +13,33 @@ export async function getClientsFromDb(): Promise<Client[]> {
       return INITIAL_CLIENTS;
     }
 
-    return data.map((c: any) => ({
-      id: c.id,
-      qrToken: c.qr_token || `aneth-${c.id}`,
-      fullName: c.full_name,
-      businessName: c.business_name,
-      gender: c.gender || 'Hombre',
-      whatsappNumber: c.whatsapp_number,
-      latitude: Number(c.latitude),
-      longitude: Number(c.longitude),
-      addressReference: c.address_reference,
-      taxId: c.tax_id,
-      taxIdType: c.tax_id_type,
-      email: c.email,
-      creditLimit: Number(c.credit_limit || 0),
-      currentDebt: Number(c.current_debt || 0),
-      birthDate: c.birth_date,
-      economicActivity: c.economic_activity,
-      taxpayerType: c.taxpayer_type,
-      createdAt: c.created_at,
-    }));
+    return data.map((c: any) => {
+      const tierMatch = c.qr_token?.match(/\|tier:(normal|distribuidor|especial)/);
+      const clientTier = tierMatch ? tierMatch[1] : (c.client_tier || 'normal');
+      const cleanQr = c.qr_token ? c.qr_token.split('|')[0] : `aneth-${c.id}`;
+
+      return {
+        id: c.id,
+        qrToken: cleanQr,
+        fullName: c.full_name,
+        businessName: c.business_name,
+        gender: c.gender || 'Hombre',
+        clientTier,
+        whatsappNumber: c.whatsapp_number,
+        latitude: Number(c.latitude),
+        longitude: Number(c.longitude),
+        addressReference: c.address_reference,
+        taxId: c.tax_id,
+        taxIdType: c.tax_id_type,
+        email: c.email,
+        creditLimit: Number(c.credit_limit || 0),
+        currentDebt: Number(c.current_debt || 0),
+        birthDate: c.birth_date,
+        economicActivity: c.economic_activity,
+        taxpayerType: c.taxpayer_type,
+        createdAt: c.created_at,
+      };
+    });
   } catch {
     return INITIAL_CLIENTS;
   }
@@ -40,9 +47,13 @@ export async function getClientsFromDb(): Promise<Client[]> {
 
 export async function saveClientToDb(client: Client): Promise<{ success: boolean; error?: string }> {
   try {
+    const safeQrToken = client.qrToken.includes('|tier:')
+      ? client.qrToken
+      : `${client.qrToken}|tier:${client.clientTier || 'normal'}`;
+
     const clientRecord: any = {
       id: client.id,
-      qr_token: client.qrToken,
+      qr_token: safeQrToken,
       full_name: client.fullName,
       business_name: client.businessName,
       gender: client.gender,
@@ -53,7 +64,7 @@ export async function saveClientToDb(client: Client): Promise<{ success: boolean
       tax_id: client.taxId || null,
       tax_id_type: client.taxIdType || null,
       email: client.email || null,
-      credit_limit: client.creditLimit || 0,
+      credit_limit: 0,
       current_debt: client.currentDebt || 0,
       created_at: client.createdAt || new Date().toISOString(),
     };

@@ -199,7 +199,14 @@ const FLAVOR_STYLES: Record<string, { bgSelected: string; borderSelected: string
 };
 
 export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaProps) {
-  const { catalog, addToCart } = useDistribution();
+  const { catalog, addToCart, clients, selectedClientId } = useDistribution();
+
+  // Active Client & Pricing Tier (Normal / Distribuidor / Especial)
+  const activeClient = useMemo(() => {
+    return clients.find((c) => c.id === selectedClientId);
+  }, [clients, selectedClientId]);
+
+  const clientTier = activeClient?.clientTier || 'normal';
 
   // Tipo de Bebida
   const [selectedType, setSelectedType] = useState<BeverageType>('Colas');
@@ -260,19 +267,31 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
   const [javasCount, setJavasCount] = useState<number>(1);
   const [unitsCount, setUnitsCount] = useState<number>(0);
 
+  // Precio por Java adaptado a la categoría del cliente
+  const effectivePricePerJava = useMemo(() => {
+    if (!currentOption) return 0;
+    if (clientTier === 'distribuidor' && currentOption.priceDistribuidor) {
+      return currentOption.priceDistribuidor;
+    }
+    if (clientTier === 'especial' && currentOption.priceEspecial) {
+      return currentOption.priceEspecial;
+    }
+    return currentOption.pricePerJava;
+  }, [currentOption, clientTier]);
+
   // Cálculo de Precio Unitario
   const unitPrice = useMemo(() => {
     if (!currentOption) return 0;
-    return currentOption.pricePerUnit || Number((currentOption.pricePerJava / currentOption.unitsPerJava).toFixed(2));
-  }, [currentOption]);
+    return currentOption.pricePerUnit || Number((effectivePricePerJava / currentOption.unitsPerJava).toFixed(2));
+  }, [currentOption, effectivePricePerJava]);
 
   // Subtotal Actual Dinámico
   const currentTotalSubtotal = useMemo(() => {
     if (!currentOption) return 0;
-    const javasVal = javasCount * currentOption.pricePerJava;
+    const javasVal = javasCount * effectivePricePerJava;
     const unitsVal = unitsCount * unitPrice;
     return Number((javasVal + unitsVal).toFixed(2));
-  }, [currentOption, javasCount, unitsCount, unitPrice]);
+  }, [currentOption, javasCount, unitsCount, effectivePricePerJava, unitPrice]);
 
   const currentTotalBottles = useMemo(() => {
     if (!currentOption) return 0;
@@ -325,7 +344,7 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
       quantityJavas: javasCount,
       quantityUnits: unitsCount,
       unitsPerJava: currentOption.unitsPerJava,
-      pricePerJava: currentOption.pricePerJava,
+      pricePerJava: effectivePricePerJava,
       pricePerUnit: unitPrice,
       totalBottles: currentTotalBottles,
       subtotal: currentTotalSubtotal,
@@ -386,8 +405,6 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
             {/* Grid compacto de mini-tiles horizontales */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-2.5">
               {availableOptionsForType.map((option) => {
-                const isSelected = currentOption?.id === option.id;
-
                 let displayTitle: string = option.size;
                 if (option.size === '1500 ml' || option.size === '1.5 Litros') displayTitle = '1.5 Litros';
                 if (option.size === '3000 ml' || option.size === '3.0 Litros') displayTitle = '3.0 Litros';
@@ -395,18 +412,23 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
                   displayTitle = `${option.size} Vidrio`;
                 }
 
+                const isSelected = option.id === selectedOptionId;
+                const optPrice = clientTier === 'distribuidor' && option.priceDistribuidor
+                  ? option.priceDistribuidor
+                  : (clientTier === 'especial' && option.priceEspecial ? option.priceEspecial : option.pricePerJava);
+
                 return (
                   <button
                     key={option.id}
                     type="button"
                     onClick={() => setSelectedOptionId(option.id)}
-                    className={`p-2.5 rounded-2xl border text-left flex items-center space-x-2.5 transition-all active:scale-[0.98] ${
+                    className={`relative p-3 rounded-2xl border text-left transition-all flex items-center space-x-3 cursor-pointer ${
                       isSelected
-                        ? 'border-blue-600 bg-blue-50/80 text-slate-950 ring-2 ring-blue-600/25 shadow-xs'
-                        : 'border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50'
+                        ? 'bg-blue-50/80 border-blue-600 shadow-xs ring-2 ring-blue-500/20'
+                        : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/50'
                     }`}
                   >
-                    {/* Minimalist Vector Bottle Silhouette Container */}
+                    {/* Bottle Icon */}
                     <div className={`w-8 h-10 rounded-xl flex items-center justify-center p-0.5 flex-shrink-0 ${
                       isSelected ? 'bg-white shadow-2xs' : 'bg-slate-50'
                     }`}>
@@ -426,7 +448,7 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
                         {option.unitsPerJava} unidades
                       </div>
                       <div className="text-sm sm:text-base font-black text-blue-700 font-mono">
-                        {formatCurrency(option.pricePerJava)}
+                        {formatCurrency(optPrice)}
                       </div>
                     </div>
                   </button>
@@ -599,11 +621,21 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/90 p-3 sm:p-4 rounded-2xl border border-slate-200/90">
                 {/* Total Price Display */}
                 <div>
-                  <div className="flex items-center space-x-1.5">
+                  <div className="flex items-center space-x-1.5 flex-wrap gap-y-1">
                     <span className="text-xs font-bold text-slate-500">Precio Total:</span>
                     <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200">
                       {currentTotalBottles} {currentTotalBottles === 1 ? 'botella' : 'botellas'}
                     </span>
+                    {clientTier === 'distribuidor' && (
+                      <span className="text-[10px] font-black text-purple-700 bg-purple-100 border border-purple-200 px-2 py-0.5 rounded-md">
+                        Tarifa Distribuidor
+                      </span>
+                    )}
+                    {clientTier === 'especial' && (
+                      <span className="text-[10px] font-black text-amber-700 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-md">
+                        Tarifa Especial
+                      </span>
+                    )}
                   </div>
                   <div className="text-2xl sm:text-3xl font-black text-slate-900 font-mono mt-0.5">
                     {formatCurrency(currentTotalSubtotal)}

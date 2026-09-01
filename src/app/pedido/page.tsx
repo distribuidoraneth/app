@@ -187,9 +187,21 @@ function StandaloneOrderContent() {
                   <Store className="w-5 h-5" />
                 </div>
                 <div className="min-w-0">
-                  <h2 className="text-sm font-black text-slate-900 truncate">
-                    {activeClient.businessName || activeClient.fullName}
-                  </h2>
+                  <div className="flex items-center space-x-2">
+                    <h2 className="text-sm font-black text-slate-900 truncate">
+                      {activeClient.businessName || activeClient.fullName}
+                    </h2>
+                    {activeClient.clientTier === 'distribuidor' && (
+                      <span className="text-[10px] font-black text-purple-700 bg-purple-100 border border-purple-200 px-2 py-0.5 rounded-full shrink-0">
+                        Distribuidor
+                      </span>
+                    )}
+                    {activeClient.clientTier === 'especial' && (
+                      <span className="text-[10px] font-black text-amber-700 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-full shrink-0">
+                        Especial
+                      </span>
+                    )}
+                  </div>
                   <p className="text-[11px] text-slate-500 truncate flex items-center mt-0.5">
                     <MapPin className="w-3 h-3 mr-1 shrink-0 text-slate-400" />
                     <span className="truncate">{activeClient.addressReference || 'Sin dirección registrada'}</span>

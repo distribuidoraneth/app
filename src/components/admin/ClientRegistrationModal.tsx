@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useDistribution } from '@/context/DistributionContext';
 import { GoogleMapPreview } from '@/components/maps/GoogleMapPreview';
-import { Gender, Client } from '@/types';
+import { Gender, Client, ClientTier } from '@/types';
 import {
   X,
   UserPlus,
@@ -48,7 +48,7 @@ export function ClientRegistrationModal({
   const [taxId, setTaxId] = useState<string>('');
   const [taxIdType, setTaxIdType] = useState<'04' | '05'>('05');
   const [email, setEmail] = useState<string>('');
-  const [creditLimit, setCreditLimit] = useState<number>(0);
+  const [clientTier, setClientTier] = useState<ClientTier>('normal');
   const [addressReference, setAddressReference] = useState<string>('');
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
@@ -197,6 +197,7 @@ export function ClientRegistrationModal({
       fullName,
       businessName: businessName.trim() || fullName,
       gender,
+      clientTier,
       whatsappNumber: formattedPhone,
       latitude: coords.lat,
       longitude: coords.lng,
@@ -204,7 +205,7 @@ export function ClientRegistrationModal({
       taxId: taxId.trim() || undefined,
       taxIdType,
       email: email.trim() || undefined,
-      creditLimit,
+      creditLimit: 0,
       birthDate: birthDate || undefined,
     });
 
@@ -215,7 +216,7 @@ export function ClientRegistrationModal({
     setBirthDate('');
     setTaxId('');
     setEmail('');
-    setCreditLimit(0);
+    setClientTier('normal');
     setAddressReference('');
     setErrors({});
     setApiFeedback(null);
@@ -481,31 +482,49 @@ export function ClientRegistrationModal({
               </div>
             </div>
 
+            {/* Categoría / Tarifa de Precios */}
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700 block">Cupo Crédito ($)</label>
-              <input
-                type="number"
-                min="0"
-                step="5"
-                value={creditLimit}
-                onChange={(e) => setCreditLimit(parseFloat(e.target.value) || 0)}
-                placeholder="0"
-                className="w-full text-xs px-3.5 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-hidden font-mono"
-              />
+              <label className="text-xs font-bold text-slate-700 block">Tarifa de Precios</label>
+              <div className="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+                {(
+                  [
+                    { id: 'normal', label: 'Normal' },
+                    { id: 'distribuidor', label: 'Distribuidor' },
+                    { id: 'especial', label: 'Especial' },
+                  ] as const
+                ).map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setClientTier(t.id)}
+                    className={`py-1.5 text-xs font-black rounded-lg transition-all cursor-pointer ${
+                      clientTier === t.id
+                        ? 'bg-white text-blue-700 shadow-2xs font-black'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
-          {/* Dirección Oficial Traída por Google Maps */}
+          {/* Dirección y Referencia del Local (100% editable) */}
           <div className="space-y-1">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-slate-700 flex items-center">
-                <MapPin className="w-3.5 h-3.5 mr-1 text-red-500" />
-                <span>Dirección Oficial (Google Maps)</span>
+                <MapPin className="w-3.5 h-3.5 mr-1 text-blue-600" />
+                <span>Dirección y Referencia del Local *</span>
               </label>
-              {isGeocoding && (
+              {isGeocoding ? (
                 <span className="text-[10px] text-blue-600 font-bold flex items-center">
                   <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                  Obteniendo de Google...
+                  Detectando con Google...
+                </span>
+              ) : (
+                <span className="text-[10px] text-slate-500 font-medium">
+                  Editable libremente
                 </span>
               )}
             </div>
@@ -513,8 +532,8 @@ export function ClientRegistrationModal({
               type="text"
               value={addressReference}
               onChange={(e) => setAddressReference(e.target.value)}
-              placeholder="Detectando dirección exacta de Google Maps..."
-              className="w-full text-xs px-3.5 py-2.5 border border-slate-300 rounded-xl bg-slate-50 font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-600 focus:outline-hidden"
+              placeholder="Ingresa o edita la dirección exacta (ej: Av. Cevallos y Montalvo)"
+              className="w-full text-xs px-3.5 py-2.5 border border-slate-300 rounded-xl bg-white font-medium text-slate-900 focus:ring-2 focus:ring-blue-600 focus:outline-hidden"
             />
           </div>
 

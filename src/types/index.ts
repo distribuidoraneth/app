@@ -12,6 +12,8 @@ export interface SurtidoBreakdown {
   [flavor: string]: number; // e.g. { "Piña": 12, "Mora": 12 }
 }
 
+export type ClientTier = 'normal' | 'distribuidor' | 'especial';
+
 export interface JavaProductOption {
   id: string;
   beverageType: BeverageType;
@@ -19,7 +21,9 @@ export interface JavaProductOption {
   size: BeverageSize;
   allowedFlavors: string[];
   unitsPerJava: number; // e.g. 12 for 250ml/300ml/500ml/1.5L, 6 for 3.0L, 24 for 300ml Vidrio
-  pricePerJava: number;
+  pricePerJava: number; // Precio Normal (PVP / Tienda estándar)
+  priceDistribuidor?: number; // Precio Mayorista / Distribuidor
+  priceEspecial?: number; // Precio Especial / Gran Volumen
   pricePerUnit?: number; // Calculated or customized unit price (e.g. pricePerJava / unitsPerJava)
   imageUrl: string;
   description: string;
@@ -51,6 +55,7 @@ export interface Client {
   fullName: string;
   businessName: string;
   gender: Gender;
+  clientTier?: ClientTier; // 'normal' | 'distribuidor' | 'especial'
   whatsappNumber: string;
   latitude: number;
   longitude: number;
@@ -58,7 +63,7 @@ export interface Client {
   taxId?: string; // Cédula o RUC
   taxIdType?: '04' | '05' | '06' | '07';
   email?: string;
-  creditLimit?: number; // Límite de crédito permitido
+  creditLimit?: number; // Límite de crédito
   currentDebt?: number; // Deuda acumulada actual
   birthDate?: string; // Fecha de nacimiento o cumpleaños para promociones/fidelización
   economicActivity?: string; // Actividad económica registrada en SRI
