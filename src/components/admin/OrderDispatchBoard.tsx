@@ -135,11 +135,11 @@ export function OrderDispatchBoard() {
                     </span>
                     {order.saleType === 'autoventa' ? (
                       <span className="text-[11px] font-black text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200">
-                        ⚡ Autoventa
+                        Autoventa
                       </span>
                     ) : (
                       <span className="text-[11px] font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                        📅 Preventa
+                        Preventa
                       </span>
                     )}
                   </div>

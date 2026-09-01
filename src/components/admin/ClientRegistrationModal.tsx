@@ -86,7 +86,7 @@ export function ClientRegistrationModal({
 
         setApiFeedback({
           type: 'success',
-          message: `✓ Datos de ${data.taxIdType === '04' ? 'RUC SRI' : 'Registro Civil'} autocompletados correctamente.`,
+          message: `Datos de ${data.taxIdType === '04' ? 'RUC SRI' : 'Registro Civil'} autocompletados correctamente.`,
         });
       } else {
         setApiFeedback({

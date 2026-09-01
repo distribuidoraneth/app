@@ -11,9 +11,9 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: 'Distribuidora Aneth | Plataforma de Pedidos & Facturación SRI',
+  title: 'Aneth Distribuciones | Plataforma de Pedidos & Facturación SRI',
   description: 'Sistema integral de distribución mayorista de bebidas en javas, despacho en ruta y facturación electrónica SRI Ecuador.',
-  applicationName: 'Distribuidora Aneth',
+  applicationName: 'Aneth Distribuciones',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',

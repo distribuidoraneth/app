@@ -51,7 +51,7 @@ export default function LoginPage() {
       <div className="relative z-10 w-full max-w-sm flex flex-col items-center space-y-6 animate-in fade-in zoom-in-95 duration-200">
         {/* Brand Logo - Centered with balanced proportions */}
         <div className="flex flex-col items-center justify-center">
-          <AnethFullLogo size="lg" variant="white" showSubtitle={true} subtitleText="DISTRIBUIDORA" />
+          <AnethFullLogo size="lg" variant="white" showSubtitle={true} subtitleText="DISTRIBUCIONES" />
         </div>
 
         {/* Login Card */}
@@ -116,7 +116,7 @@ export default function LoginPage() {
 
         {/* Integrated Footer */}
         <p className="text-[11px] text-slate-500 font-medium text-center">
-          Distribuidora Aneth &copy; {new Date().getFullYear()}
+          Aneth Distribuciones &copy; {new Date().getFullYear()}
         </p>
       </div>
     </div>

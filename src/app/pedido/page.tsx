@@ -106,8 +106,8 @@ function StandaloneOrderContent() {
               <Zap className="w-4 h-4 mr-1.5 text-blue-600 fill-blue-600" />
               1. Modalidad de Venta
             </span>
-            <span className="text-[10px] font-extrabold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
-              {saleType === 'autoventa' ? '⚡ Despacho Inmediato' : '📅 Entrega Programada'}
+            <span className="text-[10px] font-extrabold text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200">
+              {saleType === 'autoventa' ? 'Despacho Inmediato' : 'Entrega Programada'}
             </span>
           </div>
 

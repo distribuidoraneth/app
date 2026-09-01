@@ -62,7 +62,7 @@ export function AnethFullLogo({
   size = 'md',
   variant = 'color',
   showSubtitle = false,
-  subtitleText = 'DISTRIBUIDORA',
+  subtitleText = 'DISTRIBUCIONES',
 }: LogoProps) {
   let logoSrc = '/logos/aneth-logo-full.svg';
   let subtextColor = '#475569';
@@ -84,7 +84,7 @@ export function AnethFullLogo({
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={logoSrc}
-          alt="Distribuidora Aneth"
+          alt="Aneth Distribuciones"
           className="h-full w-auto object-contain select-none"
           loading="eager"
         />

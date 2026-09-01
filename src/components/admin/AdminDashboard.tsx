@@ -115,7 +115,7 @@ export function AdminDashboard() {
     },
     {
       id: 'clients',
-      label: 'Locales QR',
+      label: 'Clientes',
       icon: <Users className="w-4 h-4" />,
       badge: clients.length,
     },
@@ -174,44 +174,29 @@ export function AdminDashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-2 sm:gap-3">
           <div className="flex items-center space-x-3 sm:space-x-4">
             <div className="hidden sm:block">
-              <AnethFullLogo size="md" showSubtitle={true} subtitleText="DISTRIBUIDORA" />
+              <AnethFullLogo size="md" showSubtitle={true} subtitleText="DISTRIBUCIONES" />
             </div>
             <div className="sm:hidden">
               <AnethIsotype size="md" variant="color" />
-            </div>
-            <div className="hidden md:block pl-4 border-l border-slate-200">
-              <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-lg border border-blue-200">
-                Panel Administrativo
-              </span>
             </div>
           </div>
 
           <div className="flex items-center space-x-2">
             <Link
               href="/pedido?type=autoventa"
-              className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black shadow-xs flex items-center space-x-1.5 transition-all active:scale-95"
+              className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl text-xs font-black shadow-xs flex items-center space-x-1.5 transition-all"
             >
-              <Zap className="w-3.5 h-3.5 fill-white" />
-              <span>⚡ Autoventa</span>
+              <Zap className="w-3.5 h-3.5 fill-white text-white" />
+              <span>Autoventa</span>
             </Link>
 
             <Link
               href="/pedido?type=preventa"
-              className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-xl text-xs font-black border border-slate-300 flex items-center space-x-1.5 transition-colors"
+              className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-900 rounded-xl text-xs font-black border border-slate-300 flex items-center space-x-1.5 transition-colors"
             >
-              <Calendar className="w-3.5 h-3.5 text-emerald-600" />
-              <span className="hidden sm:inline">📅 Preventa</span>
+              <Calendar className="w-3.5 h-3.5 text-slate-700" />
+              <span className="hidden sm:inline">Preventa</span>
             </Link>
-
-            <button
-              type="button"
-              onClick={() => setIsRegisterModalOpen(true)}
-              className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white rounded-xl text-xs font-black shadow-xs flex items-center space-x-1.5 transition-all"
-            >
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Nuevo Local QR</span>
-              <span className="sm:hidden">Local</span>
-            </button>
 
             {/* Google User Profile Chip */}
             {userProfile && (
@@ -290,7 +275,7 @@ export function AdminDashboard() {
           <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs space-y-1">
             <div className="flex items-center justify-between">
               <span className="text-[11px] sm:text-xs font-extrabold text-slate-500 uppercase tracking-wider">
-                Locales QR
+                Clientes
               </span>
               <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
                 <Users className="w-4 h-4" />
@@ -300,7 +285,7 @@ export function AdminDashboard() {
               {clients.length}
             </div>
             <p className="text-[11px] sm:text-xs text-blue-700 font-bold">
-              Clientes con QR activo
+              Clientes registrados
             </p>
           </div>
 
@@ -537,8 +522,8 @@ export function AdminDashboard() {
                                   Registrar Abono
                                 </button>
                               ) : (
-                                <span className="text-[11px] text-emerald-600 font-bold bg-emerald-50 px-2 py-1 rounded-lg">
-                                  Al día ✓
+                                <span className="text-[11px] text-emerald-700 font-bold bg-emerald-50 px-2.5 py-1 rounded-lg">
+                                  Al día
                                 </span>
                               )}
                             </td>

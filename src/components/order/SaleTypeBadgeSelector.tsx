@@ -35,7 +35,7 @@ export function SaleTypeBadgeSelector({
             />
           )}
           <Zap className={`w-4 h-4 ${value === 'autoventa' ? 'text-blue-600 fill-blue-600' : 'text-slate-400'}`} />
-          <span>⚡ Autoventa (En Ruta)</span>
+          <span>Autoventa (En Ruta)</span>
         </button>
 
         <button
@@ -53,7 +53,7 @@ export function SaleTypeBadgeSelector({
             />
           )}
           <Calendar className={`w-4 h-4 ${value === 'preventa' ? 'text-emerald-600' : 'text-slate-400'}`} />
-          <span>📅 Preventa (Programado)</span>
+          <span>Preventa (Programado)</span>
         </button>
       </div>
 

@@ -151,15 +151,15 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
       ? `${window.location.origin}/factura/${createdOrderSummary.invoiceId}`
       : '';
 
-    const text = `👋 *DISTRIBUIDORA ANETH* - Comprobante de Entrega\n\n` +
-      `📦 *Pedido:* ${createdOrderSummary.orderNumber}\n` +
-      `🏢 *Cliente:* ${activeClient?.businessName || activeClient?.fullName}\n` +
-      `⚡ *Tipo de Venta:* ${createdOrderSummary.saleType === 'autoventa' ? 'Autoventa (Entregado al instante)' : 'Preventa Programada'}\n` +
-      `💰 *Total:* $${createdOrderSummary.totalAmount.toFixed(2)}\n` +
-      `💵 *Valor Pagado:* $${createdOrderSummary.amountPaid.toFixed(2)}\n` +
-      (createdOrderSummary.debtBalance > 0 ? `⚠️ *Saldo Pendiente:* $${createdOrderSummary.debtBalance.toFixed(2)}\n` : `✅ *Estado:* Pagado Completo\n`) +
-      (invoiceLink ? `\n🏛️ *Factura Electrónica SRI:* ${invoiceLink}\n` : '') +
-      `\n_¡Gracias por confiar en Distribuidora Aneth!_`;
+    const text = `*ANETH DISTRIBUCIONES* - Comprobante de Entrega\n\n` +
+      `*Pedido:* ${createdOrderSummary.orderNumber}\n` +
+      `*Cliente:* ${activeClient?.businessName || activeClient?.fullName}\n` +
+      `*Tipo de Venta:* ${createdOrderSummary.saleType === 'autoventa' ? 'Autoventa (Entregado al instante)' : 'Preventa Programada'}\n` +
+      `*Total:* $${createdOrderSummary.totalAmount.toFixed(2)}\n` +
+      `*Valor Pagado:* $${createdOrderSummary.amountPaid.toFixed(2)}\n` +
+      (createdOrderSummary.debtBalance > 0 ? `*Saldo Pendiente:* $${createdOrderSummary.debtBalance.toFixed(2)}\n` : `*Estado:* Pagado Completo\n`) +
+      (invoiceLink ? `\n*Factura Electrónica SRI:* ${invoiceLink}\n` : '') +
+      `\n_Gracias por su preferencia - Aneth Distribuciones_`;
 
     window.open(`https://wa.me/${phone.startsWith('593') ? phone : '593' + phone}?text=${encodeURIComponent(text)}`, '_blank');
   };
@@ -220,8 +220,8 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
               <div className="space-y-1">
                 <span className="text-xs font-extrabold uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full">
                   {createdOrderSummary.saleType === 'autoventa'
-                    ? '⚡ Autoventa • Despachado al Instante'
-                    : '📅 Preventa • Pedido Programado'}
+                    ? 'Autoventa • Despachado al Instante'
+                    : 'Preventa • Pedido Programado'}
                 </span>
                 <h3 className="text-2xl font-black text-slate-900 pt-2 font-mono">
                   {createdOrderSummary.orderNumber}
@@ -561,7 +561,7 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
 
                   {debtBalance > 0 && (
                     <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 font-bold flex items-center justify-between">
-                      <span>⚠️ Saldo pendiente deudor:</span>
+                      <span>Saldo pendiente deudor:</span>
                       <span className="font-mono text-sm font-black text-red-600">
                         {formatCurrency(debtBalance)}
                       </span>
@@ -612,7 +612,7 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
               }`}
             >
               <span>
-                {saleType === 'autoventa' ? '⚡ Confirmar y Despachar Ahora' : '📅 Programar Pedido de Preventa'}
+                {saleType === 'autoventa' ? 'Confirmar y Despachar Ahora' : 'Programar Pedido de Preventa'}
               </span>
               <ArrowRight className="w-5 h-5" />
             </button>
