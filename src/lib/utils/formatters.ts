@@ -30,18 +30,24 @@ export function generateWhatsAppOrderLink(params: {
   invoiceNumber?: string;
   invoiceUrl?: string;
 }): string {
-  const cleanPhone = params.phone.replace(/[^0-9]/g, '');
-  let message = `Estimado(a) *${params.clientName}*,\nLe saluda *Distribuidora Aneth*.\n\n`;
+  let cleanPhone = params.phone.replace(/[^0-9]/g, '');
+  if (cleanPhone.startsWith('0')) {
+    cleanPhone = '593' + cleanPhone.slice(1);
+  } else if (!cleanPhone.startsWith('593')) {
+    cleanPhone = '593' + cleanPhone;
+  }
+
+  let message = `Estimado(a) *${params.clientName}*,\nLe saluda *Aneth Distribuciones*.\n\n`;
   message += `Le confirmamos la recepción de su pedido *#${params.orderNumber}* por un valor total de *${formatCurrency(params.total)}*.\n\n`;
 
   if (params.invoiceNumber) {
     message += `Comprobante / Factura emitida: *${params.invoiceNumber}*\n`;
-    message += `Puede consultar y descargar su factura en el siguiente enlace:\n${params.invoiceUrl || (typeof window !== 'undefined' ? window.location.origin : 'https://distribuidoraneth.com') + '/factura/' + params.invoiceNumber}\n\n`;
+    message += `Puede consultar y descargar su factura en el siguiente enlace:\n${params.invoiceUrl || (typeof window !== 'undefined' ? window.location.origin : 'https://distribuidora-aneth.vercel.app') + '/factura/' + params.invoiceNumber}\n\n`;
   } else {
     message += `Su pedido se encuentra en preparación para despacho.\n\n`;
   }
 
-  message += `Agradecemos su preferencia.\n*Distribuidora Aneth*`;
+  message += `Agradecemos su preferencia.\n*Aneth Distribuciones*`;
 
   return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
 }

@@ -146,7 +146,12 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
   const handleShareWhatsApp = () => {
     if (!createdOrderSummary) return;
 
-    const phone = activeClient?.whatsappNumber?.replace(/\D/g, '') || '';
+    let phone = activeClient?.whatsappNumber?.replace(/\D/g, '') || '';
+    if (phone.startsWith('0')) {
+      phone = '593' + phone.slice(1);
+    } else if (!phone.startsWith('593')) {
+      phone = '593' + phone;
+    }
     const invoiceLink = createdOrderSummary.invoiceId
       ? `${window.location.origin}/factura/${createdOrderSummary.invoiceId}`
       : '';
@@ -161,7 +166,7 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
       (invoiceLink ? `\n*Factura Electrónica SRI:* ${invoiceLink}\n` : '') +
       `\n_Gracias por su preferencia - Aneth Distribuciones_`;
 
-    window.open(`https://wa.me/${phone.startsWith('593') ? phone : '593' + phone}?text=${encodeURIComponent(text)}`, '_blank');
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, '_blank');
   };
 
   const modalContent = (

@@ -39,7 +39,7 @@ export function ClientRegistrationModal({
   const [fullName, setFullName] = useState<string>('');
   const [businessName, setBusinessName] = useState<string>('');
   const [gender, setGender] = useState<Gender>('Hombre');
-  const [whatsappNumber, setWhatsappNumber] = useState<string>('+593');
+  const [whatsappNumber, setWhatsappNumber] = useState<string>('');
   const [birthDate, setBirthDate] = useState<string>('');
   const [coords, setCoords] = useState<{ lat: number; lng: number }>({
     lat: initialCoords?.latitude ?? -1.24908,
@@ -175,9 +175,9 @@ export function ClientRegistrationModal({
     e.preventDefault();
     const newErrors: { [key: string]: string } = {};
 
-    if (!fullName.trim()) newErrors.fullName = 'El nombre o razón social es requerido';
-    if (!whatsappNumber.trim() || whatsappNumber === '+593') {
-      newErrors.whatsappNumber = 'El número de WhatsApp es requerido';
+    const rawDigits = whatsappNumber.replace(/\D/g, '');
+    if (!rawDigits || rawDigits.length < 9) {
+      newErrors.whatsappNumber = 'Ingresa un número celular válido (ej: 099 123 4567)';
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -185,11 +185,19 @@ export function ClientRegistrationModal({
       return;
     }
 
+    // Format phone cleanly starting with 0
+    let formattedPhone = rawDigits;
+    if (formattedPhone.startsWith('593')) {
+      formattedPhone = '0' + formattedPhone.slice(3);
+    } else if (!formattedPhone.startsWith('0') && formattedPhone.length === 9) {
+      formattedPhone = '0' + formattedPhone;
+    }
+
     const created = addClient({
       fullName,
       businessName: businessName.trim() || fullName,
       gender,
-      whatsappNumber,
+      whatsappNumber: formattedPhone,
       latitude: coords.lat,
       longitude: coords.lng,
       addressReference: addressReference.trim() || 'Ubicación GPS confirmada por Google Maps',
@@ -203,7 +211,7 @@ export function ClientRegistrationModal({
     // Reset form
     setFullName('');
     setBusinessName('');
-    setWhatsappNumber('+593');
+    setWhatsappNumber('');
     setBirthDate('');
     setTaxId('');
     setEmail('');
@@ -422,8 +430,11 @@ export function ClientRegistrationModal({
               <input
                 type="tel"
                 value={whatsappNumber}
-                onChange={(e) => setWhatsappNumber(e.target.value)}
-                placeholder="+593 99 999 9999"
+                onChange={(e) => {
+                  const val = e.target.value.replace(/[^\d\s]/g, '');
+                  setWhatsappNumber(val);
+                }}
+                placeholder="099 123 4567"
                 className="w-full text-xs px-3.5 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-hidden font-mono"
               />
               {errors.whatsappNumber && (
