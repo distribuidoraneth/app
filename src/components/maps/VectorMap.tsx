@@ -45,19 +45,17 @@ export function VectorMap({
     lng: longitude,
   });
 
-  // Free high-contrast minimalist vector-compatible style (Carto Positron)
+  // Crisp OpenStreetMap standard tiles (No watermarks / No API key required)
   const mapStyle = {
     version: 8 as const,
     sources: {
       'osm-tiles': {
         type: 'raster' as const,
         tiles: [
-          'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png',
-          'https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png',
-          'https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png',
+          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
         ],
         tileSize: 256,
-        attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; OpenStreetMap contributors',
+        attribution: '&copy; OpenStreetMap contributors',
       },
     },
     layers: [

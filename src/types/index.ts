@@ -60,6 +60,9 @@ export interface Client {
   email?: string;
   creditLimit?: number; // Límite de crédito permitido
   currentDebt?: number; // Deuda acumulada actual
+  birthDate?: string; // Fecha de nacimiento o cumpleaños para promociones/fidelización
+  economicActivity?: string; // Actividad económica registrada en SRI
+  taxpayerType?: string; // Régimen tributario (e.g. RIMPE Negocio Popular)
   createdAt: string;
 }
 

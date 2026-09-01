@@ -9,8 +9,8 @@ export async function GET(req: NextRequest) {
 
     if (!taxIdRaw) {
       return NextResponse.json(
-        { success: false, error: 'Parámetro taxId (RUC o Cédula) requerido.' },
-        { status: 400 }
+        { success: false, error: 'Parámetro Cédula o RUC requerido.' },
+        { status: 200 }
       );
     }
 
@@ -27,14 +27,11 @@ export async function GET(req: NextRequest) {
       });
 
       if (!res.ok) {
-        // Si el RUC no se encuentra o hay error, retornar mensaje claro
-        return NextResponse.json(
-          {
-            success: false,
-            error: `No se encontró información tributaria en el SRI para el RUC ${taxId}`,
-          },
-          { status: res.status }
-        );
+        const errJson = await res.json().catch(() => null);
+        return NextResponse.json({
+          success: false,
+          error: errJson?.message || `No se encontró información en el SRI para el RUC ${taxId}`,
+        });
       }
 
       const json = await res.json();
@@ -60,6 +57,7 @@ export async function GET(req: NextRequest) {
         taxpayerType: rucData?.taxpayer_type || 'PERSONA NATURAL',
         economicActivity: rucData?.economic_activity || '',
         gender: rucData?.taxpayer_type?.includes('JURIDICA') ? 'Empresa' : 'Hombre',
+        birthDate: '',
       });
     } else if (taxId.length === 10) {
       // 2. Consulta Cédula
@@ -71,13 +69,11 @@ export async function GET(req: NextRequest) {
       });
 
       if (!res.ok) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: `No se encontró información en el Registro Civil para la Cédula ${taxId}`,
-          },
-          { status: res.status }
-        );
+        const errJson = await res.json().catch(() => null);
+        return NextResponse.json({
+          success: false,
+          error: errJson?.message || `No se encontró información en el Registro Civil para la Cédula ${taxId}`,
+        });
       }
 
       const json = await res.json();
@@ -99,22 +95,20 @@ export async function GET(req: NextRequest) {
         businessName: '',
         addressReference: address,
         gender,
+        birthDate: cedulaData?.birth_date || cedulaData?.dob || '',
         status: 'ACTIVO',
       });
     } else {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Identificación inválida. Ingrese 10 dígitos para Cédula o 13 dígitos para RUC.',
-        },
-        { status: 400 }
-      );
+      return NextResponse.json({
+        success: false,
+        error: 'Ingresa 10 dígitos para Cédula o 13 dígitos para RUC.',
+      });
     }
   } catch (error) {
     console.error('Error en consulta EcuadorAPI:', error);
-    return NextResponse.json(
-      { success: false, error: 'Error de conexión con el servicio de consulta tributaria.' },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      success: false,
+      error: 'No se pudo consultar automáticamente. Completa los datos manualmente.',
+    });
   }
 }
