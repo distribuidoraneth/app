@@ -40,6 +40,20 @@
   .font-mono, [data-tabular] {
     font-variant-numeric: tabular-nums;
   }
+
+  /* Quitar flecha y chevron por defecto en campos de fecha (cumpleaños) */
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="date"]::-webkit-inner-spin-button,
+  input[type="date"]::-webkit-clear-button {
+    display: none !important;
+    -webkit-appearance: none !important;
+  }
+
+  input[type="date"] {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+  }
 }
 
 @layer components {

@@ -300,7 +300,7 @@ export function ClientRegistrationModal({
         {/* Form - Espacioso, Cómodo y con Fuentes Grandes para Móvil */}
         <form onSubmit={handleSubmit} className="p-5 sm:p-7 space-y-5 max-h-[80vh] overflow-y-auto">
           {/* Cédula o RUC Input & Fast Query */}
-          <div className="p-4 sm:p-5 bg-slate-50 border border-slate-200/90 rounded-2xl space-y-3 shadow-2xs">
+          <div className="p-4 sm:p-5 bg-slate-50 border border-slate-200/90 rounded-2xl space-y-3 shadow-2xs overflow-hidden">
             <div className="flex items-center justify-between">
               <label className="text-sm sm:text-base font-black text-slate-900 block">
                 Cédula o RUC
@@ -333,7 +333,7 @@ export function ClientRegistrationModal({
               </div>
             </div>
 
-            <div className="flex items-stretch gap-2">
+            <div className="flex items-stretch gap-2 w-full">
               <input
                 type="text"
                 value={taxId}
@@ -351,7 +351,7 @@ export function ClientRegistrationModal({
                   }
                 }}
                 placeholder={taxIdType === '04' ? 'Ingresa RUC (13 dígitos)' : 'Ingresa Cédula (10 dígitos)'}
-                className={`flex-1 text-sm sm:text-base px-4 py-3 sm:py-3.5 bg-white border rounded-xl font-mono focus:ring-2 focus:ring-blue-600 focus:outline-hidden ${
+                className={`flex-1 min-w-0 text-sm sm:text-base px-3.5 sm:px-4 py-3 sm:py-3.5 bg-white border rounded-xl font-mono focus:ring-2 focus:ring-blue-600 focus:outline-hidden ${
                   isOfficialDataLocked
                     ? 'bg-slate-100 border-slate-200 text-slate-500 cursor-not-allowed'
                     : 'border-slate-300 text-slate-900 font-bold placeholder:font-normal'
@@ -362,7 +362,7 @@ export function ClientRegistrationModal({
                 <button
                   type="button"
                   onClick={() => setIsOfficialDataLocked(false)}
-                  className="px-4 py-3 sm:py-3.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl text-xs sm:text-sm font-black transition-all shrink-0 cursor-pointer"
+                  className="px-3.5 py-3 sm:py-3.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl text-xs sm:text-sm font-black transition-all shrink-0 cursor-pointer"
                   title="Desbloquear para editar número"
                 >
                   Cambiar
@@ -372,14 +372,14 @@ export function ClientRegistrationModal({
                   type="button"
                   onClick={handleLookup}
                   disabled={isSearchingApi || !taxId.trim()}
-                  className="px-4 sm:px-6 py-3 sm:py-3.5 bg-blue-600 hover:bg-blue-700 active:scale-95 disabled:opacity-50 text-white rounded-xl text-xs sm:text-sm font-black flex items-center space-x-2 transition-all shadow-xs shrink-0 cursor-pointer"
+                  className="w-12 sm:w-14 shrink-0 bg-blue-600 hover:bg-blue-700 active:scale-95 disabled:opacity-50 text-white rounded-xl flex items-center justify-center transition-all shadow-xs cursor-pointer"
+                  title="Consultar Cédula o RUC"
                 >
                   {isSearchingApi ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <Loader2 className="w-5 h-5 animate-spin" />
                   ) : (
-                    <Search className="w-4 h-4" />
+                    <Search className="w-5 h-5 stroke-[2.5]" />
                   )}
-                  <span>{isSearchingApi ? 'Consultando...' : 'Consultar'}</span>
                 </button>
               )}
             </div>
@@ -463,7 +463,7 @@ export function ClientRegistrationModal({
                 value={birthDate}
                 readOnly={isOfficialDataLocked && !!birthDate}
                 onChange={(e) => setBirthDate(e.target.value)}
-                className={`w-full text-sm sm:text-base px-4 py-3 sm:py-3.5 border rounded-xl font-mono font-bold ${
+                className={`w-full text-sm sm:text-base px-4 py-3 sm:py-3.5 border rounded-xl font-mono font-bold appearance-none [-webkit-appearance:none] [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none [&::-webkit-inner-spin-button]:hidden ${
                   isOfficialDataLocked && birthDate
                     ? 'bg-slate-100 border-slate-200 text-slate-700 cursor-not-allowed'
                     : 'bg-white border-slate-300 text-slate-900 focus:ring-2 focus:ring-blue-600 focus:outline-hidden'
