@@ -1,24 +1,24 @@
 'use client';
 
 import React from 'react';
-import { MapPin, Navigation, RefreshCw, ExternalLink } from 'lucide-react';
+import { Navigation, ExternalLink, Loader2, CheckCircle2 } from 'lucide-react';
 
 interface GoogleMapPreviewProps {
   latitude: number;
   longitude: number;
+  accuracy?: number | null;
+  isCalibrating?: boolean;
   zoom?: number;
   className?: string;
-  onRefreshGps?: () => void;
-  isRefreshingGps?: boolean;
 }
 
 export function GoogleMapPreview({
   latitude,
   longitude,
+  accuracy = null,
+  isCalibrating = false,
   zoom = 17,
   className = 'h-48 w-full rounded-2xl overflow-hidden',
-  onRefreshGps,
-  isRefreshingGps = false,
 }: GoogleMapPreviewProps) {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || 'AIzaSyBxdOiBsT-hmDUzpwhLg8BSmjvgCof0uI0';
 
@@ -47,18 +47,28 @@ export function GoogleMapPreview({
         </div>
 
         <div className="flex items-center space-x-1.5">
-          {onRefreshGps && (
-            <button
-              type="button"
-              onClick={onRefreshGps}
-              disabled={isRefreshingGps}
-              className="bg-white hover:bg-slate-50 text-slate-800 px-2.5 py-1 rounded-xl shadow-xs border border-slate-200 text-[11px] font-bold flex items-center space-x-1 transition-all active:scale-95 cursor-pointer disabled:opacity-60"
-              title="Recalcular ubicación GPS precisa"
+          {/* Live Automatic GPS Precision Badge */}
+          {isCalibrating ? (
+            <div className="bg-blue-600 text-white px-2.5 py-1 rounded-xl shadow-xs text-[10px] font-black flex items-center space-x-1 animate-pulse">
+              <Loader2 className="w-3 h-3 animate-spin" />
+              <span>Ajustando GPS...</span>
+            </div>
+          ) : accuracy !== null ? (
+            <div
+              className={`px-2.5 py-1 rounded-xl shadow-xs text-[10px] font-black flex items-center space-x-1 ${
+                accuracy <= 20
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-amber-500 text-white'
+              }`}
             >
-              <RefreshCw className={`w-3 h-3 text-blue-600 ${isRefreshingGps ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline">GPS Preciso</span>
-            </button>
-          )}
+              {accuracy <= 20 ? (
+                <CheckCircle2 className="w-3 h-3" />
+              ) : (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              )}
+              <span>GPS ±{Math.round(accuracy)}m</span>
+            </div>
+          ) : null}
 
           <a
             href={googleMapsExternalUrl}
@@ -73,8 +83,9 @@ export function GoogleMapPreview({
       </div>
 
       {/* Bottom Subtle Tag */}
-      <div className="absolute bottom-1.5 left-2.5 bg-slate-900/75 backdrop-blur-xs text-white text-[9px] font-bold px-2 py-0.5 rounded-md pointer-events-none">
-        Ubicación fijada automáticamente por GPS
+      <div className="absolute bottom-1.5 left-2.5 bg-slate-900/80 backdrop-blur-xs text-white text-[9px] font-black px-2 py-0.5 rounded-md pointer-events-none flex items-center space-x-1">
+        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span>Ajuste automático en tiempo real • Fijo</span>
       </div>
     </div>
   );

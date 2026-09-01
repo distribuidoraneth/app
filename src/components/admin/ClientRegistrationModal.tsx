@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useDistribution } from '@/context/DistributionContext';
 import { GoogleMapPreview } from '@/components/maps/GoogleMapPreview';
 import { Gender, Client, ClientTier } from '@/types';
@@ -60,9 +60,26 @@ export function ClientRegistrationModal({
     message: string;
   } | null>(null);
 
-  // Google Reverse Geocoding State
+  // Google Reverse Geocoding & Continuous Auto-GPS State
   const [isGeocoding, setIsGeocoding] = useState<boolean>(false);
-  const [isRefreshingGps, setIsRefreshingGps] = useState<boolean>(false);
+  const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
+  const [isCalibratingGps, setIsCalibratingGps] = useState<boolean>(true);
+  const lastGeocodedCoordsRef = useRef<{ lat: number; lng: number } | null>(null);
+  const bestAccuracyRef = useRef<number>(999999);
+
+  // Helper: Haversine distance in meters
+  const getDistanceMeters = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371e3;
+    const φ1 = (lat1 * Math.PI) / 180;
+    const φ2 = (lat2 * Math.PI) / 180;
+    const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+    const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+    const a =
+      Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+      Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
 
   // Fetch official Google Maps address from GPS coordinates
   const fetchGoogleAddress = useCallback(async (lat: number, lng: number) => {
@@ -72,6 +89,7 @@ export function ClientRegistrationModal({
       const data = await res.json();
       if (data.success && data.address) {
         setAddressReference(data.address);
+        lastGeocodedCoordsRef.current = { lat, lng };
       }
     } catch (err) {
       console.warn('Error al obtener dirección oficial de Google Maps:', err);
@@ -80,40 +98,62 @@ export function ClientRegistrationModal({
     }
   }, []);
 
-  // Request High-Precision Device GPS
-  const handleRefreshGps = useCallback(() => {
-    if (typeof window === 'undefined' || !navigator.geolocation) return;
-    setIsRefreshingGps(true);
-
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const newCoords = {
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
-        };
-        setCoords(newCoords);
-        setIsRefreshingGps(false);
-        fetchGoogleAddress(newCoords.lat, newCoords.lng);
-      },
-      (err) => {
-        console.warn('Error GPS:', err);
-        setIsRefreshingGps(false);
-      },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-    );
-  }, [fetchGoogleAddress]);
-
-  // When modal opens: refresh GPS & fetch Google address automatically
+  // Continuous GPS auto-refinement in real-time (no buttons needed)
   useEffect(() => {
     if (!isOpen) return;
 
     if (initialCoords) {
       setCoords({ lat: initialCoords.latitude, lng: initialCoords.longitude });
       fetchGoogleAddress(initialCoords.latitude, initialCoords.longitude);
-    } else {
-      handleRefreshGps();
+      setIsCalibratingGps(false);
+      return;
     }
-  }, [isOpen, initialCoords, fetchGoogleAddress, handleRefreshGps]);
+
+    if (typeof window === 'undefined' || !navigator.geolocation) {
+      setIsCalibratingGps(false);
+      return;
+    }
+
+    setIsCalibratingGps(true);
+    bestAccuracyRef.current = 999999;
+    lastGeocodedCoordsRef.current = null;
+
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        const newLat = pos.coords.latitude;
+        const newLng = pos.coords.longitude;
+        const accuracy = pos.coords.accuracy;
+
+        setGpsAccuracy(accuracy);
+        setIsCalibratingGps(false);
+
+        const last = lastGeocodedCoordsRef.current;
+        const distanceMoved = last ? getDistanceMeters(last.lat, last.lng, newLat, newLng) : 999;
+
+        // Auto-refine if accuracy improves noticeably or moved to storefront
+        if (!last || (accuracy < bestAccuracyRef.current - 10 && distanceMoved > 5) || distanceMoved > 20) {
+          setCoords({ lat: newLat, lng: newLng });
+          if (accuracy < bestAccuracyRef.current) {
+            bestAccuracyRef.current = accuracy;
+          }
+          fetchGoogleAddress(newLat, newLng);
+        }
+      },
+      (err) => {
+        console.warn('Advertencia GPS:', err);
+        setIsCalibratingGps(false);
+      },
+      {
+        enableHighAccuracy: true,
+        maximumAge: 0,
+        timeout: 20000,
+      }
+    );
+
+    return () => {
+      navigator.geolocation.clearWatch(watchId);
+    };
+  }, [isOpen, initialCoords, fetchGoogleAddress]);
 
   if (!isOpen) return null;
 
@@ -510,30 +550,36 @@ export function ClientRegistrationModal({
             </div>
           </div>
 
-          {/* Dirección y Referencia del Local (100% editable) */}
+          {/* Dirección Oficial Bloqueada de Google Maps */}
           <div className="space-y-1">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-slate-700 flex items-center">
-                <MapPin className="w-3.5 h-3.5 mr-1 text-blue-600" />
-                <span>Dirección y Referencia del Local *</span>
+                <MapPin className="w-3.5 h-3.5 mr-1 text-red-500" />
+                <span>Dirección Oficial (Google Maps)</span>
               </label>
               {isGeocoding ? (
                 <span className="text-[10px] text-blue-600 font-bold flex items-center">
                   <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                  Detectando con Google...
+                  Obteniendo de Google...
+                </span>
+              ) : addressReference ? (
+                <span className="text-[10px] font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md flex items-center">
+                  <Lock className="w-2.5 h-2.5 mr-1" />
+                  Oficial Verificada
                 </span>
               ) : (
-                <span className="text-[10px] text-slate-500 font-medium">
-                  Editable libremente
+                <span className="text-[10px] text-amber-600 font-bold flex items-center">
+                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                  Ajustando GPS...
                 </span>
               )}
             </div>
             <input
               type="text"
               value={addressReference}
-              onChange={(e) => setAddressReference(e.target.value)}
-              placeholder="Ingresa o edita la dirección exacta (ej: Av. Cevallos y Montalvo)"
-              className="w-full text-xs px-3.5 py-2.5 border border-slate-300 rounded-xl bg-white font-medium text-slate-900 focus:ring-2 focus:ring-blue-600 focus:outline-hidden"
+              readOnly
+              placeholder="Detectando y fijando dirección con GPS..."
+              className="w-full text-xs px-3.5 py-2.5 border border-slate-200 rounded-xl bg-slate-100/90 text-slate-800 font-medium cursor-not-allowed select-text"
             />
           </div>
 
@@ -547,9 +593,9 @@ export function ClientRegistrationModal({
             <GoogleMapPreview
               latitude={coords.lat}
               longitude={coords.lng}
+              accuracy={gpsAccuracy}
+              isCalibrating={isCalibratingGps}
               zoom={17}
-              onRefreshGps={handleRefreshGps}
-              isRefreshingGps={isRefreshingGps}
             />
           </div>
 
