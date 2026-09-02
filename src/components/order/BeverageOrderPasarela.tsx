@@ -263,9 +263,42 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
     }
   }, [currentOption]);
 
-  // VENTA MIXTA: Javas y Unidades Sueltas
-  const [javasCount, setJavasCount] = useState<number>(1);
+  // VENTA MIXTA: Javas y Unidades Sueltas (inician en 0 para exigir confirmación con +)
+  const [javasCount, setJavasCount] = useState<number>(0);
   const [unitsCount, setUnitsCount] = useState<number>(0);
+
+  const resetQuantities = () => {
+    setJavasCount(0);
+    setUnitsCount(0);
+  };
+
+  const handleTypeChange = (type: BeverageType) => {
+    if (type !== selectedType) {
+      setSelectedType(type);
+      resetQuantities();
+    }
+  };
+
+  const handleOptionChange = (optionId: string) => {
+    if (optionId !== selectedOptionId) {
+      setSelectedOptionId(optionId);
+      resetQuantities();
+    }
+  };
+
+  const handleFlavorChange = (flavor: string) => {
+    if (flavor !== selectedSingleFlavor) {
+      setSelectedSingleFlavor(flavor);
+      resetQuantities();
+    }
+  };
+
+  const handleFlavorModeChange = (mode: 'single' | 'surtido') => {
+    if (mode !== flavorMode) {
+      setFlavorMode(mode);
+      resetQuantities();
+    }
+  };
 
   // Precio por Java adaptado a la categoría del cliente
   const effectivePricePerJava = useMemo(() => {
@@ -359,9 +392,8 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
       origin: { y: 0.85 },
     });
 
-    // Reset counts to default
-    setJavasCount(1);
-    setUnitsCount(0);
+    // Reset counts back to 0
+    resetQuantities();
   };
 
   return (
@@ -374,7 +406,7 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
             <button
               key={type}
               type="button"
-              onClick={() => setSelectedType(type)}
+              onClick={() => handleTypeChange(type)}
               className={`flex-1 py-3 px-4 rounded-xl font-black text-base sm:text-lg transition-all active:scale-95 ${
                 isSelected
                   ? 'bg-white text-slate-950 shadow-sm ring-1 ring-slate-300'
@@ -421,7 +453,7 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
                   <button
                     key={option.id}
                     type="button"
-                    onClick={() => setSelectedOptionId(option.id)}
+                    onClick={() => handleOptionChange(option.id)}
                     className={`relative p-3 rounded-2xl border text-left transition-all flex items-center space-x-3 cursor-pointer ${
                       isSelected
                         ? 'bg-blue-50/80 border-blue-600 shadow-xs ring-2 ring-blue-500/20'
@@ -472,7 +504,7 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
                   <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200">
                     <button
                       type="button"
-                      onClick={() => setFlavorMode('single')}
+                      onClick={() => handleFlavorModeChange('single')}
                       className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all active:scale-95 ${
                         flavorMode === 'single'
                           ? 'bg-white text-slate-950 shadow-xs'
@@ -483,7 +515,7 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
                     </button>
                     <button
                       type="button"
-                      onClick={() => setFlavorMode('surtido')}
+                      onClick={() => handleFlavorModeChange('surtido')}
                       className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all active:scale-95 ${
                         flavorMode === 'surtido'
                           ? 'bg-blue-600 text-white shadow-xs'
@@ -514,7 +546,7 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
                       <button
                         key={flavor}
                         type="button"
-                        onClick={() => setSelectedSingleFlavor(flavor)}
+                        onClick={() => handleFlavorChange(flavor)}
                         className={`p-2 sm:p-2.5 rounded-xl border text-center flex flex-col sm:flex-row items-center justify-center space-y-1 sm:space-y-0 sm:space-x-2 transition-all active:scale-[0.98] ${
                           isSelected
                             ? `${style.bgSelected} ${style.borderSelected} ${style.ringSelected} shadow-xs`
@@ -638,13 +670,13 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
                     )}
                   </div>
                   <div className="text-2xl sm:text-3xl font-black text-slate-900 font-mono mt-0.5">
-                    {formatCurrency(currentTotalSubtotal)}
+                    {javasCount === 0 && unitsCount === 0 ? '$0.00' : formatCurrency(currentTotalSubtotal)}
                   </div>
                   <div className="text-[11px] font-bold text-slate-500 mt-0.5">
                     {javasCount > 0 && `${javasCount} ${javasCount === 1 ? 'Java' : 'Javas'}`}
                     {javasCount > 0 && unitsCount > 0 && ' + '}
                     {unitsCount > 0 && `${unitsCount} ${unitsCount === 1 ? 'Unidad suelta' : 'Unidades sueltas'}`}
-                    {javasCount === 0 && unitsCount === 0 && 'Selecciona cantidad'}
+                    {javasCount === 0 && unitsCount === 0 && 'Selecciona cantidad con +'}
                   </div>
                 </div>
 
@@ -705,13 +737,15 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
                 onClick={handleAddToCart}
                 className={`w-full py-3.5 sm:py-4 px-6 rounded-2xl font-black text-base sm:text-lg flex items-center justify-center space-x-2 transition-all shadow-md active:scale-[0.99] ${
                   canAddToCart
-                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                    ? 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer'
                     : 'bg-slate-200 text-slate-400 cursor-not-allowed'
                 }`}
               >
                 <Plus className="w-5 h-5" />
                 <span>
-                  Agregar al Pedido • {formatCurrency(currentTotalSubtotal)}
+                  {javasCount === 0 && unitsCount === 0
+                    ? 'Pulsa + para indicar cantidad'
+                    : `Agregar al Pedido • ${formatCurrency(currentTotalSubtotal)}`}
                 </span>
               </button>
             </div>
