@@ -11,6 +11,7 @@ import {
   Loader2,
   CheckCircle2,
 } from 'lucide-react';
+import { formatEcuadorianPhone, validateEcuadorianPhone } from '@/lib/utils/ecuadorValidators';
 
 interface ClientRegistrationModalProps {
   isOpen: boolean;
@@ -205,9 +206,9 @@ export function ClientRegistrationModal({
     e.preventDefault();
     const newErrors: { [key: string]: string } = {};
 
-    const rawDigits = whatsappNumber.replace(/\D/g, '');
-    if (!rawDigits || rawDigits.length < 9) {
-      newErrors.whatsappNumber = 'Ingresa un número celular válido (ej: 099 123 4567)';
+    const phoneValidation = validateEcuadorianPhone(whatsappNumber);
+    if (!phoneValidation.isValid) {
+      newErrors.whatsappNumber = phoneValidation.error || 'Ingresa un número celular válido (ej: 099 123 4567)';
     }
 
     if (!fullName.trim()) {
@@ -219,13 +220,7 @@ export function ClientRegistrationModal({
       return;
     }
 
-    // Format phone cleanly starting with 0
-    let formattedPhone = rawDigits;
-    if (formattedPhone.startsWith('593')) {
-      formattedPhone = '0' + formattedPhone.slice(3);
-    } else if (!formattedPhone.startsWith('0') && formattedPhone.length === 9) {
-      formattedPhone = '0' + formattedPhone;
-    }
+    const formattedPhone = phoneValidation.cleanDigits;
 
     const created = addClient({
       fullName,
@@ -451,21 +446,38 @@ export function ClientRegistrationModal({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* WhatsApp */}
               <div className="space-y-1.5">
-                <label className="text-sm font-bold text-slate-800 block">
-                  WhatsApp
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-bold text-slate-800 block">
+                    WhatsApp
+                  </label>
+                  {whatsappNumber.replace(/\D/g, '').length === 10 && validateEcuadorianPhone(whatsappNumber).isValid && (
+                    <span className="text-xs font-bold text-emerald-600 flex items-center">
+                      <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
+                      Válido
+                    </span>
+                  )}
+                </div>
                 <input
                   type="tel"
+                  inputMode="numeric"
+                  maxLength={12}
                   value={whatsappNumber}
                   onChange={(e) => {
-                    const val = e.target.value.replace(/[^\d\s]/g, '');
-                    setWhatsappNumber(val);
+                    const formatted = formatEcuadorianPhone(e.target.value);
+                    setWhatsappNumber(formatted);
+                    if (errors.whatsappNumber) {
+                      setErrors((prev) => ({ ...prev, whatsappNumber: '' }));
+                    }
                   }}
                   placeholder="099 123 4567"
-                  className="w-full text-base sm:text-lg px-4 py-3.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-hidden font-mono font-bold text-slate-900 placeholder:font-normal placeholder:text-slate-400"
+                  className={`w-full text-base sm:text-lg px-4 py-3.5 border rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-hidden font-mono font-bold text-slate-900 placeholder:font-normal placeholder:text-slate-400 ${
+                    errors.whatsappNumber ? 'border-red-400 bg-red-50/20' : 'border-slate-300'
+                  }`}
                 />
-                {errors.whatsappNumber && (
+                {errors.whatsappNumber ? (
                   <p className="text-xs text-red-600 font-bold">{errors.whatsappNumber}</p>
+                ) : (
+                  <p className="text-[11px] text-slate-500 font-medium">10 dígitos • Empieza con 09</p>
                 )}
               </div>
 
