@@ -45,24 +45,41 @@ export async function getClientsFromDb(): Promise<Client[]> {
   }
 }
 
+function isValidUuid(id: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+}
+
+function generateUuid(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
 export async function saveClientToDb(client: Client): Promise<{ success: boolean; error?: string }> {
   try {
     const safeQrToken = client.qrToken.includes('|tier:')
       ? client.qrToken
       : `${client.qrToken}|tier:${client.clientTier || 'normal'}`;
 
+    const safeId = isValidUuid(client.id) ? client.id : generateUuid();
+
     const clientRecord: any = {
-      id: client.id,
+      id: safeId,
       qr_token: safeQrToken,
       full_name: client.fullName,
-      business_name: client.businessName,
-      gender: client.gender,
-      whatsapp_number: client.whatsappNumber,
+      business_name: client.businessName || client.fullName,
+      gender: client.gender || 'Hombre',
+      whatsapp_number: client.whatsappNumber || '',
       latitude: client.latitude,
       longitude: client.longitude,
-      address_reference: client.addressReference,
+      address_reference: client.addressReference || '',
       tax_id: client.taxId || null,
-      tax_id_type: client.taxIdType || null,
+      tax_id_type: client.taxIdType || (client.taxId?.length === 13 ? '04' : client.taxId?.length === 10 ? '05' : '07'),
       email: client.email || null,
       credit_limit: 0,
       current_debt: client.currentDebt || 0,

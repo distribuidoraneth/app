@@ -18,7 +18,7 @@ import {
   INITIAL_ORDERS,
   INITIAL_INVOICES,
 } from '@/lib/mockData';
-import { saveOrderToDb, saveClientToDb } from '@/lib/supabase/syncService';
+import { saveOrderToDb, saveClientToDb, getClientsFromDb } from '@/lib/supabase/syncService';
 
 interface DistributionContextType {
   // Data
@@ -79,7 +79,7 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   const [cart, setCart] = useState<CartItem[]>([]);
 
-  // Load from local storage
+  // Load from local storage and sync from Supabase
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -96,6 +96,16 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
     } catch {
       // ignore
     }
+
+    // Sync clients from Supabase in background
+    getClientsFromDb()
+      .then((dbClients) => {
+        if (dbClients && dbClients.length > 0) {
+          setClients(dbClients);
+          setSelectedClientId((prev) => prev || dbClients[0].id);
+        }
+      })
+      .catch((err) => console.warn('Sync clients error:', err));
   }, []);
 
   // Save to local storage
@@ -198,9 +208,17 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
     const randomSuffix = Math.floor(10 + Math.random() * 90);
     const qrToken = `aneth-${slug}-${randomSuffix}`;
 
+    const validUuid = typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID()
+      : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+          const r = (Math.random() * 16) | 0;
+          const v = c === 'x' ? r : (r & 0x3) | 0x8;
+          return v.toString(16);
+        });
+
     const newClient: Client = {
       ...clientData,
-      id: `cli-${Date.now()}`,
+      id: validUuid,
       qrToken,
       creditLimit: clientData.creditLimit || 0.00,
       currentDebt: 0.00,
