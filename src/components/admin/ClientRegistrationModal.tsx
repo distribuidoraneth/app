@@ -469,7 +469,7 @@ export function ClientRegistrationModal({
                       setErrors((prev) => ({ ...prev, whatsappNumber: '' }));
                     }
                   }}
-                  placeholder="099 123 4567"
+                  placeholder="099 123 4567 (Opcional)"
                   className={`w-full text-base sm:text-lg px-4 py-3.5 border rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-hidden font-mono font-bold text-slate-900 placeholder:font-normal placeholder:text-slate-400 ${
                     errors.whatsappNumber ? 'border-red-400 bg-red-50/20' : 'border-slate-300'
                   }`}
@@ -477,7 +477,7 @@ export function ClientRegistrationModal({
                 {errors.whatsappNumber ? (
                   <p className="text-xs text-red-600 font-bold">{errors.whatsappNumber}</p>
                 ) : (
-                  <p className="text-[11px] text-slate-500 font-medium">10 dígitos • Empieza con 09</p>
+                  <p className="text-[11px] text-slate-500 font-medium">10 dígitos • Empieza con 09 (Opcional)</p>
                 )}
               </div>
 

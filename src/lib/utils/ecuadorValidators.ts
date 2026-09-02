@@ -1,12 +1,14 @@
 /**
- * Algoritmo Profesional de Validación de Números Celulares de Ecuador
- * Basado en las regulaciones de numeración móvil de ARCOTEL Ecuador.
+ * Algoritmo Profesional y Riguroso de Validación de Números Celulares de Ecuador
+ * Basado en las regulaciones de numeración móvil de ARCOTEL Ecuador y
+ * patrones anti-fraude / anti-números falsos.
  */
 
 export interface PhoneValidationResult {
   isValid: boolean;
   cleanDigits: string;
   formatted: string;
+  isProvided: boolean;
   error?: string;
 }
 
@@ -47,7 +49,7 @@ export function formatEcuadorianPhone(input: string): string {
 
 /**
  * Valida minuciosamente si un número celular cumple con la estructura real de Ecuador
- * y rechaza números basura (consecutivos, repetitivos, prefijos falsos o incompletos).
+ * y rechaza cualquier número falso (consecutivos, repetitivos, prefijos inexistentes o ceros).
  */
 export function validateEcuadorianPhone(input: string): PhoneValidationResult {
   let digits = input.replace(/\D/g, '');
@@ -59,45 +61,43 @@ export function validateEcuadorianPhone(input: string): PhoneValidationResult {
     digits = '0' + digits;
   }
 
-  // 1. Longitud exacta
+  // 1. Campo Opcional por Privacidad: Si está completamente vacío, es válido pero no provisto
   if (!digits) {
     return {
-      isValid: false,
+      isValid: true,
       cleanDigits: '',
       formatted: '',
-      error: 'Ingresa el número de celular de WhatsApp',
+      isProvided: false,
     };
   }
 
+  // 2. Longitud exacta requerida si se proporciona
   if (digits.length < 10) {
     return {
       isValid: false,
       cleanDigits: digits,
       formatted: formatEcuadorianPhone(digits),
+      isProvided: true,
       error: `Número incompleto (${digits.length}/10 dígitos)`,
     };
   }
 
   if (digits.length > 10) {
-    return {
-      isValid: false,
-      cleanDigits: digits.slice(0, 10),
-      formatted: formatEcuadorianPhone(digits.slice(0, 10)),
-      error: 'El número no debe exceder 10 dígitos',
-    };
+    digits = digits.slice(0, 10);
   }
 
-  // 2. Prefijo obligatorio de celular en Ecuador (09)
+  // 3. Prefijo obligatorio de celular en Ecuador: "09"
   if (!digits.startsWith('09')) {
     return {
       isValid: false,
       cleanDigits: digits,
       formatted: formatEcuadorianPhone(digits),
-      error: 'Debe empezar con 09 (formato celular de Ecuador)',
+      isProvided: true,
+      error: 'Debe empezar con 09 (código móvil de Ecuador)',
     };
   }
 
-  // 3. Rango de operadores móviles activos en Ecuador (ARCOTEL: 092 a 099)
+  // 4. Rango de operadores móviles activos en Ecuador (ARCOTEL: 092 a 099)
   // 092, 093, 094, 095, 096, 097, 098, 099
   const operatorDigit = parseInt(digits.charAt(2), 10);
   if (operatorDigit < 2 || operatorDigit > 9) {
@@ -105,64 +105,100 @@ export function validateEcuadorianPhone(input: string): PhoneValidationResult {
       isValid: false,
       cleanDigits: digits,
       formatted: formatEcuadorianPhone(digits),
-      error: `El prefijo 09${operatorDigit} no corresponde a ninguna operadora móvil en Ecuador`,
+      isProvided: true,
+      error: `El prefijo 09${operatorDigit} no corresponde a ninguna operadora de Ecuador`,
     };
   }
 
-  // 4. Detección de números basura: Dígitos totalmente idénticos (ej: 0000000000, 0999999999)
-  const isAllSame = /^(\d)\1{9}$/.test(digits);
-  if (isAllSame) {
+  // 5. Primer dígito del abonado (4to dígito del número):
+  // En Ecuador, los números de abonado móvil asignados por ARCOTEL inician entre 2 y 9.
+  // El 0 y el 1 están estrictamente reservados para servicios especiales y enrutamiento.
+  // Ej: 096 000 0000 o 099 012 3456 son números ficticios.
+  const subscriberFirstDigit = parseInt(digits.charAt(3), 10);
+  if (subscriberFirstDigit < 2 || subscriberFirstDigit > 9) {
     return {
       isValid: false,
       cleanDigits: digits,
       formatted: formatEcuadorianPhone(digits),
-      error: 'El número no puede contener todos los dígitos iguales',
+      isProvided: true,
+      error: 'Número no válido (el abonado no puede iniciar en 0 o 1)',
     };
   }
 
-  // Detección de repeticiones masivas en el cuerpo del número (ej: 0966666666, 0980000000)
-  const suffix = digits.slice(2); // los 8 dígitos siguientes a 09
-  if (/^(\d)\1{6,}$/.test(suffix)) {
+  // 6. Detección de dígitos repetitivos consecutivos (4 o más repeticiones consecutivas)
+  // Ejemplos: 096 000 0000, 099 888 8888, 098 777 7777
+  if (/(\d)\1{3,}/.test(digits)) {
     return {
       isValid: false,
       cleanDigits: digits,
       formatted: formatEcuadorianPhone(digits),
-      error: 'Número no válido (dígitos repetitivos detectados)',
+      isProvided: true,
+      error: 'Número ficticio detectado (demasiados dígitos repetidos)',
     };
   }
 
-  // 5. Detección de secuencias consecutivas ascendentes o descendentes
-  // Ejemplos: 0912345678, 0987654321, 0123456789
-  const sequences = [
-    '0123456789',
-    '1234567890',
-    '9876543210',
-    '8765432109',
-    '1234567',
-    '2345678',
-    '3456789',
-    '7654321',
-    '6543210',
+  // 7. Diversidad mínima de dígitos (Mínimo 5 dígitos distintos para evitar combinaciones falsas)
+  // Ejemplos falsos: 099 889 9889 (sólo 3 dígitos únicos), 096 666 6666
+  const uniqueDigitsCount = new Set(digits.split('')).size;
+  if (uniqueDigitsCount < 5) {
+    return {
+      isValid: false,
+      cleanDigits: digits,
+      formatted: formatEcuadorianPhone(digits),
+      isProvided: true,
+      error: 'Número no válido (patrón de dígitos insuficiente)',
+    };
+  }
+
+  // 8. Detección de secuencias consecutivas ascendentes o descendentes (4 o más dígitos)
+  // Ejemplos: 1234, 2345, 3456, 4567, 5678, 6789, 4321, 5432, 6543, 7654, 8765, 9876
+  const sequentialPatterns = [
+    '0123',
+    '1234',
+    '2345',
+    '3456',
+    '4567',
+    '5678',
+    '6789',
+    '7890',
+    '9876',
+    '8765',
+    '7654',
+    '6543',
+    '5432',
+    '4321',
+    '3210',
+    '1212',
+    '2323',
+    '3434',
+    '4545',
+    '5656',
+    '6767',
+    '7878',
+    '8989',
   ];
 
-  for (const seq of sequences) {
+  for (const seq of sequentialPatterns) {
     if (digits.includes(seq)) {
       return {
         isValid: false,
         cleanDigits: digits,
         formatted: formatEcuadorianPhone(digits),
-        error: 'El número no puede contener secuencias consecutivas (ej: 123456)',
+        isProvided: true,
+        error: `Secuencia no permitida (${seq})`,
       };
     }
   }
 
-  // 6. Detección de patrones alternantes falsos (ej: 0912121212, 0901010101)
-  if (/(\d{2})\1{3,}/.test(suffix)) {
+  // 9. Detección de bloques repetitivos dobles (ej: 098 565 6565)
+  const subscriberBody = digits.slice(3); // 7 dígitos
+  if (/^(\d{2,3})\1+/.test(subscriberBody)) {
     return {
       isValid: false,
       cleanDigits: digits,
       formatted: formatEcuadorianPhone(digits),
-      error: 'El número no puede contener patrones repetitivos',
+      isProvided: true,
+      error: 'Patrón repetitivo detectado',
     };
   }
 
@@ -170,5 +206,6 @@ export function validateEcuadorianPhone(input: string): PhoneValidationResult {
     isValid: true,
     cleanDigits: digits,
     formatted: formatEcuadorianPhone(digits),
+    isProvided: true,
   };
 }
