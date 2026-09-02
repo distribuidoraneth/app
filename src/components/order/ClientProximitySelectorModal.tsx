@@ -82,7 +82,7 @@ export function ClientProximitySelectorModal({
 
   return (
     <>
-      <div className="fixed inset-0 z-[9999] bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-150">
+      <div className={`fixed inset-0 z-[9990] bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-150 ${isRegisterOpen ? 'hidden' : ''}`}>
         <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-200 flex flex-col max-h-[90vh]">
           {/* Header */}
           <div className="p-4 sm:p-5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
