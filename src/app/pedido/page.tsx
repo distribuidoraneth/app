@@ -51,9 +51,13 @@ function StandaloneOrderContent() {
     }
   }, [searchParams]);
 
+  // User manual selection override: only when user clicks "Cambiar" or registers new client
+  const [manualClientId, setManualClientId] = useState<string | null>(null);
+
   // Request GPS position & Automatically select nearest client
   useEffect(() => {
     if (typeof window !== 'undefined' && navigator.geolocation) {
+      setIsLocating(true);
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           const coords = {
@@ -62,46 +66,43 @@ function StandaloneOrderContent() {
           };
           setUserLocation(coords);
           setIsLocating(false);
-
-          if (clients.length > 0) {
-            const sorted = sortClientsByProximity(clients, coords);
-            if (sorted.length > 0 && !selectedClientId) {
-              setSelectedClientId(sorted[0].id);
-            }
-          }
         },
         (err) => {
           console.warn('GPS location error:', err);
           setIsLocating(false);
-          if (clients.length > 0 && !selectedClientId) {
-            setSelectedClientId(clients[0].id);
-          }
         },
-        { enableHighAccuracy: true, timeout: 8000 }
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
       );
     } else {
       setIsLocating(false);
-      if (clients.length > 0 && !selectedClientId) {
-        setSelectedClientId(clients[0].id);
-      }
     }
-  }, [clients, selectedClientId, setSelectedClientId]);
+  }, []);
 
-  // Current active client
+  // Nearest client calculation dynamically based on live GPS
+  const nearestClient: Client | null = useMemo(() => {
+    if (!clients || clients.length === 0) return null;
+    if (userLocation) {
+      const sorted = sortClientsByProximity(clients, userLocation);
+      return sorted[0] || clients[0];
+    }
+    return clients[0];
+  }, [clients, userLocation]);
+
+  // Current active client: User manual choice takes precedence; otherwise ALWAYS nearest client
   const activeClient: Client | null = useMemo(() => {
-    if (selectedClientId) {
-      const found = clients.find((c) => c.id === selectedClientId);
+    if (manualClientId) {
+      const found = clients.find((c) => c.id === manualClientId);
       if (found) return found;
     }
-    if (clients.length > 0) {
-      if (userLocation) {
-        const sorted = sortClientsByProximity(clients, userLocation);
-        return sorted[0];
-      }
-      return clients[0];
+    return nearestClient;
+  }, [clients, manualClientId, nearestClient]);
+
+  // Keep DistributionContext selectedClientId in sync with activeClient
+  useEffect(() => {
+    if (activeClient?.id && activeClient.id !== selectedClientId) {
+      setSelectedClientId(activeClient.id);
     }
-    return null;
-  }, [clients, selectedClientId, userLocation]);
+  }, [activeClient, selectedClientId, setSelectedClientId]);
 
   // Formatted distance to current active client
   const formattedDistance = useMemo(() => {
@@ -118,6 +119,7 @@ function StandaloneOrderContent() {
   }, [activeClient, userLocation]);
 
   const handleSelectClient = (client: Client) => {
+    setManualClientId(client.id);
     setSelectedClientId(client.id);
   };
 
