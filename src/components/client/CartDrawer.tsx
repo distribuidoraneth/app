@@ -14,7 +14,6 @@ import {
   Minus,
   Banknote,
   Building2,
-  CreditCard,
   MapPin,
   ArrowRight,
   Package,
@@ -89,18 +88,13 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
 
   useEffect(() => {
     setMounted(true);
-    if (cartTotalAmount > 0 && paymentMethod !== 'credit') {
+    if (isOpen && cartTotalAmount > 0) {
       setAmountPaidInput(cartTotalAmount.toFixed(2));
     }
-  }, [cartTotalAmount, isOpen, paymentMethod]);
+  }, [cartTotalAmount, isOpen]);
 
   const handlePaymentMethodChange = (method: PaymentMethod) => {
     setPaymentMethod(method);
-    if (method === 'credit') {
-      setAmountPaidInput('0.00');
-    } else {
-      setAmountPaidInput(cartTotalAmount.toFixed(2));
-    }
   };
 
   const handleCopy = (text: string, type: 'bank' | 'deuna') => {
@@ -134,7 +128,7 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
         scheduledTimeSlot: saleType === 'preventa' ? scheduledTimeSlot : undefined,
         promisedCollectionDate: debtBalance > 0 ? promisedDate : undefined,
         promisedCollectionTime: debtBalance > 0 ? promisedTime : undefined,
-        amountPaid: numericPaid,
+        amountPaid: Math.min(cartTotalAmount, numericPaid),
         notes,
         customLocation: {
           latitude: activeClient.latitude,
@@ -517,68 +511,52 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
                 <label className="text-xs font-black text-slate-700 uppercase tracking-wider block">
                   Forma de Pago
                 </label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <button
                     type="button"
                     onClick={() => handlePaymentMethodChange('cash')}
-                    className={`p-3 rounded-2xl border flex items-center space-x-2.5 text-left transition-all active:scale-95 cursor-pointer ${
+                    className={`p-2.5 sm:p-3 rounded-2xl border flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-1.5 sm:gap-2 transition-all active:scale-95 cursor-pointer ${
                       paymentMethod === 'cash'
                         ? 'border-blue-600 bg-blue-50 text-blue-950 ring-2 ring-blue-500/20 font-black'
                         : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
                     }`}
                   >
                     <Banknote className="w-5 h-5 text-emerald-600 shrink-0" />
-                    <div>
-                      <div className="text-xs font-black">Efectivo</div>
-                      <div className="text-[10px] text-slate-500">Cobro de contado</div>
+                    <div className="min-w-0">
+                      <div className="text-xs font-black truncate">Efectivo</div>
+                      <div className="text-[10px] text-slate-500 truncate">Contado</div>
                     </div>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => handlePaymentMethodChange('deuna')}
-                    className={`p-3 rounded-2xl border flex items-center space-x-2.5 text-left transition-all active:scale-95 cursor-pointer ${
+                    className={`p-2.5 sm:p-3 rounded-2xl border flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-1.5 sm:gap-2 transition-all active:scale-95 cursor-pointer ${
                       paymentMethod === 'deuna'
                         ? 'border-blue-600 bg-blue-50 text-blue-950 ring-2 ring-blue-500/20 font-black'
                         : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
                     }`}
                   >
                     <Zap className="w-5 h-5 text-purple-600 shrink-0" />
-                    <div>
-                      <div className="text-xs font-black">DeUna</div>
-                      <div className="text-[10px] text-slate-500">QR / Celular directo</div>
+                    <div className="min-w-0">
+                      <div className="text-xs font-black truncate">DeUna</div>
+                      <div className="text-[10px] text-slate-500 truncate">QR / Cel</div>
                     </div>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => handlePaymentMethodChange('transfer')}
-                    className={`p-3 rounded-2xl border flex items-center space-x-2.5 text-left transition-all active:scale-95 cursor-pointer ${
+                    className={`p-2.5 sm:p-3 rounded-2xl border flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-1.5 sm:gap-2 transition-all active:scale-95 cursor-pointer ${
                       paymentMethod === 'transfer'
                         ? 'border-blue-600 bg-blue-50 text-blue-950 ring-2 ring-blue-500/20 font-black'
                         : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
                     }`}
                   >
                     <Building2 className="w-5 h-5 text-blue-600 shrink-0" />
-                    <div>
-                      <div className="text-xs font-black">Transferencia</div>
-                      <div className="text-[10px] text-slate-500">Banco Pichincha</div>
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handlePaymentMethodChange('credit')}
-                    className={`p-3 rounded-2xl border flex items-center space-x-2.5 text-left transition-all active:scale-95 cursor-pointer ${
-                      paymentMethod === 'credit'
-                        ? 'border-blue-600 bg-blue-50 text-blue-950 ring-2 ring-blue-500/20 font-black'
-                        : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
-                    }`}
-                  >
-                    <CreditCard className="w-5 h-5 text-amber-600 shrink-0" />
-                    <div>
-                      <div className="text-xs font-black">Crédito</div>
-                      <div className="text-[10px] text-slate-500">Cartera por cobrar</div>
+                    <div className="min-w-0">
+                      <div className="text-xs font-black truncate">Transferencia</div>
+                      <div className="text-[10px] text-slate-500 truncate">Pichincha</div>
                     </div>
                   </button>
                 </div>
@@ -682,44 +660,50 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
                   </div>
                 )}
 
-                {/* CRÉDITO: AVISO CARTERA POR COBRAR */}
-                {paymentMethod === 'credit' && (
-                  <div className="p-3.5 bg-amber-50/80 border border-amber-200 rounded-2xl space-y-1.5 animate-in fade-in duration-150">
-                    <div className="flex items-center space-x-1.5 text-amber-900 font-black text-xs uppercase tracking-wider">
-                      <CreditCard className="w-3.5 h-3.5 text-amber-700 shrink-0" />
-                      <span>Venta a Crédito • Cartera por Cobrar</span>
-                    </div>
-                    <p className="text-xs text-amber-900 font-medium leading-relaxed">
-                      El valor de <strong className="font-mono font-black text-amber-950">{formatCurrency(cartTotalAmount)}</strong> quedará registrado en la cartera deudora de <strong className="text-slate-900">{activeClient?.businessName || activeClient?.fullName}</strong>.
-                    </p>
-                  </div>
-                )}
-
                 {/* Monto Recibido / Pagado ($) Input */}
-                <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-2.5">
-                  <div className="flex items-center justify-between">
+                <div className="p-3.5 sm:p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+                  <div className="flex items-center justify-between flex-wrap gap-1.5">
                     <label className="text-xs font-black text-slate-800">
                       Monto Recibido / Pagado ($):
                     </label>
-                    <button
-                      type="button"
-                      onClick={() => setAmountPaidInput(cartTotalAmount.toFixed(2))}
-                      className="text-[11px] text-blue-600 font-bold hover:underline cursor-pointer"
-                    >
-                      Pagar Total (${cartTotalAmount.toFixed(2)})
-                    </button>
+                    <div className="flex items-center space-x-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setAmountPaidInput(cartTotalAmount.toFixed(2))}
+                        className={`text-[11px] font-bold px-2 py-0.5 rounded-lg border transition-all active:scale-95 cursor-pointer ${
+                          numericPaid === cartTotalAmount
+                            ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
+                            : 'bg-white hover:bg-blue-50 text-blue-700 border-blue-200'
+                        }`}
+                      >
+                        Pagar Total (${cartTotalAmount.toFixed(2)})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAmountPaidInput('0.00')}
+                        className={`text-[11px] font-bold px-2 py-0.5 rounded-lg border transition-all active:scale-95 cursor-pointer ${
+                          numericPaid === 0 && amountPaidInput !== ''
+                            ? 'bg-amber-600 text-white border-amber-600 shadow-2xs'
+                            : 'bg-white hover:bg-amber-50 text-amber-800 border-amber-200'
+                        }`}
+                      >
+                        Dejar a Crédito ($0.00)
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="flex items-center space-x-2">
-                    <span className="text-lg font-bold text-slate-400">$</span>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                      <span className="text-lg sm:text-xl font-bold text-slate-400 font-mono">$</span>
+                    </div>
                     <input
                       type="number"
                       step="0.01"
                       min="0"
-                      max={cartTotalAmount}
                       value={amountPaidInput}
                       onChange={(e) => setAmountPaidInput(e.target.value)}
-                      className="w-full text-lg font-black font-mono px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-hidden [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      placeholder={cartTotalAmount.toFixed(2)}
+                      className="w-full text-lg sm:text-xl font-black font-mono pl-9 pr-3.5 py-2.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-hidden [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none shadow-xs"
                     />
                   </div>
 
@@ -727,9 +711,15 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
                     <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 font-bold flex items-center justify-between">
                       <span className="flex items-center">
                         <CheckCircle2 className="w-4 h-4 mr-1.5 text-emerald-600 shrink-0" />
-                        Pago Completo • Cancelado en su totalidad
+                        {numericPaid > cartTotalAmount
+                          ? 'Vuelto / Cambio a entregar:'
+                          : 'Pago Completo • Cancelado en su totalidad'}
                       </span>
-                      <span className="font-mono text-xs font-black text-emerald-700">$0.00 pendiente</span>
+                      <span className="font-mono text-xs font-black text-emerald-700">
+                        {numericPaid > cartTotalAmount
+                          ? formatCurrency(Number((numericPaid - cartTotalAmount).toFixed(2)))
+                          : '$0.00 pendiente'}
+                      </span>
                     </div>
                   ) : (
                     <div className="p-3.5 bg-amber-50/90 border border-amber-200 rounded-2xl space-y-3 animate-in fade-in duration-150">
