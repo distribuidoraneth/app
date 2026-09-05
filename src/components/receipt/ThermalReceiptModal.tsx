@@ -158,7 +158,7 @@ export function ThermalReceiptModal({
             <button
               type="button"
               onClick={handlePrint}
-              className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-lg text-xs font-bold flex items-center space-x-1.5 transition-all cursor-pointer shadow-xs"
+              className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 active:scale-97 text-white rounded-lg text-xs font-bold flex items-center space-x-1.5 transition-transform duration-150 ease-out cursor-pointer shadow-xs"
             >
               <Printer className="w-3.5 h-3.5" />
               <span>Imprimir</span>

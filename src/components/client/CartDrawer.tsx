@@ -836,9 +836,9 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
           )}
         </div>
 
-        {/* Modal Sticky Footer */}
+        {/* Modal Sticky Footer with iOS Safe-Area support */}
         {!createdOrderSummary && cart.length > 0 && (
-          <div className="p-4 sm:p-5 bg-white border-t border-slate-200 space-y-3 sticky bottom-0 z-20 shadow-lg">
+          <div className="p-4 sm:p-5 bg-white border-t border-slate-200 space-y-3 sticky bottom-0 z-20 shadow-lg pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
             <div className="flex justify-between items-end">
               <div>
                 <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
@@ -885,7 +885,7 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
               type="button"
               disabled={isSubmitting || cart.length === 0}
               onClick={handleConfirmOrder}
-              className={`w-full py-4 px-5 active:scale-[0.98] text-white font-black rounded-2xl text-base sm:text-lg shadow-md flex items-center justify-center space-x-2 transition-all disabled:opacity-50 cursor-pointer ${
+              className={`w-full py-4 px-5 active:scale-97 text-white font-black rounded-2xl text-base sm:text-lg shadow-md flex items-center justify-center space-x-2 transition-transform duration-150 ease-out disabled:opacity-50 cursor-pointer ${
                 debtBalance > 0 && numericPaid === 0
                   ? 'bg-amber-600 hover:bg-amber-700'
                   : saleType === 'autoventa'

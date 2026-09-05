@@ -3,7 +3,7 @@
 import React, { use, useState, useMemo } from 'react';
 import { useDistribution } from '@/context/DistributionContext';
 import { formatCurrency, formatDate, generateWhatsAppOrderLink } from '@/lib/utils/formatters';
-import { QRCodeSVG } from 'qrcode.react';
+import { PoplQRCodeSVG } from '@/components/ui/PoplQRCodeSVG';
 import Link from 'next/link';
 import { AnethFullLogo } from '@/components/ui/AnethLogo';
 import { generarClaveAcceso } from '@/lib/sri/claveAcceso';
@@ -329,11 +329,12 @@ export default function PublicInvoicePage({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4 border-t border-slate-200 items-start">
           {/* QR Code de Validación SRI */}
           <div className="flex items-center space-x-3.5 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
-            <div className="bg-white p-2 rounded-xl border border-slate-200 shrink-0">
-              <QRCodeSVG
+            <div className="bg-white p-2 rounded-xl border border-slate-200 shrink-0 flex items-center justify-center">
+              <PoplQRCodeSVG
                 value={`https://sri.gob.ec/comprobantes-electronicos?clave=${claveAcceso}`}
-                size={70}
-                level="M"
+                size={80}
+                color="#000000"
+                bgColor="#ffffff"
               />
             </div>
             <div className="text-[11px] text-slate-600 space-y-0.5">

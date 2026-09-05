@@ -260,13 +260,13 @@ function StandaloneOrderContent() {
         </div>
       </main>
 
-      {/* Floating Bottom Review Button for Mobile */}
+      {/* Floating Bottom Review Button for Mobile with iOS Safe-Area support */}
       {(cartTotalJavas > 0 || cartTotalUnits > 0) && (
-        <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-40 w-full max-w-sm px-4 sm:hidden">
+        <div className="fixed bottom-[calc(1.25rem+env(safe-area-inset-bottom,0px))] left-1/2 -translate-x-1/2 z-40 w-full max-w-sm px-4 sm:hidden">
           <button
             type="button"
             onClick={() => setIsCartOpen(true)}
-            className="w-full py-3.5 px-5 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-black text-sm shadow-xl flex items-center justify-between active:scale-95 transition-all cursor-pointer"
+            className="w-full py-3.5 px-5 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-black text-sm shadow-2xl flex items-center justify-between active:scale-97 transition-transform duration-150 ease-out cursor-pointer"
           >
             <div className="flex items-center space-x-2">
               <ShoppingBag className="w-5 h-5 text-white" />
