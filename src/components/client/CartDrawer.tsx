@@ -27,6 +27,8 @@ import {
   FileText,
   ExternalLink,
   Store,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { PaymentMethod, SaleType, Invoice } from '@/types';
 
@@ -76,13 +78,35 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
     invoiceNumber?: string;
   } | null>(null);
   const [mounted, setMounted] = useState<boolean>(false);
+  const [copiedBank, setCopiedBank] = useState<boolean>(false);
+  const [copiedDeuna, setCopiedDeuna] = useState<boolean>(false);
 
   useEffect(() => {
     setMounted(true);
-    if (cartTotalAmount > 0) {
+    if (cartTotalAmount > 0 && paymentMethod !== 'credit') {
       setAmountPaidInput(cartTotalAmount.toFixed(2));
     }
-  }, [cartTotalAmount, isOpen]);
+  }, [cartTotalAmount, isOpen, paymentMethod]);
+
+  const handlePaymentMethodChange = (method: PaymentMethod) => {
+    setPaymentMethod(method);
+    if (method === 'credit') {
+      setAmountPaidInput('0.00');
+    } else {
+      setAmountPaidInput(cartTotalAmount.toFixed(2));
+    }
+  };
+
+  const handleCopy = (text: string, type: 'bank' | 'deuna') => {
+    navigator.clipboard.writeText(text);
+    if (type === 'bank') {
+      setCopiedBank(true);
+      setTimeout(() => setCopiedBank(false), 2000);
+    } else {
+      setCopiedDeuna(true);
+      setTimeout(() => setCopiedDeuna(false), 2000);
+    }
+  };
 
   if (!isOpen || !mounted) return null;
 
@@ -357,7 +381,7 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
               {/* Cart Items List */}
               <div className="space-y-3">
                 <span className="text-xs font-black text-slate-500 uppercase tracking-wider block">
-                  Detalle de Productos ({cartTotalBottles} botellas • {cartTotalJavas} javas, {cartTotalUnits} sueltas)
+                  Productos en el Pedido • {cartTotalBottles} {cartTotalBottles === 1 ? 'botella' : 'botellas'}
                 </span>
 
                 {cart.map((item) => (
@@ -383,7 +407,9 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
                             </span>
                           ) : (
                             <div>
-                              <span className="font-black text-blue-700 block">Java Surtida:</span>
+                              <span className="font-black text-blue-700 block">
+                                {item.container === 'Vidrio' ? 'Java Surtida:' : 'Pack Surtido:'}
+                              </span>
                               <div className="flex flex-wrap gap-1 mt-0.5">
                                 {item.surtidoDetails &&
                                   Object.entries(item.surtidoDetails).map(([fl, qty]) => (
@@ -417,7 +443,9 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
                     {/* Steppers */}
                     <div className="flex items-center justify-between pt-2 border-t border-slate-100 gap-2">
                       <div className="flex items-center space-x-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200">
-                        <span className="text-[11px] font-black text-slate-700 px-1">Javas:</span>
+                        <span className="text-[11px] font-black text-slate-700 px-1">
+                          {item.container === 'Vidrio' ? 'Javas:' : 'Packs:'}
+                        </span>
                         <button
                           type="button"
                           onClick={() => updateCartQuantity(item.id, item.quantityJavas - 1, item.quantityUnits)}
@@ -470,8 +498,8 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
-                    onClick={() => setPaymentMethod('cash')}
-                    className={`p-3 rounded-2xl border flex items-center space-x-2 text-left transition-all active:scale-95 ${
+                    onClick={() => handlePaymentMethodChange('cash')}
+                    className={`p-3 rounded-2xl border flex items-center space-x-2.5 text-left transition-all active:scale-95 cursor-pointer ${
                       paymentMethod === 'cash'
                         ? 'border-blue-600 bg-blue-50 text-blue-950 ring-2 ring-blue-500/20 font-black'
                         : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
@@ -480,30 +508,14 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
                     <Banknote className="w-5 h-5 text-emerald-600 shrink-0" />
                     <div>
                       <div className="text-xs font-black">Efectivo</div>
-                      <div className="text-[10px] text-slate-500">Cobro en ruta</div>
+                      <div className="text-[10px] text-slate-500">Cobro de contado</div>
                     </div>
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => setPaymentMethod('transfer')}
-                    className={`p-3 rounded-2xl border flex items-center space-x-2 text-left transition-all active:scale-95 ${
-                      paymentMethod === 'transfer'
-                        ? 'border-blue-600 bg-blue-50 text-blue-950 ring-2 ring-blue-500/20 font-black'
-                        : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
-                    }`}
-                  >
-                    <Building2 className="w-5 h-5 text-blue-600 shrink-0" />
-                    <div>
-                      <div className="text-xs font-black">Transferencia</div>
-                      <div className="text-[10px] text-slate-500">Banco / DeUna</div>
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('deuna')}
-                    className={`p-3 rounded-2xl border flex items-center space-x-2 text-left transition-all active:scale-95 ${
+                    onClick={() => handlePaymentMethodChange('deuna')}
+                    className={`p-3 rounded-2xl border flex items-center space-x-2.5 text-left transition-all active:scale-95 cursor-pointer ${
                       paymentMethod === 'deuna'
                         ? 'border-blue-600 bg-blue-50 text-blue-950 ring-2 ring-blue-500/20 font-black'
                         : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
@@ -512,17 +524,30 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
                     <Zap className="w-5 h-5 text-purple-600 shrink-0" />
                     <div>
                       <div className="text-xs font-black">DeUna</div>
-                      <div className="text-[10px] text-slate-500">QR inmediato</div>
+                      <div className="text-[10px] text-slate-500">QR / Celular directo</div>
                     </div>
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => {
-                      setPaymentMethod('credit');
-                      setAmountPaidInput('0.00');
-                    }}
-                    className={`p-3 rounded-2xl border flex items-center space-x-2 text-left transition-all active:scale-95 ${
+                    onClick={() => handlePaymentMethodChange('transfer')}
+                    className={`p-3 rounded-2xl border flex items-center space-x-2.5 text-left transition-all active:scale-95 cursor-pointer ${
+                      paymentMethod === 'transfer'
+                        ? 'border-blue-600 bg-blue-50 text-blue-950 ring-2 ring-blue-500/20 font-black'
+                        : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
+                    }`}
+                  >
+                    <Building2 className="w-5 h-5 text-blue-600 shrink-0" />
+                    <div>
+                      <div className="text-xs font-black">Transferencia</div>
+                      <div className="text-[10px] text-slate-500">Banco Pichincha</div>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handlePaymentMethodChange('credit')}
+                    className={`p-3 rounded-2xl border flex items-center space-x-2.5 text-left transition-all active:scale-95 cursor-pointer ${
                       paymentMethod === 'credit'
                         ? 'border-blue-600 bg-blue-50 text-blue-950 ring-2 ring-blue-500/20 font-black'
                         : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
@@ -531,12 +556,124 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
                     <CreditCard className="w-5 h-5 text-amber-600 shrink-0" />
                     <div>
                       <div className="text-xs font-black">Crédito</div>
-                      <div className="text-[10px] text-slate-500">A cuenta por cobrar</div>
+                      <div className="text-[10px] text-slate-500">Cartera por cobrar</div>
                     </div>
                   </button>
                 </div>
 
-                {/* Amount Paid & Partial Debt Input */}
+                {/* TRANSFERENCIA BANCARIA: DATOS A LA MANO CON BOTÓN COPIAR */}
+                {paymentMethod === 'transfer' && (
+                  <div className="p-3.5 bg-blue-50/80 border border-blue-200 rounded-2xl space-y-2.5 animate-in fade-in duration-150">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-black text-blue-900 uppercase tracking-wider flex items-center">
+                        <Building2 className="w-3.5 h-3.5 mr-1.5 text-blue-700 shrink-0" />
+                        Datos Bancarios para Transferencia
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleCopy(
+                            `Banco Pichincha - Cuenta de Ahorros\nCta: 2204567890\nTitular: ANDRADE CONSTANTE ANA ELIZABETH\nCI: 1803013810`,
+                            'bank'
+                          )
+                        }
+                        className="px-2.5 py-1 bg-white hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-xs font-black flex items-center space-x-1 shadow-2xs transition-all active:scale-95 cursor-pointer"
+                      >
+                        {copiedBank ? (
+                          <>
+                            <Check className="w-3 h-3 text-emerald-600" />
+                            <span className="text-emerald-700">¡Copiado!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3 h-3 text-blue-600" />
+                            <span>Copiar Datos</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs bg-white p-3 rounded-xl border border-blue-100 font-medium">
+                      <div>
+                        <span className="text-slate-400 block text-[10px] font-bold">Banco:</span>
+                        <span className="font-black text-slate-800">Banco Pichincha</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[10px] font-bold">Tipo:</span>
+                        <span className="font-bold text-slate-800">Ahorros</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[10px] font-bold">N° Cuenta:</span>
+                        <span className="font-mono font-black text-blue-700 select-all">2204567890</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[10px] font-bold">Cédula / RUC:</span>
+                        <span className="font-mono font-bold text-slate-800 select-all">1803013810</span>
+                      </div>
+                      <div className="col-span-2 pt-1.5 border-t border-slate-100">
+                        <span className="text-slate-400 block text-[10px] font-bold">Titular:</span>
+                        <span className="font-black text-slate-900">ANDRADE CONSTANTE ANA ELIZABETH</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* DEUNA: DATOS A LA MANO CON BOTÓN COPIAR */}
+                {paymentMethod === 'deuna' && (
+                  <div className="p-3.5 bg-purple-50/80 border border-purple-200 rounded-2xl space-y-2.5 animate-in fade-in duration-150">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-black text-purple-900 uppercase tracking-wider flex items-center">
+                        <Zap className="w-3.5 h-3.5 mr-1.5 text-purple-700 shrink-0" />
+                        Cobro Inmediato por DeUna
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleCopy('0963906286', 'deuna')}
+                        className="px-2.5 py-1 bg-white hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-lg text-xs font-black flex items-center space-x-1 shadow-2xs transition-all active:scale-95 cursor-pointer"
+                      >
+                        {copiedDeuna ? (
+                          <>
+                            <Check className="w-3 h-3 text-emerald-600" />
+                            <span className="text-emerald-700">¡Copiado!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3 h-3 text-purple-600" />
+                            <span>Copiar Celular</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    <div className="bg-white p-3 rounded-xl border border-purple-100 flex items-center justify-between">
+                      <div>
+                        <span className="text-slate-400 block text-[10px] font-bold">Número Celular DeUna:</span>
+                        <span className="font-mono text-base font-black text-purple-950 select-all">096 390 6286</span>
+                        <span className="text-[11px] text-slate-500 font-bold block mt-0.5">
+                          Titular: Ana Andrade
+                        </span>
+                      </div>
+                      <div className="px-2.5 py-1 bg-purple-100 text-purple-800 font-black text-[11px] rounded-lg">
+                        Sin comisión
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* CRÉDITO: AVISO CARTERA POR COBRAR */}
+                {paymentMethod === 'credit' && (
+                  <div className="p-3.5 bg-amber-50/80 border border-amber-200 rounded-2xl space-y-1.5 animate-in fade-in duration-150">
+                    <div className="flex items-center space-x-1.5 text-amber-900 font-black text-xs uppercase tracking-wider">
+                      <CreditCard className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+                      <span>Venta a Crédito • Cartera por Cobrar</span>
+                    </div>
+                    <p className="text-xs text-amber-900 font-medium leading-relaxed">
+                      El valor de <strong className="font-mono font-black text-amber-950">{formatCurrency(cartTotalAmount)}</strong> quedará registrado en la cartera deudora de <strong className="text-slate-900">{activeClient?.businessName || activeClient?.fullName}</strong>.
+                    </p>
+                  </div>
+                )}
+
+                {/* Monto Recibido / Pagado ($) Input */}
                 <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-2.5">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-black text-slate-800">
@@ -545,14 +682,14 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
                     <button
                       type="button"
                       onClick={() => setAmountPaidInput(cartTotalAmount.toFixed(2))}
-                      className="text-[11px] text-blue-600 font-bold hover:underline"
+                      className="text-[11px] text-blue-600 font-bold hover:underline cursor-pointer"
                     >
                       Pagar Total (${cartTotalAmount.toFixed(2)})
                     </button>
                   </div>
 
                   <div className="flex items-center space-x-2">
-                    <span className="text-base font-bold text-slate-500">$</span>
+                    <span className="text-lg font-bold text-slate-400">$</span>
                     <input
                       type="number"
                       step="0.01"
@@ -560,16 +697,29 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
                       max={cartTotalAmount}
                       value={amountPaidInput}
                       onChange={(e) => setAmountPaidInput(e.target.value)}
-                      className="w-full text-base font-black font-mono px-3 py-2 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-hidden"
+                      className="w-full text-lg font-black font-mono px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-hidden [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </div>
 
-                  {debtBalance > 0 && (
-                    <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 font-bold flex items-center justify-between">
-                      <span>Saldo pendiente deudor:</span>
-                      <span className="font-mono text-sm font-black text-red-600">
-                        {formatCurrency(debtBalance)}
+                  {debtBalance === 0 ? (
+                    <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 font-bold flex items-center justify-between">
+                      <span className="flex items-center">
+                        <CheckCircle2 className="w-4 h-4 mr-1.5 text-emerald-600 shrink-0" />
+                        Pago Completo • Cancelado en su totalidad
                       </span>
+                      <span className="font-mono text-xs font-black text-emerald-700">$0.00 pendiente</span>
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-amber-50/90 border border-amber-200 rounded-xl text-xs space-y-1">
+                      <div className="flex items-center justify-between font-bold text-amber-950">
+                        <span>Saldo en Cartera por cobrar:</span>
+                        <span className="font-mono text-sm font-black text-amber-700">
+                          {formatCurrency(debtBalance)}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-amber-700 font-medium">
+                        Este valor quedará registrado como deuda en la cuenta del cliente.
+                      </p>
                     </div>
                   )}
                 </div>

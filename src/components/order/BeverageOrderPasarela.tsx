@@ -673,18 +673,20 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
                     {javasCount === 0 && unitsCount === 0 ? '$0.00' : formatCurrency(currentTotalSubtotal)}
                   </div>
                   <div className="text-[11px] font-bold text-slate-500 mt-0.5">
-                    {javasCount > 0 && `${javasCount} ${javasCount === 1 ? 'Java' : 'Javas'}`}
+                    {javasCount > 0 && `${javasCount} ${javasCount === 1 ? (currentOption?.container === 'Vidrio' ? 'Java' : 'Pack') : (currentOption?.container === 'Vidrio' ? 'Javas' : 'Packs')}`}
                     {javasCount > 0 && unitsCount > 0 && ' + '}
                     {unitsCount > 0 && `${unitsCount} ${unitsCount === 1 ? 'Unidad suelta' : 'Unidades sueltas'}`}
-                    {javasCount === 0 && unitsCount === 0 && 'Selecciona cantidad con +'}
+                    {javasCount === 0 && unitsCount === 0 && 'Indica la cantidad deseada'}
                   </div>
                 </div>
 
-                {/* Dual Stepper Pills: Javas & Unidades */}
+                {/* Dual Stepper Pills: Javas/Packs & Unidades */}
                 <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
-                  {/* Javas Pill */}
+                  {/* Javas / Packs Pill */}
                   <div className="flex items-center space-x-1.5 bg-white p-1.5 rounded-xl border border-slate-200 shadow-2xs">
-                    <span className="text-xs font-black text-slate-700 px-1">Javas:</span>
+                    <span className="text-xs font-black text-slate-700 px-1">
+                      {currentOption?.container === 'Vidrio' ? 'Javas:' : 'Packs:'}
+                    </span>
                     <button
                       type="button"
                       disabled={javasCount <= 0}
@@ -735,17 +737,17 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
                 type="button"
                 disabled={!canAddToCart}
                 onClick={handleAddToCart}
-                className={`w-full py-3.5 sm:py-4 px-6 rounded-2xl font-black text-base sm:text-lg flex items-center justify-center space-x-2 transition-all shadow-md active:scale-[0.99] ${
+                className={`w-full py-3.5 sm:py-4 px-6 rounded-2xl font-black text-base sm:text-lg flex items-center justify-center space-x-2 transition-all ${
                   canAddToCart
-                    ? 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer'
-                    : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                    ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md active:scale-[0.99] cursor-pointer'
+                    : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-none'
                 }`}
               >
-                <Plus className="w-5 h-5" />
+                {canAddToCart && <Plus className="w-5 h-5" />}
                 <span>
-                  {javasCount === 0 && unitsCount === 0
-                    ? 'Pulsa + para indicar cantidad'
-                    : `Agregar al Pedido • ${formatCurrency(currentTotalSubtotal)}`}
+                  {canAddToCart
+                    ? `Agregar al Pedido • ${formatCurrency(currentTotalSubtotal)}`
+                    : 'Agregar al Pedido'}
                 </span>
               </button>
             </div>
