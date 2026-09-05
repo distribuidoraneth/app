@@ -7,6 +7,7 @@ import { DEFAULT_TAX_PROFILE } from '@/lib/sri/xmlBuilder';
 import { generarClaveAcceso } from '@/lib/sri/claveAcceso';
 import { PoplQRCodeSVG } from '@/components/ui/PoplQRCodeSVG';
 import { BarcodeSVG } from '@/components/ui/BarcodeSVG';
+import { AnethReceiptLogo } from './AnethReceiptLogo';
 import { Printer, X } from 'lucide-react';
 
 interface ThermalReceiptModalProps {
@@ -91,9 +92,9 @@ export function ThermalReceiptModal({
       : 'CRÉDITO';
 
   return (
-    <div className="fixed inset-0 z-[10000] flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-xs overflow-y-auto print:p-0 print:bg-white print:fixed print:inset-0">
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-xs overflow-y-auto print:p-0 print:bg-white print:fixed print:inset-0">
       {/* Estilos optimizados para 58mm (2.283 in) en impresoras térmicas tipo Munbyn IMP001 */}
-      <style jsx global>{`
+      <style>{`
         @media print {
           @page {
             size: 58mm auto;
@@ -101,6 +102,8 @@ export function ThermalReceiptModal({
           }
           html, body {
             width: 58mm !important;
+            max-width: 58mm !important;
+            min-width: 58mm !important;
             margin: 0 !important;
             padding: 0 !important;
             background: #ffffff !important;
@@ -109,11 +112,11 @@ export function ThermalReceiptModal({
             print-color-adjust: exact;
           }
           body * {
-            visibility: hidden;
+            visibility: hidden !important;
           }
           #thermal-printable-receipt,
           #thermal-printable-receipt * {
-            visibility: visible;
+            visibility: visible !important;
           }
           #thermal-printable-receipt {
             position: absolute !important;
@@ -122,7 +125,7 @@ export function ThermalReceiptModal({
             width: 58mm !important;
             max-width: 58mm !important;
             min-width: 58mm !important;
-            padding: 2mm 2.5mm 10mm 2.5mm !important;
+            padding: 1.5mm 2mm 8mm 2mm !important;
             margin: 0 !important;
             background: #ffffff !important;
             color: #000000 !important;
@@ -139,18 +142,23 @@ export function ThermalReceiptModal({
         }
       `}</style>
 
-      <div className="relative w-full max-w-sm bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-300 my-auto print:border-none print:shadow-none print:m-0 print:w-[58mm] print:max-w-[58mm] print:rounded-none">
-        {/* Barra superior sencilla de control */}
-        <div className="bg-slate-100 border-b border-slate-200 px-4 py-2.5 flex items-center justify-between no-thermal-print">
-          <span className="text-xs font-bold text-slate-800">
-            Vista Previa Ticket (58mm)
-          </span>
+      <div className="relative w-full max-w-[340px] bg-slate-100 rounded-2xl shadow-2xl overflow-hidden border border-slate-300 my-auto flex flex-col max-h-[92vh] print:border-none print:shadow-none print:m-0 print:w-[58mm] print:max-w-[58mm] print:max-h-none print:rounded-none print:bg-white print:overflow-visible">
+        {/* Barra superior de control */}
+        <div className="bg-white border-b border-slate-200 px-4 py-2.5 flex items-center justify-between no-thermal-print shrink-0 shadow-xs">
+          <div>
+            <span className="text-xs font-bold text-slate-800 block">
+              Recibo Térmico (58mm)
+            </span>
+            <span className="text-[10px] text-slate-500 font-medium">
+              Munbyn IMP001
+            </span>
+          </div>
 
           <div className="flex items-center space-x-2">
             <button
               type="button"
               onClick={handlePrint}
-              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-lg text-xs font-bold flex items-center space-x-1 transition-all cursor-pointer shadow-xs"
+              className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-lg text-xs font-bold flex items-center space-x-1.5 transition-all cursor-pointer shadow-xs"
             >
               <Printer className="w-3.5 h-3.5" />
               <span>Imprimir</span>
@@ -158,36 +166,31 @@ export function ThermalReceiptModal({
             <button
               type="button"
               onClick={onClose}
-              className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+              className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {/* Contenedor del ticket */}
-        <div className="p-3 sm:p-4 bg-slate-100 overflow-y-auto max-h-[82vh] flex justify-center print:p-0 print:bg-white print:max-h-none print:overflow-visible">
+        {/* Contenedor del ticket con scroll suave */}
+        <div className="p-3 sm:p-4 overflow-y-auto flex justify-center flex-1 print:p-0 print:overflow-visible">
           {/* TICKET IMPRIMIBLE 58MM */}
           <div
             id="thermal-printable-receipt"
             ref={receiptRef}
-            className="w-[280px] print:w-[58mm] bg-white text-black p-3 shadow-xs border border-slate-300 rounded-xs font-mono text-[11px] leading-[1.22] tracking-tight select-all print:shadow-none print:border-none print:p-0"
+            className="w-[280px] print:w-[58mm] bg-white text-black p-3.5 pb-6 shadow-md border border-slate-200 rounded-xs font-mono text-[11px] leading-[1.22] tracking-tight select-all print:shadow-none print:border-none print:p-0 print:pb-0"
           >
-            {/* ENCABEZADO CONCISO */}
-            <div className="text-center space-y-0.5 pb-1">
-              <p className="font-extrabold text-[13px] tracking-tighter leading-none">
-                ================================
-              </p>
-              <h1 className="font-black text-[15px] tracking-normal uppercase">
-                DISTRIBUIDORA ANETH
-              </h1>
-              <p className="font-bold text-[10.5px] uppercase">
+            {/* LOGOTIPO OFICIAL DISTRIBUIDORA ANETH */}
+            <div className="text-center pt-1 pb-1">
+              <AnethReceiptLogo className="w-36 h-auto mx-auto mb-1" />
+              <p className="font-bold text-[10px] uppercase tracking-tight text-slate-800">
                 {DEFAULT_TAX_PROFILE.razonSocial}
               </p>
               <p className="font-bold text-[11px]">
                 RUC: {DEFAULT_TAX_PROFILE.ruc}
               </p>
-              <p className="font-extrabold text-[13px] tracking-tighter leading-none">
+              <p className="font-extrabold text-[13px] tracking-tighter leading-none pt-1">
                 ================================
               </p>
             </div>
