@@ -5,6 +5,7 @@ import { useDistribution } from '@/context/DistributionContext';
 import { formatCurrency, formatDate, generateWhatsAppOrderLink } from '@/lib/utils/formatters';
 import { Order, Invoice } from '@/types';
 import { InvoiceModal } from '@/components/invoice/InvoiceModal';
+import { ThermalReceiptModal } from '@/components/receipt/ThermalReceiptModal';
 import {
   Clock,
   CheckCircle2,
@@ -16,18 +17,21 @@ import {
   MapPin,
   Check,
   Navigation,
+  Printer,
 } from 'lucide-react';
 
 export function OrderDispatchBoard() {
   const {
     orders,
     invoices,
+    clients,
     generateInvoice,
     updateOrderStatus,
   } = useDistribution();
 
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'delivered'>('all');
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [selectedOrderForThermal, setSelectedOrderForThermal] = useState<Order | null>(null);
 
   const filteredOrders = orders.filter((o) => {
     if (statusFilter === 'pending') return o.status === 'pending';
@@ -309,6 +313,15 @@ export function OrderDispatchBoard() {
                         <span>Emitir Factura</span>
                       </button>
                     )}
+                    <button
+                      type="button"
+                      onClick={() => setSelectedOrderForThermal(order)}
+                      className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 rounded-xl text-xs font-extrabold flex items-center space-x-1.5 transition-colors cursor-pointer"
+                      title="Imprimir Recibo Térmico (Munbyn 58mm)"
+                    >
+                      <Printer className="w-3.5 h-3.5 text-slate-700" />
+                      <span>Ticket 58mm</span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -322,6 +335,17 @@ export function OrderDispatchBoard() {
         invoice={selectedInvoice}
         isOpen={!!selectedInvoice}
         onClose={() => setSelectedInvoice(null)}
+      />
+
+      {/* Thermal Receipt Modal (Munbyn 58mm) */}
+      <ThermalReceiptModal
+        isOpen={Boolean(selectedOrderForThermal)}
+        onClose={() => setSelectedOrderForThermal(null)}
+        order={selectedOrderForThermal}
+        client={clients.find((c) => c.id === selectedOrderForThermal?.clientId)}
+        invoice={invoices.find(
+          (i) => i.orderId === selectedOrderForThermal?.id || i.id === selectedOrderForThermal?.invoiceId
+        )}
       />
     </div>
   );

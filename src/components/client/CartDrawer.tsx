@@ -28,8 +28,10 @@ import {
   Store,
   Copy,
   Check,
+  Printer,
 } from 'lucide-react';
-import { PaymentMethod, SaleType, Invoice } from '@/types';
+import { PaymentMethod, SaleType, Invoice, Order } from '@/types';
+import { ThermalReceiptModal } from '@/components/receipt/ThermalReceiptModal';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -82,6 +84,8 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
     invoiceId?: string;
     invoiceNumber?: string;
   } | null>(null);
+  const [createdOrder, setCreatedOrder] = useState<Order | null>(null);
+  const [showThermalModal, setShowThermalModal] = useState<boolean>(false);
   const [mounted, setMounted] = useState<boolean>(false);
   const [copiedBank, setCopiedBank] = useState<boolean>(false);
   const [copiedDeuna, setCopiedDeuna] = useState<boolean>(false);
@@ -145,6 +149,7 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
 
       const matchedInvoice = invoices.find((i) => i.orderId === order.id || i.id === order.invoiceId);
 
+      setCreatedOrder(order);
       setCreatedOrderSummary({
         orderId: order.id,
         orderNumber: order.orderNumber,
@@ -167,6 +172,8 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
   };
 
   const handleCloseAll = () => {
+    setCreatedOrder(null);
+    setShowThermalModal(false);
     setCreatedOrderSummary(null);
     onClose();
   };
@@ -308,10 +315,19 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
                 <button
                   type="button"
                   onClick={handleShareWhatsApp}
-                  className="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white rounded-2xl font-black text-sm flex items-center justify-center space-x-2 shadow-md transition-all"
+                  className="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white rounded-2xl font-black text-sm flex items-center justify-center space-x-2 shadow-md transition-all cursor-pointer"
                 >
                   <Share2 className="w-4 h-4" />
                   <span>Enviar Comprobante por WhatsApp</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowThermalModal(true)}
+                  className="w-full py-3.5 px-4 bg-blue-600 hover:bg-blue-700 active:scale-98 text-white rounded-2xl font-black text-sm flex items-center justify-center space-x-2 shadow-md transition-all cursor-pointer"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>Imprimir Recibo Térmico (Munbyn 58mm)</span>
                 </button>
 
                 {createdOrderSummary.invoiceId && (
@@ -894,5 +910,18 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
     </div>
   );
 
-  return createPortal(modalContent, document.body);
+  return (
+    <>
+      {createPortal(modalContent, document.body)}
+      {showThermalModal && createdOrder && (
+        <ThermalReceiptModal
+          isOpen={showThermalModal}
+          onClose={() => setShowThermalModal(false)}
+          order={createdOrder}
+          client={activeClient}
+          invoice={invoices.find((i) => i.orderId === createdOrder.id || i.id === createdOrder.invoiceId)}
+        />
+      )}
+    </>
+  );
 }
