@@ -64,6 +64,10 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
     new Date(Date.now() + 86400000).toISOString().split('T')[0]
   );
   const [scheduledTimeSlot, setScheduledTimeSlot] = useState<string>('Mañana (8:00 - 12:00)');
+  const [promisedDate, setPromisedDate] = useState<string>(
+    new Date(Date.now() + 86400000).toISOString().split('T')[0]
+  );
+  const [promisedTime, setPromisedTime] = useState<string>('Mañana (8:00 - 11:00)');
   const [notes, setNotes] = useState<string>('');
   const [addressRef, setAddressRef] = useState<string>(activeClient?.addressReference || '');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -74,6 +78,8 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
     totalAmount: number;
     amountPaid: number;
     debtBalance: number;
+    promisedCollectionDate?: string;
+    promisedCollectionTime?: string;
     invoiceId?: string;
     invoiceNumber?: string;
   } | null>(null);
@@ -126,6 +132,8 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
         saleType,
         scheduledDeliveryDate: saleType === 'preventa' ? scheduledDate : undefined,
         scheduledTimeSlot: saleType === 'preventa' ? scheduledTimeSlot : undefined,
+        promisedCollectionDate: debtBalance > 0 ? promisedDate : undefined,
+        promisedCollectionTime: debtBalance > 0 ? promisedTime : undefined,
         amountPaid: numericPaid,
         notes,
         customLocation: {
@@ -150,6 +158,8 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
         totalAmount: order.totalAmount,
         amountPaid: order.amountPaid,
         debtBalance: order.debtBalance,
+        promisedCollectionDate: order.promisedCollectionDate,
+        promisedCollectionTime: order.promisedCollectionTime,
         invoiceId: matchedInvoice?.id || order.invoiceId,
         invoiceNumber: matchedInvoice?.invoiceNumber,
       });
@@ -186,7 +196,9 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
       `*Tipo de Venta:* ${createdOrderSummary.saleType === 'autoventa' ? 'Autoventa (Entregado al instante)' : 'Preventa Programada'}\n` +
       `*Total:* $${createdOrderSummary.totalAmount.toFixed(2)}\n` +
       `*Valor Pagado:* $${createdOrderSummary.amountPaid.toFixed(2)}\n` +
-      (createdOrderSummary.debtBalance > 0 ? `*Saldo Pendiente:* $${createdOrderSummary.debtBalance.toFixed(2)}\n` : `*Estado:* Pagado Completo\n`) +
+      (createdOrderSummary.debtBalance > 0
+        ? `*Saldo Pendiente:* $${createdOrderSummary.debtBalance.toFixed(2)}\n*Fecha pactada de cobro:* ${createdOrderSummary.promisedCollectionDate || 'Por coordinar'} (${createdOrderSummary.promisedCollectionTime || 'En ruta'})\n`
+        : `*Estado:* Pagado Completo\n`) +
       (invoiceLink ? `\n*Factura Electrónica SRI:* ${invoiceLink}\n` : '') +
       `\n_Gracias por su preferencia - Aneth Distribuciones_`;
 
@@ -275,10 +287,20 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
                   </span>
                 </div>
                 {createdOrderSummary.debtBalance > 0 ? (
-                  <div className="flex justify-between pt-2 border-t border-slate-100 text-red-600 font-bold">
-                    <span>Saldo Pendiente (Deuda en Cuenta):</span>
-                    <span className="font-mono font-black">{formatCurrency(createdOrderSummary.debtBalance)}</span>
-                  </div>
+                  <>
+                    <div className="flex justify-between pt-2 border-t border-slate-100 text-amber-900 font-bold">
+                      <span>Saldo Pendiente (Cartera):</span>
+                      <span className="font-mono font-black text-amber-700">{formatCurrency(createdOrderSummary.debtBalance)}</span>
+                    </div>
+                    {createdOrderSummary.promisedCollectionDate && (
+                      <div className="flex justify-between text-slate-600 font-medium">
+                        <span>Cobro Programado:</span>
+                        <span className="font-bold text-slate-800">
+                          {createdOrderSummary.promisedCollectionDate} • {createdOrderSummary.promisedCollectionTime}
+                        </span>
+                      </div>
+                    )}
+                  </>
                 ) : (
                   <div className="flex justify-between pt-2 border-t border-slate-100 text-emerald-700 font-bold">
                     <span>Estado de Pago:</span>
@@ -710,16 +732,82 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
                       <span className="font-mono text-xs font-black text-emerald-700">$0.00 pendiente</span>
                     </div>
                   ) : (
-                    <div className="p-3 bg-amber-50/90 border border-amber-200 rounded-xl text-xs space-y-1">
-                      <div className="flex items-center justify-between font-bold text-amber-950">
-                        <span>Saldo en Cartera por cobrar:</span>
-                        <span className="font-mono text-sm font-black text-amber-700">
-                          {formatCurrency(debtBalance)}
+                    <div className="p-3.5 bg-amber-50/90 border border-amber-200 rounded-2xl space-y-3 animate-in fade-in duration-150">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-black text-amber-950 uppercase tracking-wider flex items-center">
+                          <Clock className="w-3.5 h-3.5 mr-1.5 text-amber-700 shrink-0" />
+                          Programar Cobro del Saldo
+                        </span>
+                        <span className="font-mono text-xs font-black text-amber-900 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-lg">
+                          {formatCurrency(debtBalance)} a cobrar
                         </span>
                       </div>
-                      <p className="text-[11px] text-amber-700 font-medium">
-                        Este valor quedará registrado como deuda en la cuenta del cliente.
+
+                      <p className="text-xs text-amber-900 font-medium">
+                        ¿Cuándo y a qué hora pasas cobrando el saldo restante a <strong className="text-slate-900">{activeClient?.businessName || activeClient?.fullName}</strong>?
                       </p>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                        <div>
+                          <label className="text-[11px] font-black text-amber-900 block mb-1">
+                            Fecha de Cobranza:
+                          </label>
+                          <input
+                            type="date"
+                            value={promisedDate}
+                            onChange={(e) => setPromisedDate(e.target.value)}
+                            className="w-full text-xs font-black px-3 py-2 bg-white border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:outline-hidden"
+                          />
+                          <div className="flex gap-1 mt-1.5 flex-wrap">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setPromisedDate(new Date(Date.now() + 86400000).toISOString().split('T')[0])
+                              }
+                              className="text-[10px] font-bold px-2 py-0.5 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-md transition-colors cursor-pointer"
+                            >
+                              Mañana
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setPromisedDate(new Date(Date.now() + 3 * 86400000).toISOString().split('T')[0])
+                              }
+                              className="text-[10px] font-bold px-2 py-0.5 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-md transition-colors cursor-pointer"
+                            >
+                              En 3 días
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setPromisedDate(new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0])
+                              }
+                              className="text-[10px] font-bold px-2 py-0.5 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-md transition-colors cursor-pointer"
+                            >
+                              En 1 semana
+                            </button>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="text-[11px] font-black text-amber-900 block mb-1">
+                            Hora o Franja de Cobro:
+                          </label>
+                          <select
+                            value={promisedTime}
+                            onChange={(e) => setPromisedTime(e.target.value)}
+                            className="w-full text-xs font-black px-3 py-2 bg-white border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:outline-hidden cursor-pointer"
+                          >
+                            <option value="Mañana (8:00 - 11:00)">Mañana (8:00 - 11:00)</option>
+                            <option value="Mediodía (11:00 - 13:00)">Mediodía (11:00 - 13:00)</option>
+                            <option value="Tarde (13:00 - 16:00)">Tarde (13:00 - 16:00)</option>
+                            <option value="Final de ruta (16:00 - 19:00)">Final de ruta (16:00 - 19:00)</option>
+                          </select>
+                          <p className="text-[10px] text-amber-700 font-medium mt-1.5">
+                            Quedará registrado en cartera y en el comprobante.
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -745,29 +833,68 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
         {/* Modal Sticky Footer */}
         {!createdOrderSummary && cart.length > 0 && (
           <div className="p-4 sm:p-5 bg-white border-t border-slate-200 space-y-3 sticky bottom-0 z-20 shadow-lg">
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-end">
               <div>
-                <span className="text-xs text-slate-500 font-bold block">
-                  Total del Pedido ({cartTotalBottles} botellas):
+                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                  {debtBalance === 0
+                    ? `Cobro Total (${cartTotalBottles} botellas):`
+                    : numericPaid > 0
+                    ? `A Cobrar Hoy (${paymentMethod === 'cash' ? 'Efectivo' : paymentMethod === 'deuna' ? 'DeUna' : 'Transferencia'}):`
+                    : 'Venta 100% a Crédito:'}
                 </span>
-                <span className="text-2xl sm:text-3xl font-black text-blue-700 font-mono">
-                  {formatCurrency(cartTotalAmount)}
-                </span>
+                <div className="flex items-baseline space-x-2 mt-0.5">
+                  <span
+                    className={`text-2xl sm:text-3xl font-black font-mono ${
+                      debtBalance === 0
+                        ? 'text-blue-700'
+                        : numericPaid > 0
+                        ? 'text-emerald-700'
+                        : 'text-amber-700'
+                    }`}
+                  >
+                    {debtBalance === 0
+                      ? formatCurrency(cartTotalAmount)
+                      : formatCurrency(numericPaid)}
+                  </span>
+
+                  {debtBalance > 0 && (
+                    <span className="text-xs font-black text-amber-800 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-md">
+                      + {formatCurrency(debtBalance)} a Cartera
+                    </span>
+                  )}
+                </div>
               </div>
+
+              {debtBalance > 0 && (
+                <div className="text-right">
+                  <span className="text-[11px] text-slate-400 font-bold block">Total Pedido:</span>
+                  <span className="font-mono text-sm font-black text-slate-700">
+                    {formatCurrency(cartTotalAmount)}
+                  </span>
+                </div>
+              )}
             </div>
 
             <button
               type="button"
               disabled={isSubmitting || cart.length === 0}
               onClick={handleConfirmOrder}
-              className={`w-full py-4 px-5 active:scale-[0.98] text-white font-black rounded-2xl text-base sm:text-lg shadow-md flex items-center justify-center space-x-2 transition-all disabled:opacity-50 ${
-                saleType === 'autoventa'
+              className={`w-full py-4 px-5 active:scale-[0.98] text-white font-black rounded-2xl text-base sm:text-lg shadow-md flex items-center justify-center space-x-2 transition-all disabled:opacity-50 cursor-pointer ${
+                debtBalance > 0 && numericPaid === 0
+                  ? 'bg-amber-600 hover:bg-amber-700'
+                  : saleType === 'autoventa'
                   ? 'bg-blue-600 hover:bg-blue-700'
                   : 'bg-emerald-600 hover:bg-emerald-700'
               }`}
             >
               <span>
-                {saleType === 'autoventa' ? 'Confirmar y Despachar Ahora' : 'Programar Pedido de Preventa'}
+                {debtBalance === 0
+                  ? (saleType === 'autoventa'
+                      ? `Confirmar y Despachar (${formatCurrency(cartTotalAmount)})`
+                      : `Programar Pedido (${formatCurrency(cartTotalAmount)})`)
+                  : numericPaid > 0
+                  ? `Cobrar ${formatCurrency(numericPaid)} + Dejar ${formatCurrency(debtBalance)} a Crédito`
+                  : `Confirmar Venta a Crédito (${formatCurrency(cartTotalAmount)})`}
               </span>
               <ArrowRight className="w-5 h-5" />
             </button>

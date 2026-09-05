@@ -51,6 +51,8 @@ interface DistributionContextType {
     saleType?: SaleType;
     scheduledDeliveryDate?: string;
     scheduledTimeSlot?: string;
+    promisedCollectionDate?: string;
+    promisedCollectionTime?: string;
     amountPaid?: number;
     paymentProofUrl?: string;
     notes?: string;
@@ -244,7 +246,9 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
     saleType = 'preventa',
     scheduledDeliveryDate,
     scheduledTimeSlot,
-    amountPaid = 0,
+    promisedCollectionDate,
+    promisedCollectionTime,
+    amountPaid,
     paymentProofUrl,
     notes,
     customLocation,
@@ -255,6 +259,8 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
     saleType?: SaleType;
     scheduledDeliveryDate?: string;
     scheduledTimeSlot?: string;
+    promisedCollectionDate?: string;
+    promisedCollectionTime?: string;
     amountPaid?: number;
     paymentProofUrl?: string;
     notes?: string;
@@ -266,9 +272,9 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
     const totalUnits = items.reduce((sum, item) => sum + (item.quantityUnits || 0), 0);
     const totalBottles = items.reduce((sum, item) => sum + (item.totalBottles || (item.quantityJavas * item.unitsPerJava)), 0);
 
-    const actualAmountPaid = paymentMethod === 'cash' || paymentMethod === 'deuna' || paymentMethod === 'transfer'
-      ? (amountPaid > 0 ? amountPaid : totalAmount)
-      : (amountPaid || 0);
+    const actualAmountPaid = amountPaid !== undefined
+      ? Math.max(0, Number(amountPaid))
+      : (paymentMethod === 'cash' || paymentMethod === 'deuna' || paymentMethod === 'transfer' ? totalAmount : 0);
 
     const debtBalance = Math.max(0, Number((totalAmount - actualAmountPaid).toFixed(2)));
 
@@ -280,6 +286,10 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
     }
 
     const orderNum = `ORD-${String(orders.length + 101).padStart(5, '0')}`;
+
+    const formattedNotes = notes
+      ? (promisedCollectionDate ? `[Cobro saldo: ${promisedCollectionDate} ${promisedCollectionTime || ''}] ${notes}` : notes)
+      : (promisedCollectionDate ? `Cobro saldo programado: ${promisedCollectionDate} (${promisedCollectionTime || 'En ruta'})` : undefined);
 
     const newOrder: Order = {
       id: `ord-${Date.now()}`,
@@ -300,12 +310,14 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
       saleType,
       scheduledDeliveryDate,
       scheduledTimeSlot,
+      promisedCollectionDate,
+      promisedCollectionTime,
       paymentStatus,
       paymentMethod,
       amountPaid: actualAmountPaid,
       debtBalance,
       paymentProofUrl,
-      notes,
+      notes: formattedNotes,
       createdAt: new Date().toISOString(),
       deliveredAt: saleType === 'autoventa' ? new Date().toISOString() : undefined,
     };

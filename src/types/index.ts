@@ -95,6 +95,8 @@ export interface Order {
   saleType: SaleType;
   scheduledDeliveryDate?: string; // Fecha y hora programada
   scheduledTimeSlot?: string; // e.g. "Mañana 09:00 - 11:00"
+  promisedCollectionDate?: string; // Fecha acordada para cobrar el saldo pendiente
+  promisedCollectionTime?: string; // Hora o franja para cobrar el saldo (e.g. "Mañana 8:00 - 11:00")
   paymentStatus: PaymentStatus;
   paymentMethod: PaymentMethod;
   amountPaid: number; // Monto efectivamente abonado/pagado
