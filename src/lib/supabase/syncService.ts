@@ -122,9 +122,18 @@ export async function getProductsFromDb(): Promise<JavaProductOption[]> {
   }
 }
 
+export async function updateClientDebtInDb(clientId: string, newDebt: number): Promise<void> {
+  try {
+    if (!isValidUuid(clientId)) return;
+    await supabase.from('clients').update({ current_debt: newDebt }).eq('id', clientId);
+  } catch (err) {
+    console.warn('Error al actualizar deuda de cliente en Supabase:', err);
+  }
+}
+
 export async function saveOrderToDb(order: Order): Promise<{ success: boolean; error?: string }> {
   try {
-    const orderRecord = {
+    const orderRecord: any = {
       order_number: order.orderNumber,
       client_id: order.clientId && order.clientId.startsWith('cli-') ? null : order.clientId,
       client_name: order.clientName,
@@ -146,13 +155,29 @@ export async function saveOrderToDb(order: Order): Promise<{ success: boolean; e
       amount_paid: order.amountPaid,
       debt_balance: order.debtBalance,
       notes: order.notes,
+      promised_collection_date: order.promisedCollectionDate || null,
+      promised_collection_time: order.promisedCollectionTime || null,
     };
 
-    const { data: insertedOrder, error: orderErr } = await supabase
+    let { data: insertedOrder, error: orderErr } = await supabase
       .from('orders')
       .insert(orderRecord)
       .select()
       .single();
+
+    // Si las columnas dedicadas no han sido creadas aún en Supabase (error 42703), reintentar sin ellas
+    // garantizando que la información quede registrada en 'notes', 'debt_balance' y 'amount_paid'
+    if (orderErr && (orderErr.code === '42703' || orderErr.message?.includes('promised_collection'))) {
+      delete orderRecord.promised_collection_date;
+      delete orderRecord.promised_collection_time;
+      const retryResult = await supabase
+        .from('orders')
+        .insert(orderRecord)
+        .select()
+        .single();
+      insertedOrder = retryResult.data;
+      orderErr = retryResult.error;
+    }
 
     if (orderErr) {
       console.warn('Advertencia al guardar orden en Supabase:', orderErr.message);

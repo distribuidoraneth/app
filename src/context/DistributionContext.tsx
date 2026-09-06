@@ -18,7 +18,7 @@ import {
   INITIAL_ORDERS,
   INITIAL_INVOICES,
 } from '@/lib/mockData';
-import { saveOrderToDb, saveClientToDb, getClientsFromDb } from '@/lib/supabase/syncService';
+import { saveOrderToDb, saveClientToDb, getClientsFromDb, updateClientDebtInDb } from '@/lib/supabase/syncService';
 
 interface DistributionContextType {
   // Data
@@ -324,13 +324,15 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
 
     // Update client debt if applicable
     if (client && debtBalance > 0) {
+      const updatedDebt = Number(((client.currentDebt || 0) + debtBalance).toFixed(2));
       setClients((prev) =>
         prev.map((c) =>
           c.id === client.id
-            ? { ...c, currentDebt: Number(((c.currentDebt || 0) + debtBalance).toFixed(2)) }
+            ? { ...c, currentDebt: updatedDebt }
             : c
         )
       );
+      updateClientDebtInDb(client.id, updatedDebt).catch(() => {});
     }
 
     // Deduct stock
@@ -468,13 +470,18 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
 
           // Update client debt balance
           if (o.clientId) {
-            setClients((cPrev) =>
-              cPrev.map((c) =>
-                c.id === o.clientId
-                  ? { ...c, currentDebt: Math.max(0, Number(((c.currentDebt || 0) - amount).toFixed(2))) }
-                  : c
-              )
-            );
+            const client = clients.find((c) => c.id === o.clientId);
+            if (client) {
+              const updatedDebt = Math.max(0, Number(((client.currentDebt || 0) - amount).toFixed(2)));
+              setClients((cPrev) =>
+                cPrev.map((c) =>
+                  c.id === o.clientId
+                    ? { ...c, currentDebt: updatedDebt }
+                    : c
+                )
+              );
+              updateClientDebtInDb(client.id, updatedDebt).catch(() => {});
+            }
           }
 
           return {

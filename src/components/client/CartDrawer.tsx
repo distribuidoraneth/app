@@ -69,6 +69,72 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
     new Date(Date.now() + 86400000).toISOString().split('T')[0]
   );
   const [promisedTime, setPromisedTime] = useState<string>('Mañana (8:00 - 11:00)');
+  const [isCustomTime, setIsCustomTime] = useState<boolean>(false);
+  const [customTimeInput, setCustomTimeInput] = useState<string>('');
+  const dateInputRef = React.useRef<HTMLInputElement>(null);
+
+  const todayIso = new Date().toISOString().split('T')[0];
+  const tomorrowIso = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+  const in3DaysIso = new Date(Date.now() + 3 * 86400000).toISOString().split('T')[0];
+  const in7DaysIso = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
+
+  const getNextSaturdayIso = () => {
+    const d = new Date();
+    const day = d.getDay();
+    const diff = (6 - day + 7) % 7 || 7;
+    const sat = new Date(d.getTime() + diff * 86400000);
+    return sat.toISOString().split('T')[0];
+  };
+
+  const getNextMondayIso = () => {
+    const d = new Date();
+    const day = d.getDay();
+    const diff = (1 - day + 7) % 7 || 7;
+    const mon = new Date(d.getTime() + diff * 86400000);
+    return mon.toISOString().split('T')[0];
+  };
+
+  const getEndOfMonthIso = () => {
+    const now = new Date();
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    return lastDay.toISOString().split('T')[0];
+  };
+
+  const nextSatIso = getNextSaturdayIso();
+  const nextMonIso = getNextMondayIso();
+  const endMonthIso = getEndOfMonthIso();
+
+  const formatHumanDate = (dateStr: string) => {
+    if (!dateStr) return '';
+    try {
+      const [y, m, d] = dateStr.split('-').map(Number);
+      const date = new Date(y, m - 1, d);
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const target = new Date(y, m - 1, d);
+      target.setHours(0, 0, 0, 0);
+      const diffDays = Math.round((target.getTime() - today.getTime()) / 86400000);
+
+      let badge = '';
+      if (diffDays === 0) badge = ' • Hoy';
+      else if (diffDays === 1) badge = ' • Mañana';
+      else if (diffDays === 2) badge = ' • Pasado mañana';
+      else if (diffDays > 2) badge = ` • En ${diffDays} días`;
+      else if (diffDays < 0) badge = ' • Fecha pasada';
+
+      const formatted = date.toLocaleDateString('es-EC', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      });
+      return `${formatted.charAt(0).toUpperCase() + formatted.slice(1)}${badge}`;
+    } catch {
+      return dateStr;
+    }
+  };
+
   const [notes, setNotes] = useState<string>('');
   const [addressRef, setAddressRef] = useState<string>(activeClient?.addressReference || '');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -122,6 +188,10 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
 
     setIsSubmitting(true);
 
+    const effectivePromisedTime = isCustomTime && customTimeInput.trim()
+      ? customTimeInput.trim()
+      : promisedTime;
+
     try {
       const order = createOrder({
         clientId: activeClient.id,
@@ -131,7 +201,7 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
         scheduledDeliveryDate: saleType === 'preventa' ? scheduledDate : undefined,
         scheduledTimeSlot: saleType === 'preventa' ? scheduledTimeSlot : undefined,
         promisedCollectionDate: debtBalance > 0 ? promisedDate : undefined,
-        promisedCollectionTime: debtBalance > 0 ? promisedTime : undefined,
+        promisedCollectionTime: debtBalance > 0 ? effectivePromisedTime : undefined,
         amountPaid: Math.min(cartTotalAmount, numericPaid),
         notes,
         customLocation: {
@@ -738,80 +808,201 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
                       </span>
                     </div>
                   ) : (
-                    <div className="p-3.5 bg-amber-50/90 border border-amber-200 rounded-2xl space-y-3 animate-in fade-in duration-150">
+                    <div className="p-4 bg-gradient-to-br from-amber-50 to-orange-50/70 border-2 border-amber-300/80 rounded-2xl space-y-3.5 shadow-xs animate-in fade-in duration-150">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-black text-amber-950 uppercase tracking-wider flex items-center">
-                          <Clock className="w-3.5 h-3.5 mr-1.5 text-amber-700 shrink-0" />
+                          <Clock className="w-4 h-4 mr-1.5 text-amber-700 shrink-0" />
                           Programar Cobro del Saldo
                         </span>
-                        <span className="font-mono text-xs font-black text-amber-900 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-lg">
+                        <span className="font-mono text-xs font-black text-amber-900 bg-amber-100 border border-amber-300 px-2.5 py-1 rounded-xl shadow-2xs">
                           {formatCurrency(debtBalance)} a cobrar
                         </span>
                       </div>
 
-                      <p className="text-xs text-amber-900 font-medium">
-                        ¿Cuándo y a qué hora pasas cobrando el saldo restante a <strong className="text-slate-900">{activeClient?.businessName || activeClient?.fullName}</strong>?
+                      <p className="text-xs text-amber-900 font-medium leading-relaxed">
+                        ¿Cuándo y a qué hora ofreció pagar el saldo restante <strong className="text-slate-950 underline decoration-amber-400">{activeClient?.businessName || activeClient?.fullName}</strong>?
                       </p>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-                        <div>
-                          <label className="text-[11px] font-black text-amber-900 block mb-1">
-                            Fecha de Cobranza:
+                      {/* Callout mostrando la fecha elegida en español claro */}
+                      <div className="bg-white border border-amber-200 rounded-xl p-2.5 flex items-center justify-between shadow-2xs">
+                        <div className="flex items-center space-x-2 min-w-0">
+                          <Calendar className="w-4 h-4 text-amber-600 shrink-0" />
+                          <span className="text-xs font-black text-amber-950 truncate">
+                            {formatHumanDate(promisedDate)}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            try {
+                              dateInputRef.current?.showPicker();
+                            } catch {
+                              dateInputRef.current?.focus();
+                            }
+                          }}
+                          className="text-[11px] font-black text-amber-800 hover:text-amber-950 bg-amber-100/90 hover:bg-amber-200 px-2.5 py-1 rounded-lg transition-colors cursor-pointer shrink-0 ml-2"
+                        >
+                          Abrir Calendario 📅
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-0.5">
+                        {/* Selector de Fecha */}
+                        <div className="space-y-1.5">
+                          <label className="text-[11px] font-black text-amber-950 flex items-center justify-between">
+                            <span>Fecha de Cobro Pactada:</span>
+                            <span className="text-[10px] text-amber-700 font-semibold">Toca para cambiar</span>
                           </label>
-                          <input
-                            type="date"
-                            value={promisedDate}
-                            onChange={(e) => setPromisedDate(e.target.value)}
-                            className="w-full text-xs font-black px-3 py-2 bg-white border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:outline-hidden"
-                          />
-                          <div className="flex gap-1 mt-1.5 flex-wrap">
+
+                          <div
+                            onClick={() => {
+                              try {
+                                dateInputRef.current?.showPicker();
+                              } catch {
+                                dateInputRef.current?.focus();
+                              }
+                            }}
+                            className="relative flex items-center bg-white border-2 border-amber-300 rounded-xl px-3 py-2 cursor-pointer hover:border-amber-500 transition-colors shadow-2xs"
+                          >
+                            <Calendar className="w-4 h-4 text-amber-600 mr-2 shrink-0" />
+                            <input
+                              ref={dateInputRef}
+                              type="date"
+                              min={todayIso}
+                              value={promisedDate}
+                              onChange={(e) => setPromisedDate(e.target.value)}
+                              onClick={(e) => {
+                                try {
+                                  e.currentTarget.showPicker();
+                                } catch {}
+                              }}
+                              className="w-full text-xs font-black text-slate-900 bg-transparent focus:outline-hidden cursor-pointer"
+                            />
+                          </div>
+
+                          {/* Botones de fechas rápidas y comunes */}
+                          <div className="flex gap-1.5 pt-1 flex-wrap">
                             <button
                               type="button"
-                              onClick={() =>
-                                setPromisedDate(new Date(Date.now() + 86400000).toISOString().split('T')[0])
-                              }
-                              className="text-[10px] font-bold px-2 py-0.5 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-md transition-colors cursor-pointer"
+                              onClick={() => setPromisedDate(todayIso)}
+                              className={`text-[10px] font-black px-2.5 py-1 rounded-lg transition-all cursor-pointer border ${
+                                promisedDate === todayIso
+                                  ? 'bg-amber-600 text-white border-amber-600 shadow-2xs'
+                                  : 'bg-white hover:bg-amber-100 text-amber-900 border-amber-200'
+                              }`}
+                            >
+                              Hoy
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setPromisedDate(tomorrowIso)}
+                              className={`text-[10px] font-black px-2.5 py-1 rounded-lg transition-all cursor-pointer border ${
+                                promisedDate === tomorrowIso
+                                  ? 'bg-amber-600 text-white border-amber-600 shadow-2xs'
+                                  : 'bg-white hover:bg-amber-100 text-amber-900 border-amber-200'
+                              }`}
                             >
                               Mañana
                             </button>
                             <button
                               type="button"
-                              onClick={() =>
-                                setPromisedDate(new Date(Date.now() + 3 * 86400000).toISOString().split('T')[0])
-                              }
-                              className="text-[10px] font-bold px-2 py-0.5 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-md transition-colors cursor-pointer"
+                              onClick={() => setPromisedDate(in3DaysIso)}
+                              className={`text-[10px] font-black px-2.5 py-1 rounded-lg transition-all cursor-pointer border ${
+                                promisedDate === in3DaysIso
+                                  ? 'bg-amber-600 text-white border-amber-600 shadow-2xs'
+                                  : 'bg-white hover:bg-amber-100 text-amber-900 border-amber-200'
+                              }`}
                             >
                               En 3 días
                             </button>
                             <button
                               type="button"
-                              onClick={() =>
-                                setPromisedDate(new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0])
-                              }
-                              className="text-[10px] font-bold px-2 py-0.5 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-md transition-colors cursor-pointer"
+                              onClick={() => setPromisedDate(nextSatIso)}
+                              className={`text-[10px] font-black px-2.5 py-1 rounded-lg transition-all cursor-pointer border ${
+                                promisedDate === nextSatIso
+                                  ? 'bg-amber-600 text-white border-amber-600 shadow-2xs'
+                                  : 'bg-white hover:bg-amber-100 text-amber-900 border-amber-200'
+                              }`}
+                            >
+                              Sábado
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setPromisedDate(nextMonIso)}
+                              className={`text-[10px] font-black px-2.5 py-1 rounded-lg transition-all cursor-pointer border ${
+                                promisedDate === nextMonIso
+                                  ? 'bg-amber-600 text-white border-amber-600 shadow-2xs'
+                                  : 'bg-white hover:bg-amber-100 text-amber-900 border-amber-200'
+                              }`}
+                            >
+                              Próx. Lunes
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setPromisedDate(in7DaysIso)}
+                              className={`text-[10px] font-black px-2.5 py-1 rounded-lg transition-all cursor-pointer border ${
+                                promisedDate === in7DaysIso
+                                  ? 'bg-amber-600 text-white border-amber-600 shadow-2xs'
+                                  : 'bg-white hover:bg-amber-100 text-amber-900 border-amber-200'
+                              }`}
                             >
                               En 1 semana
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setPromisedDate(endMonthIso)}
+                              className={`text-[10px] font-black px-2.5 py-1 rounded-lg transition-all cursor-pointer border ${
+                                promisedDate === endMonthIso
+                                  ? 'bg-amber-600 text-white border-amber-600 shadow-2xs'
+                                  : 'bg-white hover:bg-amber-100 text-amber-900 border-amber-200'
+                              }`}
+                            >
+                              Fin de mes
                             </button>
                           </div>
                         </div>
 
-                        <div>
-                          <label className="text-[11px] font-black text-amber-900 block mb-1">
+                        {/* Selector de Hora / Franja Horaria con Opción Personalizada */}
+                        <div className="space-y-1.5">
+                          <label className="text-[11px] font-black text-amber-950 block">
                             Hora o Franja de Cobro:
                           </label>
                           <select
-                            value={promisedTime}
-                            onChange={(e) => setPromisedTime(e.target.value)}
-                            className="w-full text-xs font-black px-3 py-2 bg-white border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:outline-hidden cursor-pointer"
+                            value={isCustomTime ? 'custom' : promisedTime}
+                            onChange={(e) => {
+                              if (e.target.value === 'custom') {
+                                setIsCustomTime(true);
+                              } else {
+                                setIsCustomTime(false);
+                                setPromisedTime(e.target.value);
+                              }
+                            }}
+                            className="w-full text-xs font-black px-3 py-2 bg-white border-2 border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:outline-hidden cursor-pointer shadow-2xs"
                           >
                             <option value="Mañana (8:00 - 11:00)">Mañana (8:00 - 11:00)</option>
                             <option value="Mediodía (11:00 - 13:00)">Mediodía (11:00 - 13:00)</option>
                             <option value="Tarde (13:00 - 16:00)">Tarde (13:00 - 16:00)</option>
                             <option value="Final de ruta (16:00 - 19:00)">Final de ruta (16:00 - 19:00)</option>
+                            <option value="custom">✍️ Hora exacta pactada (Personalizada)...</option>
                           </select>
-                          <p className="text-[10px] text-amber-700 font-medium mt-1.5">
-                            Quedará registrado en cartera y en el comprobante.
-                          </p>
+
+                          {isCustomTime && (
+                            <div className="pt-1.5 animate-in fade-in duration-150">
+                              <input
+                                type="text"
+                                placeholder="Ej: 10:30 AM, o después del almuerzo"
+                                value={customTimeInput}
+                                onChange={(e) => setCustomTimeInput(e.target.value)}
+                                className="w-full text-xs font-black px-3 py-2 bg-white border-2 border-amber-400 rounded-xl focus:ring-2 focus:ring-amber-500 focus:outline-hidden shadow-2xs placeholder:text-amber-900/40"
+                                autoFocus
+                              />
+                            </div>
+                          )}
+
+                          <div className="flex items-center space-x-1 text-[10px] text-amber-800 font-bold mt-1.5">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                            <span>Se guarda en PostgreSQL (Supabase), cartera y recibo.</span>
+                          </div>
                         </div>
                       </div>
                     </div>

@@ -107,6 +107,8 @@ ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS scheduled_delivery_date TIMES
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS scheduled_time_slot VARCHAR(50);
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS amount_paid NUMERIC(10,2) NOT NULL DEFAULT 0.00;
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS debt_balance NUMERIC(10,2) NOT NULL DEFAULT 0.00;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS promised_collection_date DATE;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS promised_collection_time VARCHAR(50);
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS payment_proof_url TEXT;
 
 -- 5. Items del Pedido
