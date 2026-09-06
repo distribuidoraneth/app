@@ -63,11 +63,11 @@ export function buildFacturaXml(params: {
   const secuencialStr = pad(secuencial, 9);
   const fechaStr = formatDateSRI(fechaEmision);
 
-  // Calcular subtotales
-  const totalSinImpuestos = items.reduce((sum, i) => sum + i.subtotal, 0);
-  const ivaFactor = ivaRate / 100;
-  const totalIva = Number((totalSinImpuestos * ivaFactor).toFixed(2));
-  const importeTotal = Number((totalSinImpuestos + totalIva).toFixed(2));
+  // Los precios de catálogo y subtotales en Distribuidora Aneth ya incluyen IVA (PVP).
+  // Por tanto, la Base Imponible y el IVA se calculan matemáticamente:
+  const importeTotal = Number(items.reduce((sum, i) => sum + i.subtotal, 0).toFixed(2));
+  const totalSinImpuestos = ivaRate === 15 ? Number((importeTotal / 1.15).toFixed(2)) : importeTotal;
+  const totalIva = Number((importeTotal - totalSinImpuestos).toFixed(2));
 
   // Forma de pago SRI: 01 = Efectivo, 20 = Otros con utilización del sistema financiero
   const formaPagoSri = paymentMethod === 'cash' ? '01' : '20';
@@ -125,31 +125,32 @@ export function buildFacturaXml(params: {
   <detalles>`;
 
   items.forEach((item) => {
-    const descripcion = `${item.beverageType} ${item.size} ${item.container} - ${
+    const descripcion = `${item.brand || 'Fructi'} ${item.size} ${item.container} - ${
       item.flavorType === 'single' ? item.selectedFlavor : 'Surtido'
     } (${item.quantityJavas > 0 ? `${item.quantityJavas} javas` : ''}${
       item.quantityJavas > 0 && item.quantityUnits > 0 ? ' + ' : ''
     }${item.quantityUnits > 0 ? `${item.quantityUnits} unidades` : ''})`;
 
     const cantidad = item.totalBottles || (item.quantityJavas * item.unitsPerJava);
-    const precioUnitario = item.pricePerUnit || Number((item.pricePerJava / item.unitsPerJava).toFixed(4));
-    const subtotalItem = item.subtotal;
-    const ivaItem = Number((subtotalItem * ivaFactor).toFixed(2));
+    const subtotalItemConIva = item.subtotal;
+    const baseImponibleItem = ivaRate === 15 ? Number((subtotalItemConIva / 1.15).toFixed(2)) : subtotalItemConIva;
+    const ivaItem = Number((subtotalItemConIva - baseImponibleItem).toFixed(2));
+    const precioUnitarioSinIva = Number((baseImponibleItem / (cantidad || 1)).toFixed(4));
 
     xml += `
     <detalle>
       <codigoPrincipal>${escapeXml(item.productOptionId)}</codigoPrincipal>
       <descripcion>${escapeXml(descripcion)}</descripcion>
       <cantidad>${cantidad.toFixed(2)}</cantidad>
-      <precioUnitario>${precioUnitario.toFixed(4)}</precioUnitario>
+      <precioUnitario>${precioUnitarioSinIva.toFixed(4)}</precioUnitario>
       <descuento>0.00</descuento>
-      <precioTotalSinImpuesto>${subtotalItem.toFixed(2)}</precioTotalSinImpuesto>
+      <precioTotalSinImpuesto>${baseImponibleItem.toFixed(2)}</precioTotalSinImpuesto>
       <impuestos>
         <impuesto>
           <codigo>2</codigo>
           <codigoPorcentaje>${codigoPorcentajeIva}</codigoPorcentaje>
           <tarifa>${ivaRate.toFixed(2)}</tarifa>
-          <baseImponible>${subtotalItem.toFixed(2)}</baseImponible>
+          <baseImponible>${baseImponibleItem.toFixed(2)}</baseImponible>
           <valor>${ivaItem.toFixed(2)}</valor>
         </impuesto>
       </impuestos>

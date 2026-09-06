@@ -238,7 +238,7 @@ export function OrderDispatchBoard() {
                               {it.quantityJavas}x Java
                             </span>{' '}
                             <span className="font-semibold text-slate-800">
-                              {formatItemTitle(it)} • {it.size} {it.container}
+                              {formatItemTitle(it)}
                             </span>
                             {it.flavorType === 'surtido' && (
                               <div className="text-[11px] text-slate-500">

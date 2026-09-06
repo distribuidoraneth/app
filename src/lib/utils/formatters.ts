@@ -7,35 +7,56 @@ export function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
+export function formatContainerAbbrev(container?: string): string {
+  if (!container) return 'Plást.';
+  const lower = container.toLowerCase();
+  if (lower.includes('vid')) return 'Vid.';
+  return 'Plást.';
+}
+
+export function formatSizeAbbrev(size?: string): string {
+  if (!size) return '';
+  return size
+    .replace(/1\.5\s*(Litros?|L|lt)/i, '1.5L')
+    .replace(/3\.0\s*(Litros?|L|lt)/i, '3L')
+    .replace(/3\s*(Litros?|L|lt)/i, '3L')
+    .replace(/1(\.0)?\s*(Litros?|L|lt)/i, '1L')
+    .replace(/(\d+)\s*ml/i, '$1ml')
+    .trim();
+}
+
 export function formatItemTitle(item: {
+  brand?: string;
   beverageType?: string;
   container?: string;
   size?: string;
   selectedFlavor?: string;
   flavorType?: string;
 }): string {
-  const brand = 'Fructi';
-  let bev = 'Cola';
-  if (item.beverageType === 'Aguas') bev = 'Agua';
-  else if (item.beverageType === 'Tés') bev = 'Té';
-
+  const brand = item.brand || 'Fructi';
+  const containerAbbr = formatContainerAbbrev(item.container);
+  const sizeAbbr = formatSizeAbbrev(item.size);
   const flavor = item.flavorType === 'surtido'
-    ? 'Surtida'
-    : (item.selectedFlavor ? item.selectedFlavor : '');
+    ? 'Surtido'
+    : (item.selectedFlavor || '');
 
-  return `${brand} ${bev}${flavor ? ' ' + flavor : ''}`.trim();
+  // Estructura: [Marca] [Envase Abrev] [Tamaño] - [Sabor]
+  // Ej: Fructi Plást. 1.5L - Piña
+  // Ej: Fructi Vid. 300ml - Mora
+  // Ej: Fructi Plást. 300ml - Surtido
+  const presentation = [brand, containerAbbr, sizeAbbr].filter(Boolean).join(' ');
+  return flavor ? `${presentation} - ${flavor}` : presentation;
 }
 
 export function formatItemFullDescription(item: {
+  brand?: string;
   beverageType?: string;
   container?: string;
   size?: string;
   selectedFlavor?: string;
   flavorType?: string;
 }): string {
-  const title = formatItemTitle(item);
-  const details = [item.size, item.container].filter(Boolean).join(' • ');
-  return details ? `${title} (${details})` : title;
+  return formatItemTitle(item);
 }
 
 export function formatDate(dateString: string): string {

@@ -2,174 +2,135 @@ import { Client, JavaProductOption, Order, Invoice } from '@/types';
 
 export const INITIAL_CLIENTS: Client[] = [];
 
-// Precios y Unidades Oficiales por Java:
-// 250ml: 12 unidades - $2.50
-// 300ml: 12 unidades - $3.60
-// 500ml: 12 unidades - $4.10
-// 1.5 Litros: 12 unidades - $10.50
-// 3.0 Litros: 6 unidades - $10.00
-// 300ml Vidrio: 24 unidades - $8.75
+// Precios Oficiales de Catálogo (Con IVA incluido):
+// --- COLAS (FRUCTI) ---
+// 300ml Plástico: 12 unidades - $3.60
+// 500ml Plástico: 12 unidades - $4.10
+// 1.5L Plástico: 12 unidades - $10.50
+// 3.0L Plástico: 6 unidades - $10.00
+// 300ml Vidrio Retornable: 24 unidades - $8.50
+// --- TÉS (FRUCTI) ---
+// 550ml Plástico: 12 unidades - $5.00
+// --- AGUAS (FOREST) ---
+// 600ml Plástico: 12 unidades - $3.12 ($0.26 c/u)
+// 1 Litro Plástico: 12 unidades - $3.96 ($0.33 c/u)
 export const JAVA_PRODUCT_CATALOG: JavaProductOption[] = [
-  // --- COLAS PLÁSTICO ---
-  {
-    id: 'opt-colas-plastico-250',
-    beverageType: 'Colas',
-    container: 'Plástico',
-    size: '250 ml',
-    allowedFlavors: ['Piña'],
-    unitsPerJava: 12,
-    pricePerJava: 2.50,
-    priceDistribuidor: 2.30,
-    priceEspecial: 2.15,
-    imageUrl: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=600&auto=format&fit=crop&q=80',
-    description: 'Java de 12 botellas de 250 ml. Sabor Piña.',
-    stockJavas: 80,
-  },
+  // --- COLAS (FRUCTI) ---
   {
     id: 'opt-colas-plastico-300',
+    brand: 'Fructi',
     beverageType: 'Colas',
     container: 'Plástico',
     size: '300 ml',
-    allowedFlavors: ['Piña', 'Tamarindo', 'Mora', 'Uva', 'Mandarina'],
+    allowedFlavors: ['Piña', 'Mandarina', 'Uva', 'Tamarindo', 'Mora'],
     unitsPerJava: 12,
     pricePerJava: 3.60,
-    priceDistribuidor: 3.35,
-    priceEspecial: 3.15,
+    pricePerUnit: 0.30,
     imageUrl: 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=600&auto=format&fit=crop&q=80',
-    description: 'Java de 12 botellas de 300 ml. Disponible en todos los sabores y surtido.',
+    description: 'Pack de 12 botellas de 300 ml plástico. Sabores: Piña, Mandarina, Uva, Tamarindo, Mora.',
     stockJavas: 120,
   },
   {
     id: 'opt-colas-plastico-500',
+    brand: 'Fructi',
     beverageType: 'Colas',
     container: 'Plástico',
     size: '500 ml',
     allowedFlavors: ['Piña', 'Mora'],
     unitsPerJava: 12,
     pricePerJava: 4.10,
-    priceDistribuidor: 3.80,
-    priceEspecial: 3.60,
+    pricePerUnit: 0.3417,
     imageUrl: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=600&auto=format&fit=crop&q=80',
-    description: 'Java de 12 botellas de 500 ml. Disponible en Piña y Mora.',
+    description: 'Pack de 12 botellas de 500 ml plástico. Sabores: Piña y Mora.',
     stockJavas: 95,
   },
   {
     id: 'opt-colas-plastico-1500',
+    brand: 'Fructi',
     beverageType: 'Colas',
     container: 'Plástico',
     size: '1.5 Litros',
     allowedFlavors: ['Piña', 'Mora'],
     unitsPerJava: 12,
     pricePerJava: 10.50,
-    priceDistribuidor: 9.60,
-    priceEspecial: 9.00,
+    pricePerUnit: 0.875,
     imageUrl: 'https://images.unsplash.com/photo-1629203851122-3726ecdf080e?w=600&auto=format&fit=crop&q=80',
-    description: 'Java de 12 botellas de 1.5 Litros.',
+    description: 'Pack de 12 botellas de 1.5 Litros plástico. Sabores: Piña y Mora.',
     stockJavas: 65,
   },
   {
     id: 'opt-colas-plastico-3000',
+    brand: 'Fructi',
     beverageType: 'Colas',
     container: 'Plástico',
     size: '3.0 Litros',
     allowedFlavors: ['Piña'],
     unitsPerJava: 6,
     pricePerJava: 10.00,
-    priceDistribuidor: 9.25,
-    priceEspecial: 8.75,
+    pricePerUnit: 1.6667,
     imageUrl: 'https://images.unsplash.com/photo-1527661591475-527312dd65f5?w=600&auto=format&fit=crop&q=80',
-    description: 'Java de 6 botellas de 3.0 Litros. Sabor Piña.',
+    description: 'Pack de 6 botellas de 3.0 Litros plástico. Sabor Piña.',
     stockJavas: 40,
   },
-
-  // --- COLAS VIDRIO ---
   {
     id: 'opt-colas-vidrio-300',
+    brand: 'Fructi',
     beverageType: 'Colas',
     container: 'Vidrio',
     size: '300 ml',
-    allowedFlavors: ['Mora', 'Piña', 'Mandarina', 'Tamarindo'],
+    allowedFlavors: ['Piña', 'Mandarina', 'Tamarindo', 'Mora'],
     unitsPerJava: 24,
-    pricePerJava: 8.75,
-    priceDistribuidor: 8.10,
-    priceEspecial: 7.60,
+    pricePerJava: 8.50,
+    pricePerUnit: 0.3542,
     imageUrl: 'https://images.unsplash.com/photo-1543253687-c931c8e01820?w=600&auto=format&fit=crop&q=80',
-    description: 'Java de 24 botellas de vidrio de 300 ml retornable.',
+    description: 'Java de 24 botellas de vidrio de 300 ml retornable. Con azúcar de caña natural.',
     stockJavas: 110,
   },
 
-  // --- AGUAS PLÁSTICO ---
+  // --- TÉS (FRUCTI) ---
   {
-    id: 'opt-aguas-plastico-500',
+    id: 'opt-tes-plastico-550',
+    brand: 'Fructi',
+    beverageType: 'Tés',
+    container: 'Plástico',
+    size: '550 ml',
+    allowedFlavors: ['Lima Limón', 'Flor de Jamaica'],
+    unitsPerJava: 12,
+    pricePerJava: 5.00,
+    pricePerUnit: 0.4167,
+    imageUrl: 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=600&auto=format&fit=crop&q=80',
+    description: 'Pack de 12 botellas de té 550 ml. Sabores: Lima Limón y Flor de Jamaica.',
+    stockJavas: 60,
+  },
+
+  // --- AGUAS (FOREST) ---
+  {
+    id: 'opt-aguas-forest-600',
+    brand: 'Forest',
     beverageType: 'Aguas',
     container: 'Plástico',
-    size: '500 ml',
+    size: '600 ml',
     allowedFlavors: ['Sin Gas', 'Con Gas'],
     unitsPerJava: 12,
-    pricePerJava: 4.10,
-    priceDistribuidor: 3.80,
-    priceEspecial: 3.50,
+    pricePerJava: 3.12,
+    pricePerUnit: 0.26,
     imageUrl: 'https://images.unsplash.com/photo-1548839140-29a749e1bc4e?w=600&auto=format&fit=crop&q=80',
-    description: 'Java de 12 botellas de agua purificada 500 ml.',
+    description: 'Pack de 12 botellas de agua Forest 600 ml ($0.26 por unidad con IVA).',
     stockJavas: 90,
   },
   {
-    id: 'opt-aguas-plastico-1500',
+    id: 'opt-aguas-forest-1000',
+    brand: 'Forest',
     beverageType: 'Aguas',
     container: 'Plástico',
-    size: '1.5 Litros',
+    size: '1 Litro',
     allowedFlavors: ['Sin Gas', 'Con Gas'],
     unitsPerJava: 12,
-    pricePerJava: 5.00,
-    priceDistribuidor: 4.60,
-    priceEspecial: 4.25,
+    pricePerJava: 3.96,
+    pricePerUnit: 0.33,
     imageUrl: 'https://images.unsplash.com/photo-1564419320461-6870880221ad?w=600&auto=format&fit=crop&q=80',
-    description: 'Java de 12 botellas de agua purificada 1.5 Litros.',
+    description: 'Pack de 12 botellas de agua Forest 1 Litro ($0.33 por unidad con IVA).',
     stockJavas: 70,
-  },
-
-  // --- TÉS ---
-  {
-    id: 'opt-tes-vidrio-300',
-    beverageType: 'Tés',
-    container: 'Vidrio',
-    size: '300 ml',
-    allowedFlavors: ['Limón', 'Durazno'],
-    unitsPerJava: 24,
-    pricePerJava: 8.75,
-    priceDistribuidor: 8.10,
-    priceEspecial: 7.75,
-    imageUrl: 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=600&auto=format&fit=crop&q=80',
-    description: 'Java de 24 botellas de vidrio de té 300 ml.',
-    stockJavas: 50,
-  },
-  {
-    id: 'opt-tes-plastico-500',
-    beverageType: 'Tés',
-    container: 'Plástico',
-    size: '500 ml',
-    allowedFlavors: ['Limón', 'Durazno'],
-    unitsPerJava: 12,
-    pricePerJava: 4.10,
-    priceDistribuidor: 3.80,
-    priceEspecial: 3.50,
-    imageUrl: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=600&auto=format&fit=crop&q=80',
-    description: 'Java de 12 botellas de té 500 ml.',
-    stockJavas: 60,
-  },
-  {
-    id: 'opt-tes-plastico-1500',
-    beverageType: 'Tés',
-    container: 'Plástico',
-    size: '1.5 Litros',
-    allowedFlavors: ['Limón', 'Durazno'],
-    unitsPerJava: 12,
-    pricePerJava: 10.50,
-    priceDistribuidor: 9.60,
-    priceEspecial: 9.00,
-    imageUrl: 'https://images.unsplash.com/photo-1556881286-fc6915169721?w=600&auto=format&fit=crop&q=80',
-    description: 'Java de 12 botellas de té 1.5 Litros.',
-    stockJavas: 40,
   }
 ];
 

@@ -2,11 +2,11 @@ export type Gender = 'Hombre' | 'Mujer' | 'Otro';
 
 export type BeverageType = 'Colas' | 'Aguas' | 'Tés';
 export type ContainerType = 'Plástico' | 'Vidrio';
-export type BeverageSize = '250 ml' | '300 ml' | '500 ml' | '1.5 Litros' | '3.0 Litros' | '1500 ml' | '3000 ml';
+export type BeverageSize = '250 ml' | '300 ml' | '500 ml' | '550 ml' | '600 ml' | '1 Litro' | '1.5 Litros' | '3.0 Litros' | '1500 ml' | '3000 ml';
 
 export type ColaFlavor = 'Piña' | 'Tamarindo' | 'Mora' | 'Uva' | 'Mandarina';
 export type WaterFlavor = 'Sin Gas' | 'Con Gas';
-export type TeaFlavor = 'Limón' | 'Durazno';
+export type TeaFlavor = 'Lima Limón' | 'Flor de Jamaica' | 'Limón' | 'Durazno';
 
 export interface SurtidoBreakdown {
   [flavor: string]: number; // e.g. { "Piña": 12, "Mora": 12 }
@@ -16,14 +16,15 @@ export type ClientTier = 'normal' | 'distribuidor' | 'especial';
 
 export interface JavaProductOption {
   id: string;
+  brand?: string; // e.g. 'Fructi'
   beverageType: BeverageType;
   container: ContainerType;
   size: BeverageSize;
   allowedFlavors: string[];
   unitsPerJava: number; // e.g. 12 for 250ml/300ml/500ml/1.5L, 6 for 3.0L, 24 for 300ml Vidrio
-  pricePerJava: number; // Precio Normal (PVP / Tienda estándar)
-  priceDistribuidor?: number; // Precio Mayorista / Distribuidor
-  priceEspecial?: number; // Precio Especial / Gran Volumen
+  pricePerJava: number; // Precio Normal (PVP / Tienda estándar con IVA)
+  priceDistribuidor?: number; // Precio Mayorista / Distribuidor con IVA
+  priceEspecial?: number; // Precio Especial / Gran Volumen con IVA
   pricePerUnit?: number; // Calculated or customized unit price (e.g. pricePerJava / unitsPerJava)
   imageUrl: string;
   description: string;
@@ -33,6 +34,7 @@ export interface JavaProductOption {
 export interface CartItem {
   id: string;
   productOptionId: string;
+  brand?: string; // e.g. 'Fructi'
   beverageType: BeverageType;
   container: ContainerType;
   size: BeverageSize;

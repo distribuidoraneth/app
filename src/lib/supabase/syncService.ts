@@ -106,12 +106,15 @@ export async function getProductsFromDb(): Promise<JavaProductOption[]> {
 
     return data.map((p: any) => ({
       id: p.id,
+      brand: p.brand || 'Fructi',
       beverageType: p.beverage_type,
       container: p.container,
       size: p.size,
       allowedFlavors: p.allowed_flavors || [],
       unitsPerJava: Number(p.units_per_java),
       pricePerJava: Number(p.price_per_java),
+      priceDistribuidor: p.price_distribuidor ? Number(p.price_distribuidor) : undefined,
+      priceEspecial: p.price_especial ? Number(p.price_especial) : undefined,
       pricePerUnit: p.price_per_unit ? Number(p.price_per_unit) : undefined,
       imageUrl: p.image_url,
       description: p.description,
@@ -189,6 +192,7 @@ export async function saveOrderToDb(order: Order): Promise<{ success: boolean; e
       const itemsToInsert = order.items.map((item) => ({
         order_id: insertedOrder.id,
         product_option_id: item.productOptionId && item.productOptionId.startsWith('opt-') ? null : item.productOptionId,
+        brand: item.brand || 'Fructi',
         beverage_type: item.beverageType,
         container: item.container,
         size: item.size,
@@ -204,7 +208,11 @@ export async function saveOrderToDb(order: Order): Promise<{ success: boolean; e
         subtotal: item.subtotal,
       }));
 
-      await supabase.from('order_items').insert(itemsToInsert);
+      const { error: itemsErr } = await supabase.from('order_items').insert(itemsToInsert);
+      if (itemsErr && itemsErr.code === '42703') {
+        const fallbackItems = itemsToInsert.map(({ brand, ...rest }: any) => rest);
+        await supabase.from('order_items').insert(fallbackItems);
+      }
     }
 
     return { success: true };

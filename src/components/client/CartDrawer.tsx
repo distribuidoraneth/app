@@ -519,8 +519,8 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
                           <span className="font-black text-sm sm:text-base text-slate-900">
                             {formatItemTitle(item)}
                           </span>
-                          <span className="bg-blue-50 text-blue-700 border border-blue-200 text-xs font-black px-2 py-0.5 rounded-md">
-                            {item.size} • {item.container}
+                          <span className="bg-slate-100 text-slate-600 border border-slate-200 text-[11px] font-bold px-1.5 py-0.5 rounded-md">
+                            {item.unitsPerJava} un/paca
                           </span>
                         </div>
 

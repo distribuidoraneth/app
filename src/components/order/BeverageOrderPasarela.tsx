@@ -32,8 +32,8 @@ function BottleVectorIcon({
   isSelected: boolean;
 }) {
   const isGlass = container === 'Vidrio';
-  const isLarge = size.includes('1.5') || size.includes('3.0') || size.includes('1500') || size.includes('3000');
-  const isMedium = size.includes('500');
+  const isLarge = size.includes('1.5') || size.includes('3.0') || size.includes('1500') || size.includes('3000') || size.includes('1 Litro') || size.includes('1L') || size.includes('1000');
+  const isMedium = size.includes('500') || size.includes('550') || size.includes('600');
 
   const strokeColor = isSelected ? '#2563eb' : '#64748b';
   const fillColor = isSelected ? '#dbeafe' : '#f1f5f9';
@@ -93,63 +93,35 @@ function BottleVectorIcon({
   );
 }
 
-// Vector fruit SVG icon for flavors
-function FruitVectorIcon({ flavor, size = 20, className = "" }: { flavor: string; size?: number; className?: string }) {
+const FLAVOR_ICON_URLS: Record<string, string> = {
+  'Piña': '/flavors/pina.webp',
+  'Mora': '/flavors/mora.webp',
+  'Mandarina': '/flavors/mandarina.webp',
+  'Uva': '/flavors/uva.webp',
+  'Tamarindo': '/flavors/tamarindo.webp',
+  'Lima Limón': '/flavors/lima-limon.webp',
+  'Flor de Jamaica': '/flavors/flor-de-jamaica.webp',
+  'Limón': '/flavors/lima-limon.webp',
+};
+
+// 3D & Vector fruit icon for flavors
+function FruitVectorIcon({ flavor, size = 28, className = "" }: { flavor: string; size?: number; className?: string }) {
+  const iconUrl = FLAVOR_ICON_URLS[flavor];
+  if (iconUrl) {
+    return (
+      <img
+        src={iconUrl}
+        alt={flavor}
+        width={size}
+        height={size}
+        className={`object-contain select-none pointer-events-none drop-shadow-xs transition-transform duration-200 group-hover:scale-110 ${className}`}
+        style={{ width: `${size}px`, height: `${size}px` }}
+        loading="eager"
+      />
+    );
+  }
+
   switch (flavor) {
-    case 'Piña':
-      return (
-        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
-          <path d="M12 2L10 6H14L12 2Z" fill="#16a34a" />
-          <path d="M9 5L6 8H10L9 5Z" fill="#22c55e" />
-          <path d="M15 5L18 8H14L15 5Z" fill="#22c55e" />
-          <ellipse cx="12" cy="15" rx="6" ry="7" fill="#f59e0b" />
-          <path d="M8 12L16 18M16 12L8 18M12 9V21" stroke="#d97706" strokeWidth="1.2" />
-        </svg>
-      );
-    case 'Tamarindo':
-      return (
-        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
-          <ellipse cx="9" cy="8" rx="3.5" ry="3.5" fill="#92400e" />
-          <ellipse cx="13" cy="13" rx="3.5" ry="3.5" fill="#92400e" />
-          <ellipse cx="16" cy="18" rx="3" ry="3" fill="#b45309" />
-          <path d="M9 5C12 9 14 14 17 20" stroke="#78350f" strokeWidth="2.5" strokeLinecap="round" />
-        </svg>
-      );
-    case 'Mora':
-      return (
-        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
-          <circle cx="12" cy="8" r="2.5" fill="#7e22ce" />
-          <circle cx="9" cy="12" r="2.5" fill="#6b21a8" />
-          <circle cx="15" cy="12" r="2.5" fill="#6b21a8" />
-          <circle cx="10" cy="16" r="2.5" fill="#581c87" />
-          <circle cx="14" cy="16" r="2.5" fill="#581c87" />
-          <circle cx="12" cy="19.5" r="2" fill="#3b0764" />
-          <path d="M12 4V6M10 5L14 5" stroke="#16a34a" strokeWidth="1.5" strokeLinecap="round" />
-        </svg>
-      );
-    case 'Uva':
-      return (
-        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
-          <circle cx="10" cy="9" r="2.5" fill="#8b5cf6" />
-          <circle cx="14" cy="9" r="2.5" fill="#8b5cf6" />
-          <circle cx="8" cy="13.5" r="2.5" fill="#7c3aed" />
-          <circle cx="12" cy="13.5" r="2.5" fill="#7c3aed" />
-          <circle cx="16" cy="13.5" r="2.5" fill="#7c3aed" />
-          <circle cx="10" cy="18" r="2.2" fill="#6d28d9" />
-          <circle cx="14" cy="18" r="2.2" fill="#6d28d9" />
-          <circle cx="12" cy="21.5" r="1.8" fill="#5b21b6" />
-          <path d="M12 3V7M12 4C14 4 16 5 16 7" stroke="#15803d" strokeWidth="1.5" strokeLinecap="round" />
-        </svg>
-      );
-    case 'Mandarina':
-      return (
-        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
-          <circle cx="12" cy="13.5" r="7.5" fill="#f97316" />
-          <circle cx="12" cy="13.5" r="6" fill="#ea580c" />
-          <path d="M12 6C13 3 16 4 16 4" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" />
-          <ellipse cx="10" cy="11" rx="1" ry="2" fill="#fed7aa" opacity="0.6" />
-        </svg>
-      );
     case 'Sin Gas':
       return (
         <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
@@ -166,21 +138,6 @@ function FruitVectorIcon({ flavor, size = 20, className = "" }: { flavor: string
           <circle cx="11" cy="10" r="0.8" fill="#ffffff" />
         </svg>
       );
-    case 'Limón':
-      return (
-        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
-          <ellipse cx="12" cy="12" rx="7.5" ry="6" fill="#eab308" transform="rotate(-30 12 12)" />
-          <circle cx="12" cy="12" r="4.5" fill="#facc15" />
-          <path d="M12 8V16M8 12H16" stroke="#ca8a04" strokeWidth="1" />
-        </svg>
-      );
-    case 'Durazno':
-      return (
-        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
-          <path d="M12 20C7 20 4 16 5 11C6 6 11 5 12 7C13 5 18 6 19 11C20 16 17 20 12 20Z" fill="#fb923c" />
-          <path d="M12 6C12 3 14 3 14 3" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-      );
     default:
       return <Sparkles className={`w-5 h-5 text-blue-600 ${className}`} />;
   }
@@ -194,6 +151,8 @@ const FLAVOR_STYLES: Record<string, { bgSelected: string; borderSelected: string
   'Mandarina': { bgSelected: 'bg-orange-50/90', borderSelected: 'border-orange-500', ringSelected: 'ring-2 ring-orange-400/25' },
   'Sin Gas': { bgSelected: 'bg-sky-50/90', borderSelected: 'border-sky-500', ringSelected: 'ring-2 ring-sky-400/25' },
   'Con Gas': { bgSelected: 'bg-blue-50/90', borderSelected: 'border-blue-600', ringSelected: 'ring-2 ring-blue-500/25' },
+  'Lima Limón': { bgSelected: 'bg-lime-50/90', borderSelected: 'border-lime-500', ringSelected: 'ring-2 ring-lime-400/25' },
+  'Flor de Jamaica': { bgSelected: 'bg-rose-50/90', borderSelected: 'border-rose-600', ringSelected: 'ring-2 ring-rose-500/25' },
   'Limón': { bgSelected: 'bg-yellow-50/90', borderSelected: 'border-yellow-500', ringSelected: 'ring-2 ring-yellow-400/25' },
   'Durazno': { bgSelected: 'bg-orange-50/90', borderSelected: 'border-orange-400', ringSelected: 'ring-2 ring-orange-300/25' },
 };
@@ -368,6 +327,7 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
     const newItem: CartItem = {
       id: `cart-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       productOptionId: currentOption.id,
+      brand: currentOption.brand || 'Fructi',
       beverageType: currentOption.beverageType,
       container: currentOption.container,
       size: currentOption.size,
@@ -547,15 +507,15 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
                         key={flavor}
                         type="button"
                         onClick={() => handleFlavorChange(flavor)}
-                        className={`p-2 sm:p-2.5 rounded-xl border text-center flex flex-col sm:flex-row items-center justify-center space-y-1 sm:space-y-0 sm:space-x-2 transition-all active:scale-[0.98] ${
+                        className={`p-2 sm:p-2.5 rounded-2xl border text-center flex flex-col sm:flex-row items-center justify-center space-y-1 sm:space-y-0 sm:space-x-2.5 transition-all active:scale-[0.97] group ${
                           isSelected
-                            ? `${style.bgSelected} ${style.borderSelected} ${style.ringSelected} shadow-xs`
-                            : 'border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50'
+                            ? `${style.bgSelected} ${style.borderSelected} ${style.ringSelected} shadow-sm`
+                            : 'border-slate-200/90 hover:border-slate-300 bg-white hover:bg-slate-50/80 shadow-2xs'
                         }`}
                       >
-                        {/* Vector Fruit SVG */}
-                        <div className="w-8 h-8 rounded-lg bg-white shadow-2xs border border-slate-100 flex items-center justify-center flex-shrink-0">
-                          <FruitVectorIcon flavor={flavor} size={20} className="w-5 h-5" />
+                        {/* 3D Fruit Icon */}
+                        <div className="w-10 h-10 rounded-xl bg-white shadow-2xs border border-slate-100 flex items-center justify-center flex-shrink-0 p-1">
+                          <FruitVectorIcon flavor={flavor} size={32} />
                         </div>
 
                         <div className="text-xs sm:text-sm font-black text-slate-900 leading-tight truncate">
@@ -592,8 +552,8 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
                           className="flex items-center justify-between bg-white p-3 rounded-xl border border-slate-200 shadow-2xs"
                         >
                           <div className="flex items-center space-x-2.5">
-                            <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center flex-shrink-0">
-                              <FruitVectorIcon flavor={flavor} size={22} />
+                            <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center flex-shrink-0 p-1 border border-slate-100 shadow-2xs">
+                              <FruitVectorIcon flavor={flavor} size={30} />
                             </div>
                             <span className="font-black text-sm sm:text-base text-slate-900">{flavor}</span>
                           </div>

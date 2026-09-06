@@ -58,18 +58,48 @@ ALTER TABLE public.clients ADD COLUMN IF NOT EXISTS current_debt NUMERIC(10,2) N
 -- 3. Catálogo de Productos y Formatos de Javas
 CREATE TABLE IF NOT EXISTS public.products (
   id VARCHAR(100) PRIMARY KEY,
+  brand VARCHAR(50) NOT NULL DEFAULT 'Fructi',
   beverage_type VARCHAR(30) NOT NULL,
   container VARCHAR(30) NOT NULL,
   size VARCHAR(30) NOT NULL,
   allowed_flavors JSONB NOT NULL DEFAULT '[]'::jsonb,
   units_per_java INT NOT NULL DEFAULT 12,
   price_per_java NUMERIC(10,2) NOT NULL,
+  price_distribuidor NUMERIC(10,2),
+  price_especial NUMERIC(10,2),
   price_per_unit NUMERIC(10,4),
   image_url TEXT,
   description TEXT,
   stock_javas INT NOT NULL DEFAULT 100,
   created_at TIMESTAMPTZ DEFAULT now()
 );
+
+-- Agregar columnas en caso de que la tabla ya existiera previamente
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS brand VARCHAR(50) DEFAULT 'Fructi';
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS price_distribuidor NUMERIC(10,2);
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS price_especial NUMERIC(10,2);
+
+-- Actualizar/Insertar Catálogo Oficial con IVA incluido
+INSERT INTO public.products (id, brand, beverage_type, container, size, allowed_flavors, units_per_java, price_per_java, price_per_unit, description, stock_javas)
+VALUES
+  ('opt-colas-plastico-300', 'Fructi', 'Colas', 'Plástico', '300 ml', '["Piña", "Mandarina", "Uva", "Tamarindo", "Mora"]'::jsonb, 12, 3.60, 0.30, 'Pack de 12 botellas de 300 ml plástico', 120),
+  ('opt-colas-plastico-500', 'Fructi', 'Colas', 'Plástico', '500 ml', '["Piña", "Mora"]'::jsonb, 12, 4.10, 0.3417, 'Pack de 12 botellas de 500 ml plástico', 95),
+  ('opt-colas-plastico-1500', 'Fructi', 'Colas', 'Plástico', '1.5 Litros', '["Piña", "Mora"]'::jsonb, 12, 10.50, 0.8750, 'Pack de 12 botellas de 1.5 Litros plástico', 65),
+  ('opt-colas-plastico-3000', 'Fructi', 'Colas', 'Plástico', '3.0 Litros', '["Piña"]'::jsonb, 6, 10.00, 1.6667, 'Pack de 6 botellas de 3.0 Litros plástico', 40),
+  ('opt-colas-vidrio-300', 'Fructi', 'Colas', 'Vidrio', '300 ml', '["Piña", "Mandarina", "Tamarindo", "Mora"]'::jsonb, 24, 8.50, 0.3542, 'Java de 24 botellas de vidrio retornable de 300 ml', 110),
+  ('opt-tes-plastico-550', 'Fructi', 'Tés', 'Plástico', '550 ml', '["Lima Limón", "Flor de Jamaica"]'::jsonb, 12, 5.00, 0.4167, 'Pack de 12 botellas de té 550 ml', 60),
+  ('opt-aguas-forest-600', 'Forest', 'Aguas', 'Plástico', '600 ml', '["Sin Gas", "Con Gas"]'::jsonb, 12, 3.12, 0.2600, 'Pack de 12 botellas de agua Forest 600 ml', 90),
+  ('opt-aguas-forest-1000', 'Forest', 'Aguas', 'Plástico', '1 Litro', '["Sin Gas", "Con Gas"]'::jsonb, 12, 3.96, 0.3300, 'Pack de 12 botellas de agua Forest 1 Litro', 70)
+ON CONFLICT (id) DO UPDATE SET
+  brand = EXCLUDED.brand,
+  beverage_type = EXCLUDED.beverage_type,
+  container = EXCLUDED.container,
+  size = EXCLUDED.size,
+  allowed_flavors = EXCLUDED.allowed_flavors,
+  units_per_java = EXCLUDED.units_per_java,
+  price_per_java = EXCLUDED.price_per_java,
+  price_per_unit = EXCLUDED.price_per_unit,
+  description = EXCLUDED.description;
 
 -- 4. Registro de Pedidos
 CREATE TABLE IF NOT EXISTS public.orders (
@@ -116,6 +146,7 @@ CREATE TABLE IF NOT EXISTS public.order_items (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   order_id UUID NOT NULL REFERENCES public.orders(id) ON DELETE CASCADE,
   product_option_id VARCHAR(100) REFERENCES public.products(id) ON DELETE SET NULL,
+  brand VARCHAR(50) DEFAULT 'Fructi',
   beverage_type VARCHAR(30) NOT NULL,
   container VARCHAR(30) NOT NULL,
   size VARCHAR(30) NOT NULL,
@@ -130,6 +161,8 @@ CREATE TABLE IF NOT EXISTS public.order_items (
   total_bottles INT NOT NULL DEFAULT 0,
   subtotal NUMERIC(10,2) NOT NULL
 );
+
+ALTER TABLE public.order_items ADD COLUMN IF NOT EXISTS brand VARCHAR(50) DEFAULT 'Fructi';
 
 -- 6. Historial de Pagos y Abonos
 CREATE TABLE IF NOT EXISTS public.payments (
