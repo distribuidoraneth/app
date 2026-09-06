@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useDistribution } from '@/context/DistributionContext';
-import { GoogleMapPreview } from '@/components/maps/GoogleMapPreview';
+import { GoogleMapLocationPicker } from '@/components/maps/GoogleMapLocationPicker';
 import { Gender, Client, ClientTier } from '@/types';
 import {
   X,
@@ -565,15 +565,21 @@ export function ClientRegistrationModal({
               />
             </div>
 
-            {/* Mapa de Google Maps */}
+            {/* Mapa Interactivo de Google Maps con Selección y Ajuste de Pin */}
             <div className="pt-1">
-              <GoogleMapPreview
+              <GoogleMapLocationPicker
                 latitude={coords.lat}
                 longitude={coords.lng}
                 accuracy={gpsAccuracy}
                 isCalibrating={isCalibratingGps}
                 zoom={17}
-                className="h-44 sm:h-52 w-full rounded-2xl overflow-hidden shadow-2xs border border-slate-200"
+                className="h-48 sm:h-56 w-full rounded-2xl overflow-hidden shadow-2xs border border-slate-200"
+                onLocationChange={(newLat, newLng, newAddress) => {
+                  setCoords({ lat: newLat, lng: newLng });
+                  if (newAddress) {
+                    setAddressReference(newAddress);
+                  }
+                }}
               />
             </div>
           </div>

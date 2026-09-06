@@ -9,7 +9,7 @@ import { CatalogManager } from './CatalogManager';
 import { ClientRegistrationModal } from './ClientRegistrationModal';
 import { QRCodeModal } from './QRCodeModal';
 import { InvoiceModal } from '@/components/invoice/InvoiceModal';
-import { VectorMap } from '@/components/maps/VectorMap';
+import { GoogleMapDirectory } from '@/components/maps/GoogleMapDirectory';
 import { LiquidMobileTabPill, TabItem } from '@/components/ui/LiquidMobileTabPill';
 import { MobileFloatingDock, DockNavItem } from '@/components/ui/MobileFloatingDock';
 import { formatCurrency, formatDate } from '@/lib/utils/formatters';
@@ -343,25 +343,21 @@ export function AdminDashboard() {
               </button>
             </div>
 
-            {/* Map Preview of Clients */}
-            <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-3">
+            {/* Map Preview of Clients with Google Maps Platform */}
+            <div className="bg-white p-4 sm:p-5 rounded-3xl border border-slate-200 shadow-xs space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-extrabold text-slate-700 uppercase tracking-wider flex items-center">
-                  <MapPin className="w-4 h-4 mr-1 text-red-600" />
-                  Mapa de Locales Registrados
+                <span className="text-xs font-extrabold text-slate-800 uppercase tracking-wider flex items-center">
+                  <MapPin className="w-4 h-4 mr-1.5 text-blue-600" />
+                  Mapa Oficial de Locales (Google Maps)
                 </span>
                 <span className="text-xs text-slate-500 font-mono font-bold">
-                  {clients.length} ubicaciones
+                  {clients.length} {clients.length === 1 ? 'ubicación' : 'ubicaciones'}
                 </span>
               </div>
-              <div className="h-64 rounded-2xl overflow-hidden border border-slate-200">
-                <VectorMap
-                  latitude={clients[0]?.latitude || -1.24908}
-                  longitude={clients[0]?.longitude || -78.61675}
-                  markers={clientMarkers}
-                  zoom={13}
-                />
-              </div>
+              <GoogleMapDirectory
+                clients={clients}
+                heightClassName="h-72 sm:h-[420px]"
+              />
             </div>
 
             {/* Clients Grid */}

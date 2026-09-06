@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
 import { useDistribution } from '@/context/DistributionContext';
 import { BeverageOrderPasarela } from '@/components/order/BeverageOrderPasarela';
 import { CartDrawer } from '@/components/client/CartDrawer';
@@ -21,6 +21,8 @@ import {
   ChevronRight,
   Plus,
   Compass,
+  RefreshCw,
+  ExternalLink,
 } from 'lucide-react';
 
 function StandaloneOrderContent() {
@@ -45,19 +47,24 @@ function StandaloneOrderContent() {
   const [userLocation, setUserLocation] = useState<GeoCoordinates | null>(null);
   const [isLocating, setIsLocating] = useState<boolean>(true);
 
-  // Sync mode from URL
+  // Sync mode and client from URL
   useEffect(() => {
     const typeFromUrl = searchParams.get('type') as SaleType;
     if (typeFromUrl === 'autoventa' || typeFromUrl === 'preventa') {
       setSaleType(typeFromUrl);
     }
-  }, [searchParams]);
+    const clientFromUrl = searchParams.get('client');
+    if (clientFromUrl) {
+      setManualClientId(clientFromUrl);
+      setSelectedClientId(clientFromUrl);
+    }
+  }, [searchParams, setSelectedClientId]);
 
   // User manual selection override: only when user clicks "Cambiar" or registers new client
   const [manualClientId, setManualClientId] = useState<string | null>(null);
 
   // Request GPS position & Automatically select nearest client
-  useEffect(() => {
+  const refreshGpsLocation = useCallback(() => {
     if (typeof window !== 'undefined' && navigator.geolocation) {
       setIsLocating(true);
       navigator.geolocation.getCurrentPosition(
@@ -73,12 +80,16 @@ function StandaloneOrderContent() {
           console.warn('GPS location error:', err);
           setIsLocating(false);
         },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
     } else {
       setIsLocating(false);
     }
   }, []);
+
+  useEffect(() => {
+    refreshGpsLocation();
+  }, [refreshGpsLocation]);
 
   // Nearest client calculation dynamically based on live GPS
   const nearestClient: Client | null = useMemo(() => {
@@ -174,16 +185,33 @@ function StandaloneOrderContent() {
 
         {/* CLIENTE MÁS CERCANO (GPS) */}
         <div className="bg-white p-4 sm:p-5 rounded-3xl border border-slate-200 shadow-xs space-y-3">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <span className="text-xs font-black text-slate-900 uppercase tracking-wider block">
               Cliente
             </span>
-            {formattedDistance && (
-              <span className="text-[11px] font-black text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 flex items-center">
-                <Navigation className="w-3 h-3 mr-1 text-emerald-600 shrink-0" />
-                {formattedDistance}
-              </span>
-            )}
+            <div className="flex items-center space-x-1.5">
+              {isLocating && !userLocation ? (
+                <span className="text-[11px] font-bold text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200 flex items-center animate-pulse">
+                  <Navigation className="w-3 h-3 mr-1 text-blue-600 shrink-0 animate-spin" />
+                  Buscando local por GPS...
+                </span>
+              ) : formattedDistance ? (
+                <span className="text-[11px] font-black text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 flex items-center">
+                  <Navigation className="w-3 h-3 mr-1 text-emerald-600 shrink-0" />
+                  {formattedDistance}
+                </span>
+              ) : null}
+
+              <button
+                type="button"
+                onClick={refreshGpsLocation}
+                disabled={isLocating}
+                title="Actualizar GPS para detectar el local más cercano"
+                className="p-1 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors active:scale-95 cursor-pointer"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isLocating ? 'animate-spin text-blue-600' : ''}`} />
+              </button>
+            </div>
           </div>
 
           {activeClient ? (
@@ -219,6 +247,19 @@ function StandaloneOrderContent() {
               </div>
 
               <div className="flex items-center space-x-2 self-end sm:self-auto shrink-0">
+                {typeof activeClient.latitude === 'number' && typeof activeClient.longitude === 'number' && (
+                  <a
+                    href={`https://www.google.com/maps/dir/?api=1&destination=${activeClient.latitude},${activeClient.longitude}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="p-2 bg-white hover:bg-blue-50 text-slate-600 hover:text-blue-600 border border-slate-200 rounded-xl transition-colors shadow-2xs flex items-center space-x-1 text-xs font-bold"
+                    title="Abrir ruta en Google Maps"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Ruta</span>
+                  </a>
+                )}
                 <button
                   type="button"
                   onClick={(e) => {

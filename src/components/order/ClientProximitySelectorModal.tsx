@@ -96,7 +96,7 @@ export function ClientProximitySelectorModal({
                 </h3>
                 <p className="text-[11px] text-slate-500 font-semibold flex items-center mt-0.5">
                   {userLocation ? (
-                    <span className="text-emerald-700 font-bold flex items-center">
+                    <span className="text-emerald-600 flex items-center">
                       <Navigation className="w-3 h-3 mr-1 text-emerald-600" />
                       Ordenados por cercanía GPS
                     </span>
@@ -112,13 +112,40 @@ export function ClientProximitySelectorModal({
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-1.5 rounded-xl text-slate-400 hover:text-slate-800 hover:bg-slate-200 transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center space-x-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  if (navigator.geolocation) {
+                    setIsLocating(true);
+                    navigator.geolocation.getCurrentPosition(
+                      (pos) => {
+                        setUserLocation({
+                          latitude: pos.coords.latitude,
+                          longitude: pos.coords.longitude,
+                        });
+                        setIsLocating(false);
+                      },
+                      () => setIsLocating(false),
+                      { enableHighAccuracy: true, timeout: 8000 }
+                    );
+                  }
+                }}
+                disabled={isLocating}
+                title="Actualizar mi ubicación GPS"
+                className="p-2 rounded-xl text-blue-600 hover:bg-blue-50 border border-transparent hover:border-blue-200 transition-all active:scale-95 cursor-pointer"
+              >
+                <RefreshCw className={`w-4 h-4 ${isLocating ? 'animate-spin' : ''}`} />
+              </button>
+
+              <button
+                type="button"
+                onClick={onClose}
+                className="p-2 rounded-xl text-slate-400 hover:text-slate-800 hover:bg-slate-200 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           {/* Search & Actions Bar */}

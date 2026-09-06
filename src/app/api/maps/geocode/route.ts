@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Coordenadas requeridas' }, { status: 400 });
     }
 
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || 'AIzaSyBxdOiBsT-hmDUzpwhLg8BSmjvgCof0uI0';
+    const apiKey = process.env.GOOGLE_MAPS_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
     const res = await fetch(
       `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}&language=es`
     );
