@@ -101,7 +101,6 @@ const FLAVOR_ICON_URLS: Record<string, string> = {
   'Tamarindo': '/flavors/tamarindo.webp',
   'Lima Limón': '/flavors/lima-limon.webp',
   'Flor de Jamaica': '/flavors/flor-de-jamaica.webp',
-  'Limón': '/flavors/lima-limon.webp',
 };
 
 // 3D & Vector fruit icon for flavors
@@ -121,27 +120,35 @@ function FruitVectorIcon({ flavor, size = 28, className = "" }: { flavor: string
     );
   }
 
-  switch (flavor) {
-    case 'Sin Gas':
-      return (
-        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
-          <path d="M12 3C12 3 6 10 6 15C6 18.3 8.7 21 12 21C15.3 21 18 18.3 18 15C18 10 12 3 12 3Z" fill="#38bdf8" />
-          <ellipse cx="10" cy="14" rx="1.5" ry="3" fill="#e0f2fe" opacity="0.8" />
-        </svg>
-      );
-    case 'Con Gas':
-      return (
-        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
-          <path d="M12 3C12 3 6 10 6 15C6 18.3 8.7 21 12 21C15.3 21 18 18.3 18 15C18 10 12 3 12 3Z" fill="#0284c7" />
-          <circle cx="10" cy="16" r="1.5" fill="#ffffff" />
-          <circle cx="14" cy="13" r="1" fill="#ffffff" />
-          <circle cx="11" cy="10" r="0.8" fill="#ffffff" />
-        </svg>
-      );
-    default:
-      return <Sparkles className={`w-5 h-5 text-blue-600 ${className}`} />;
+  if (flavor === 'Sin Gas') {
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
+        <path d="M12 3C12 3 6 10 6 15C6 18.3 8.7 21 12 21C15.3 21 18 18.3 18 15C18 10 12 3 12 3Z" fill="#38bdf8" />
+        <ellipse cx="10" cy="14" rx="1.5" ry="3" fill="#e0f2fe" opacity="0.8" />
+      </svg>
+    );
   }
+
+  if (flavor === 'Con Gas') {
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
+        <path d="M12 3C12 3 6 10 6 15C6 18.3 8.7 21 12 21C15.3 21 18 18.3 18 15C18 10 12 3 12 3Z" fill="#0284c7" />
+        <circle cx="10" cy="16" r="1.5" fill="#ffffff" />
+        <circle cx="14" cy="13" r="1" fill="#ffffff" />
+        <circle cx="11" cy="10" r="0.8" fill="#ffffff" />
+      </svg>
+    );
+  }
+
+  // Si no existe icono para este sabor, se deja en blanco (sin inventar iconos)
+  return null;
 }
+
+const DEFAULT_FLAVOR_STYLE = {
+  bgSelected: 'bg-blue-50/90',
+  borderSelected: 'border-blue-600',
+  ringSelected: 'ring-2 ring-blue-500/25',
+};
 
 const FLAVOR_STYLES: Record<string, { bgSelected: string; borderSelected: string; ringSelected: string }> = {
   'Piña': { bgSelected: 'bg-amber-50/90', borderSelected: 'border-amber-500', ringSelected: 'ring-2 ring-amber-400/25' },
@@ -153,8 +160,6 @@ const FLAVOR_STYLES: Record<string, { bgSelected: string; borderSelected: string
   'Con Gas': { bgSelected: 'bg-blue-50/90', borderSelected: 'border-blue-600', ringSelected: 'ring-2 ring-blue-500/25' },
   'Lima Limón': { bgSelected: 'bg-lime-50/90', borderSelected: 'border-lime-500', ringSelected: 'ring-2 ring-lime-400/25' },
   'Flor de Jamaica': { bgSelected: 'bg-rose-50/90', borderSelected: 'border-rose-600', ringSelected: 'ring-2 ring-rose-500/25' },
-  'Limón': { bgSelected: 'bg-yellow-50/90', borderSelected: 'border-yellow-500', ringSelected: 'ring-2 ring-yellow-400/25' },
-  'Durazno': { bgSelected: 'bg-orange-50/90', borderSelected: 'border-orange-400', ringSelected: 'ring-2 ring-orange-300/25' },
 };
 
 export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaProps) {
@@ -167,19 +172,35 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
 
   const clientTier = activeClient?.clientTier || 'normal';
 
+  // Categorías de bebidas derivadas 100% del catálogo en base de datos
+  const availableTypes = useMemo(() => {
+    const presentTypes = Array.from(new Set(catalog.map((opt) => opt.beverageType)));
+    const preferredOrder: BeverageType[] = ['Colas', 'Aguas', 'Tés'];
+    const ordered = preferredOrder.filter((t) => presentTypes.includes(t));
+    const remaining = presentTypes.filter((t) => !preferredOrder.includes(t as BeverageType));
+    return (ordered.length > 0 || remaining.length > 0)
+      ? ([...ordered, ...remaining] as BeverageType[])
+      : (['Colas', 'Aguas', 'Tés'] as BeverageType[]);
+  }, [catalog]);
+
   // Tipo de Bebida
   const [selectedType, setSelectedType] = useState<BeverageType>('Colas');
+
+  // Asegurar selección válida cuando se carga o actualiza el catálogo
+  React.useEffect(() => {
+    if (availableTypes.length > 0 && !availableTypes.includes(selectedType)) {
+      setSelectedType(availableTypes[0]);
+    }
+  }, [availableTypes, selectedType]);
 
   const availableOptionsForType = useMemo(() => {
     return catalog.filter((opt) => opt.beverageType === selectedType);
   }, [catalog, selectedType]);
 
   // Formato seleccionado
-  const [selectedOptionId, setSelectedOptionId] = useState<string>(
-    availableOptionsForType[0]?.id || ''
-  );
+  const [selectedOptionId, setSelectedOptionId] = useState<string>('');
 
-  // Asegurar selección válida cuando cambia la categoría
+  // Asegurar selección válida cuando cambia la categoría o se actualiza el catálogo
   React.useEffect(() => {
     if (availableOptionsForType.length > 0) {
       const exists = availableOptionsForType.some((o) => o.id === selectedOptionId);
@@ -360,7 +381,7 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
     <div className="max-w-3xl mx-auto space-y-4">
       {/* Category Pills Header */}
       <div className="flex items-center space-x-2 bg-slate-200/80 p-1.5 rounded-2xl border border-slate-200/60 shadow-inner">
-        {(['Colas', 'Aguas', 'Tés'] as BeverageType[]).map((type) => {
+        {availableTypes.map((type) => {
           const isSelected = selectedType === type;
           return (
             <button
@@ -496,11 +517,8 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
                 }`}>
                   {currentOption.allowedFlavors.map((flavor) => {
                     const isSelected = selectedSingleFlavor === flavor;
-                    const style = FLAVOR_STYLES[flavor] || {
-                      bgSelected: 'bg-slate-50',
-                      borderSelected: 'border-slate-900',
-                      ringSelected: 'ring-2 ring-slate-400/25',
-                    };
+                    const style = FLAVOR_STYLES[flavor] || DEFAULT_FLAVOR_STYLE;
+                    const hasFlavorGraphic = Boolean(FLAVOR_ICON_URLS[flavor] || flavor === 'Sin Gas' || flavor === 'Con Gas');
 
                     return (
                       <button
@@ -513,9 +531,13 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
                             : 'border-slate-200/90 hover:border-slate-300 bg-white hover:bg-slate-50/80 shadow-2xs'
                         }`}
                       >
-                        {/* 3D Fruit Icon */}
-                        <div className="w-10 h-10 rounded-xl bg-white shadow-2xs border border-slate-100 flex items-center justify-center flex-shrink-0 p-1">
-                          <FruitVectorIcon flavor={flavor} size={32} />
+                        {/* 3D Fruit Icon o espacio en blanco si no tiene icono definido */}
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 p-1 ${
+                          hasFlavorGraphic
+                            ? 'bg-white shadow-2xs border border-slate-100'
+                            : 'bg-white/50 border border-slate-200/60'
+                        }`}>
+                          {hasFlavorGraphic ? <FruitVectorIcon flavor={flavor} size={32} /> : null}
                         </div>
 
                         <div className="text-xs sm:text-sm font-black text-slate-900 leading-tight truncate">
@@ -545,6 +567,7 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     {currentOption.allowedFlavors.map((flavor) => {
                       const count = surtidoCounts[flavor] || 0;
+                      const hasFlavorGraphic = Boolean(FLAVOR_ICON_URLS[flavor] || flavor === 'Sin Gas' || flavor === 'Con Gas');
 
                       return (
                         <div
@@ -552,8 +575,12 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
                           className="flex items-center justify-between bg-white p-3 rounded-xl border border-slate-200 shadow-2xs"
                         >
                           <div className="flex items-center space-x-2.5">
-                            <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center flex-shrink-0 p-1 border border-slate-100 shadow-2xs">
-                              <FruitVectorIcon flavor={flavor} size={30} />
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 p-1 ${
+                              hasFlavorGraphic
+                                ? 'bg-slate-50 border border-slate-100 shadow-2xs'
+                                : 'bg-white/50 border border-slate-200/60'
+                            }`}>
+                              {hasFlavorGraphic ? <FruitVectorIcon flavor={flavor} size={30} /> : null}
                             </div>
                             <span className="font-black text-sm sm:text-base text-slate-900">{flavor}</span>
                           </div>

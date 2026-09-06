@@ -6,7 +6,7 @@ export type BeverageSize = '250 ml' | '300 ml' | '500 ml' | '550 ml' | '600 ml' 
 
 export type ColaFlavor = 'Piña' | 'Tamarindo' | 'Mora' | 'Uva' | 'Mandarina';
 export type WaterFlavor = 'Sin Gas' | 'Con Gas';
-export type TeaFlavor = 'Lima Limón' | 'Flor de Jamaica' | 'Limón' | 'Durazno';
+export type TeaFlavor = 'Lima Limón' | 'Flor de Jamaica';
 
 export interface SurtidoBreakdown {
   [flavor: string]: number; // e.g. { "Piña": 12, "Mora": 12 }

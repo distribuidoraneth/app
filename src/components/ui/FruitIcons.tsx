@@ -574,8 +574,8 @@ export function TeaLemonIcon({ className = 'w-7 h-7', size = 32, ...props }: Fru
   );
 }
 
-// 12. TÉ DE DURAZNO (Tea Leaf + Peach Wedge)
-export function TeaPeachIcon({ className = 'w-7 h-7', size = 32, ...props }: FruitIconProps) {
+// 12. FLOR DE JAMAICA (Tea Leaf + Hibiscus Flower)
+export function HibiscusTeaIcon({ className = 'w-7 h-7', size = 32, ...props }: FruitIconProps) {
   return (
     <svg
       width={size}
@@ -596,9 +596,9 @@ export function TeaPeachIcon({ className = 'w-7 h-7', size = 32, ...props }: Fru
         fill="#22C55E"
       />
       <path d="M13 27C17.5 20.5 22 13.5 27 9" stroke="#86EFAC" strokeWidth="1.4" strokeLinecap="round" />
-      {/* Mini Peach Accent */}
-      <circle cx="10" cy="24" r="6.5" fill="#FB7185" stroke="#E11D48" strokeWidth="1.4" />
-      <path d="M10 19C9.5 22 9.5 26 10 28.5" stroke="#FFE4E6" strokeWidth="1" strokeLinecap="round" />
+      {/* Hibiscus Calyx Accent */}
+      <circle cx="10" cy="24" r="6.5" fill="#E11D48" stroke="#9F1239" strokeWidth="1.4" />
+      <path d="M10 18.5V29.5M4.5 24H15.5" stroke="#FDA4AF" strokeWidth="1" strokeLinecap="round" />
     </svg>
   );
 }
@@ -628,24 +628,15 @@ export function getFlavorVectorIcon(flavor: string, className = 'w-7 h-7') {
   if (norm.includes('limón') || norm.includes('limon')) {
     return <LimonIcon className={className} />;
   }
-  if (norm.includes('durazno')) {
-    return <DuraznoIcon className={className} />;
-  }
-  if (norm.includes('sin gas') || norm.includes('natural')) {
-    return <WaterNaturalIcon className={className} />;
-  }
-  if (norm.includes('con gas') || norm.includes('gas') || norm.includes('soda')) {
-    return <WaterSparklingIcon className={className} />;
-  }
-  if (norm.includes('té limón') || norm.includes('te limon')) {
+  if (norm.includes('té limón') || norm.includes('te limon') || norm.includes('lima limón') || norm.includes('lima limon')) {
     return <TeaLemonIcon className={className} />;
   }
-  if (norm.includes('té') || norm.includes('te')) {
-    return <TeaPeachIcon className={className} />;
+  if (norm.includes('jamaica') || norm.includes('flor de jamaica')) {
+    return <HibiscusTeaIcon className={className} />;
   }
 
-  // Fallback
-  return <PineappleIcon className={className} />;
+  // Si no existe el sabor, retornar null (en blanco)
+  return null;
 }
 
 export function FruitVectorIcon({

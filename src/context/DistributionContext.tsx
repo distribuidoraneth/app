@@ -18,7 +18,7 @@ import {
   INITIAL_ORDERS,
   INITIAL_INVOICES,
 } from '@/lib/mockData';
-import { saveOrderToDb, saveClientToDb, getClientsFromDb, updateClientDebtInDb } from '@/lib/supabase/syncService';
+import { saveOrderToDb, saveClientToDb, getClientsFromDb, getProductsFromDb, updateClientDebtInDb } from '@/lib/supabase/syncService';
 
 interface DistributionContextType {
   // Data
@@ -70,7 +70,7 @@ interface DistributionContextType {
 
 const DistributionContext = createContext<DistributionContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'distribuidora_aneth_oficial_v9';
+const STORAGE_KEY = 'distribuidora_aneth_oficial_v11';
 
 export function DistributionProvider({ children }: { children: React.ReactNode }) {
   const [clients, setClients] = useState<Client[]>(INITIAL_CLIENTS);
@@ -88,7 +88,10 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed.clients) setClients(parsed.clients);
-        if (parsed.catalog) setCatalog(parsed.catalog);
+        // Validar que el catálogo en caché sea moderno (incluya Tés) antes de sobreescribir
+        if (parsed.catalog && Array.isArray(parsed.catalog) && parsed.catalog.some((p: any) => p.beverageType === 'Tés')) {
+          setCatalog(parsed.catalog);
+        }
         if (parsed.orders) setOrders(parsed.orders);
         if (parsed.invoices) setInvoices(parsed.invoices);
         if (parsed.clients && parsed.clients.length > 0 && !selectedClientId) {
@@ -99,7 +102,16 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
       // ignore
     }
 
-    // Sync clients from Supabase in background
+    // 1. Sincronizar catálogo oficial de productos en tiempo real desde Supabase PostgreSQL
+    getProductsFromDb()
+      .then((dbProducts) => {
+        if (dbProducts && dbProducts.length > 0) {
+          setCatalog(dbProducts);
+        }
+      })
+      .catch((err) => console.warn('Sync products error:', err));
+
+    // 2. Sincronizar clientes desde Supabase
     getClientsFromDb()
       .then((dbClients) => {
         if (dbClients && dbClients.length > 0) {

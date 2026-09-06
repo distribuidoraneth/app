@@ -104,22 +104,35 @@ export async function getProductsFromDb(): Promise<JavaProductOption[]> {
       return JAVA_PRODUCT_CATALOG;
     }
 
-    return data.map((p: any) => ({
-      id: p.id,
-      brand: p.brand || 'Fructi',
-      beverageType: p.beverage_type,
-      container: p.container,
-      size: p.size,
-      allowedFlavors: p.allowed_flavors || [],
-      unitsPerJava: Number(p.units_per_java),
-      pricePerJava: Number(p.price_per_java),
-      priceDistribuidor: p.price_distribuidor ? Number(p.price_distribuidor) : undefined,
-      priceEspecial: p.price_especial ? Number(p.price_especial) : undefined,
-      pricePerUnit: p.price_per_unit ? Number(p.price_per_unit) : undefined,
-      imageUrl: p.image_url,
-      description: p.description,
-      stockJavas: Number(p.stock_javas || 100),
-    }));
+    const sortOrder: Record<string, number> = {
+      'opt-colas-plastico-300': 1,
+      'opt-colas-plastico-500': 2,
+      'opt-colas-plastico-1500': 3,
+      'opt-colas-plastico-3000': 4,
+      'opt-colas-vidrio-300': 5,
+      'opt-tes-plastico-550': 6,
+      'opt-aguas-forest-600': 7,
+      'opt-aguas-forest-1000': 8,
+    };
+
+    return data
+      .sort((a: any, b: any) => (sortOrder[a.id] || 99) - (sortOrder[b.id] || 99))
+      .map((p: any) => ({
+        id: p.id,
+        brand: p.brand || (p.beverage_type === 'Aguas' ? 'Forest' : 'Fructi'),
+        beverageType: p.beverage_type,
+        container: p.container,
+        size: p.size,
+        allowedFlavors: p.allowed_flavors || [],
+        unitsPerJava: Number(p.units_per_java),
+        pricePerJava: Number(p.price_per_java),
+        priceDistribuidor: p.price_distribuidor ? Number(p.price_distribuidor) : undefined,
+        priceEspecial: p.price_especial ? Number(p.price_especial) : undefined,
+        pricePerUnit: p.price_per_unit ? Number(p.price_per_unit) : undefined,
+        imageUrl: p.image_url || '',
+        description: p.description || '',
+        stockJavas: Number(p.stock_javas || 100),
+      }));
   } catch {
     return JAVA_PRODUCT_CATALOG;
   }
