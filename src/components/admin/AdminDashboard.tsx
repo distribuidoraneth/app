@@ -9,7 +9,6 @@ import { CatalogManager } from './CatalogManager';
 import { ClientRegistrationModal } from './ClientRegistrationModal';
 import { QRCodeModal } from './QRCodeModal';
 import { InvoiceModal } from '@/components/invoice/InvoiceModal';
-import { GoogleMapDirectory } from '@/components/maps/GoogleMapDirectory';
 import { LiquidMobileTabPill, TabItem } from '@/components/ui/LiquidMobileTabPill';
 import { MobileFloatingDock, DockNavItem } from '@/components/ui/MobileFloatingDock';
 import { formatCurrency, formatDate } from '@/lib/utils/formatters';
@@ -41,6 +40,7 @@ import {
   Sparkles,
   Zap,
   Calendar,
+  ExternalLink,
 } from 'lucide-react';
 
 export function AdminDashboard() {
@@ -343,23 +343,6 @@ export function AdminDashboard() {
               </button>
             </div>
 
-            {/* Map Preview of Clients with Google Maps Platform */}
-            <div className="bg-white p-4 sm:p-5 rounded-3xl border border-slate-200 shadow-xs space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-extrabold text-slate-800 uppercase tracking-wider flex items-center">
-                  <MapPin className="w-4 h-4 mr-1.5 text-blue-600" />
-                  Mapa Oficial de Locales (Google Maps)
-                </span>
-                <span className="text-xs text-slate-500 font-mono font-bold">
-                  {clients.length} {clients.length === 1 ? 'ubicación' : 'ubicaciones'}
-                </span>
-              </div>
-              <GoogleMapDirectory
-                clients={clients}
-                heightClassName="h-72 sm:h-[420px]"
-              />
-            </div>
-
             {/* Clients Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {clients.map((client) => (
@@ -398,10 +381,23 @@ export function AdminDashboard() {
                           RUC/CI: {client.taxId} ({client.taxIdType === '04' ? 'RUC' : 'Cédula'})
                         </p>
                       )}
-                      <p className="flex items-start text-slate-500 text-[11px]">
-                        <MapPin className="w-3.5 h-3.5 mr-1 text-slate-400 shrink-0 mt-0.5" />
-                        <span>{client.addressReference}</span>
-                      </p>
+                      <div className="flex items-start justify-between text-slate-500 text-[11px] pt-0.5">
+                        <p className="flex items-start">
+                          <MapPin className="w-3.5 h-3.5 mr-1 text-slate-400 shrink-0 mt-0.5" />
+                          <span>{client.addressReference || 'Sin dirección registrada'}</span>
+                        </p>
+                        {typeof client.latitude === 'number' && typeof client.longitude === 'number' && !isNaN(client.latitude) && !isNaN(client.longitude) && (
+                          <a
+                            href={`https://www.google.com/maps/search/?api=1&query=${client.latitude},${client.longitude}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center text-blue-600 hover:text-blue-800 font-bold shrink-0 ml-1.5 p-1 rounded-md hover:bg-blue-50 transition-colors"
+                            title="Abrir ubicación en Google Maps"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </a>
+                        )}
+                      </div>
                     </div>
 
                     {/* Credit Status */}

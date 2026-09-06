@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useDistribution } from '@/context/DistributionContext';
-import { GoogleMapLocationPicker } from '@/components/maps/GoogleMapLocationPicker';
 import { Gender, Client, ClientTier } from '@/types';
 import {
   X,
@@ -10,6 +9,10 @@ import {
   Search,
   Loader2,
   CheckCircle2,
+  Navigation,
+  MapPin,
+  RefreshCw,
+  ExternalLink,
 } from 'lucide-react';
 import { formatEcuadorianPhone, validateEcuadorianPhone } from '@/lib/utils/ecuadorValidators';
 
@@ -551,36 +554,92 @@ export function ClientRegistrationModal({
               </div>
             </div>
 
-            {/* Dirección */}
-            <div className="space-y-1.5">
-              <label className="text-sm font-bold text-slate-800 block">
-                Dirección
-              </label>
+            {/* Dirección y Referencias del Local */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-bold text-slate-800 block">
+                  Dirección y Referencias del Local
+                </label>
+                {isGeocoding && (
+                  <span className="text-[11px] text-blue-600 font-bold flex items-center animate-pulse">
+                    <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                    Obteniendo dirección oficial...
+                  </span>
+                )}
+              </div>
               <input
                 type="text"
                 value={addressReference}
-                readOnly
-                placeholder={isGeocoding ? 'Detectando dirección con Google Maps...' : 'Esperando señal GPS...'}
-                className="w-full text-base px-4 py-3.5 border border-slate-200 rounded-xl bg-slate-100/90 text-slate-800 font-medium cursor-not-allowed select-text leading-relaxed"
+                onChange={(e) => setAddressReference(e.target.value)}
+                placeholder="Ej. Galápagos 629 y Montalvo (frente a la farmacia)"
+                className="w-full text-base px-4 py-3.5 border border-slate-200 rounded-xl bg-white text-slate-900 font-medium focus:outline-hidden focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 leading-relaxed shadow-2xs"
               />
+              <p className="text-[11px] text-slate-500">
+                Se autocompleta con tu GPS mediante Google Maps. Puedes editarla o agregar referencias.
+              </p>
             </div>
 
-            {/* Mapa Interactivo de Google Maps con Selección y Ajuste de Pin */}
-            <div className="pt-1">
-              <GoogleMapLocationPicker
-                latitude={coords.lat}
-                longitude={coords.lng}
-                accuracy={gpsAccuracy}
-                isCalibrating={isCalibratingGps}
-                zoom={17}
-                className="h-48 sm:h-56 w-full rounded-2xl overflow-hidden shadow-2xs border border-slate-200"
-                onLocationChange={(newLat, newLng, newAddress) => {
-                  setCoords({ lat: newLat, lng: newLng });
-                  if (newAddress) {
-                    setAddressReference(newAddress);
-                  }
-                }}
-              />
+            {/* Captura de Ubicación GPS Satelital */}
+            <div className="p-3.5 sm:p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2.5">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center space-x-2.5 min-w-0">
+                  <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold shrink-0">
+                    <Navigation className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="text-xs font-black text-slate-900">Coordenadas GPS del Local</h4>
+                    <p className="text-[11px] text-slate-600 font-mono truncate">
+                      {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}
+                      {gpsAccuracy !== null && ` (±${Math.round(gpsAccuracy)}m)`}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (navigator.geolocation) {
+                      setIsCalibratingGps(true);
+                      navigator.geolocation.getCurrentPosition(
+                        (pos) => {
+                          const newLat = pos.coords.latitude;
+                          const newLng = pos.coords.longitude;
+                          setCoords({ lat: newLat, lng: newLng });
+                          setGpsAccuracy(pos.coords.accuracy);
+                          setIsCalibratingGps(false);
+                          fetchGoogleAddress(newLat, newLng);
+                        },
+                        (err) => {
+                          setIsCalibratingGps(false);
+                          alert('Error al obtener GPS: ' + err.message);
+                        },
+                        { enableHighAccuracy: true, timeout: 10000 }
+                      );
+                    }
+                  }}
+                  disabled={isCalibratingGps}
+                  className="px-3 py-2 bg-white hover:bg-slate-100 text-blue-600 border border-slate-200 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center space-x-1.5 cursor-pointer active:scale-95 shrink-0"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isCalibratingGps ? 'animate-spin text-blue-600' : ''}`} />
+                  <span>{isCalibratingGps ? 'Detectando...' : 'Re-capturar GPS'}</span>
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between pt-2 border-t border-slate-200/80 text-[11px]">
+                <span className="text-emerald-700 font-bold flex items-center">
+                  <CheckCircle2 className="w-3.5 h-3.5 mr-1 text-emerald-600" />
+                  Ubicación lista para cálculo de cercanía
+                </span>
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${coords.lat},${coords.lng}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:text-blue-800 font-bold flex items-center space-x-1"
+                >
+                  <span>Verificar en Google Maps</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
             </div>
           </div>
 
