@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useDistribution } from '@/context/DistributionContext';
-import { formatCurrency } from '@/lib/utils/formatters';
+import { formatCurrency, formatItemTitle } from '@/lib/utils/formatters';
 import { SaleTypeBadgeSelector } from '@/components/order/SaleTypeBadgeSelector';
 import confetti from 'canvas-confetti';
 import Link from 'next/link';
@@ -54,9 +54,11 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
     clients,
     selectedClientId,
     invoices,
+    orders,
   } = useDistribution();
 
   const activeClient = clients.find((c) => c.id === (clientId || selectedClientId)) || clients[0];
+  const nextOrderNumber = `ORD-${String(orders.length + 101).padStart(5, '0')}`;
 
   const [saleType, setSaleType] = useState<SaleType>('autoventa');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
@@ -137,6 +139,12 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
 
   const [notes, setNotes] = useState<string>('');
   const [addressRef, setAddressRef] = useState<string>(activeClient?.addressReference || '');
+
+  useEffect(() => {
+    if (activeClient?.addressReference) {
+      setAddressRef(activeClient.addressReference);
+    }
+  }, [activeClient?.id, activeClient?.addressReference]);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [createdOrderSummary, setCreatedOrderSummary] = useState<{
     orderId: string;
@@ -291,11 +299,25 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
               <span className="text-xs font-black sm:hidden">Volver</span>
             </button>
             <div>
-              <h2 className="font-black text-base sm:text-lg text-slate-900 leading-tight">
-                {createdOrderSummary ? 'Comprobante de Venta' : 'Revisar & Cobrar Pedido'}
-              </h2>
-              <p className="text-xs text-slate-500 font-bold">
-                {activeClient?.businessName || activeClient?.fullName}
+              <div className="flex items-center space-x-2">
+                <h2 className="font-black text-base sm:text-lg text-slate-900 leading-tight">
+                  {createdOrderSummary ? 'Comprobante' : 'Pedido'}
+                </h2>
+                {!createdOrderSummary && (
+                  <span className="font-mono text-xs font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
+                    #{nextOrderNumber}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-slate-600 font-medium flex items-center gap-1.5 mt-0.5">
+                <span className="font-bold text-slate-800">
+                  {activeClient?.businessName || activeClient?.fullName || 'Cliente'}
+                </span>
+                {activeClient?.whatsappNumber && (
+                  <span className="font-mono text-slate-500">
+                    • {activeClient.whatsappNumber}
+                  </span>
+                )}
               </p>
             </div>
           </div>
@@ -492,40 +514,33 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
                     className="p-3.5 bg-white rounded-2xl border border-slate-200/90 shadow-2xs space-y-2.5"
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <div className="space-y-1">
-                        <div className="flex items-center space-x-2">
+                      <div className="space-y-1 min-w-0">
+                        <div className="flex items-center space-x-2 flex-wrap gap-y-1">
                           <span className="font-black text-sm sm:text-base text-slate-900">
-                            {item.beverageType} • {item.container}
+                            {formatItemTitle(item)}
                           </span>
                           <span className="bg-blue-50 text-blue-700 border border-blue-200 text-xs font-black px-2 py-0.5 rounded-md">
-                            {item.size}
+                            {item.size} • {item.container}
                           </span>
                         </div>
 
-                        <div className="text-xs text-slate-600">
-                          {item.flavorType === 'single' ? (
-                            <span className="font-bold">
-                              Sabor: <strong className="text-slate-900">{item.selectedFlavor}</strong>
+                        {item.flavorType === 'surtido' && item.surtidoDetails && (
+                          <div className="pt-0.5">
+                            <span className="text-[11px] font-bold text-slate-500 block mb-0.5">
+                              {item.container === 'Vidrio' ? 'Java Surtida:' : 'Pack Surtido:'}
                             </span>
-                          ) : (
-                            <div>
-                              <span className="font-black text-blue-700 block">
-                                {item.container === 'Vidrio' ? 'Java Surtida:' : 'Pack Surtido:'}
-                              </span>
-                              <div className="flex flex-wrap gap-1 mt-0.5">
-                                {item.surtidoDetails &&
-                                  Object.entries(item.surtidoDetails).map(([fl, qty]) => (
-                                    <span
-                                      key={fl}
-                                      className="bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md text-[11px] text-slate-800 font-black"
-                                    >
-                                      {qty}x {fl}
-                                    </span>
-                                  ))}
-                              </div>
+                            <div className="flex flex-wrap gap-1">
+                              {Object.entries(item.surtidoDetails).map(([fl, qty]) => (
+                                <span
+                                  key={fl}
+                                  className="bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md text-[11px] text-slate-800 font-bold"
+                                >
+                                  {qty}x {fl}
+                                </span>
+                              ))}
                             </div>
-                          )}
-                        </div>
+                          </div>
+                        )}
                       </div>
 
                       <div className="text-right">
@@ -601,49 +616,40 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
                   <button
                     type="button"
                     onClick={() => handlePaymentMethodChange('cash')}
-                    className={`p-2.5 sm:p-3 rounded-2xl border flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-1.5 sm:gap-2 transition-all active:scale-95 cursor-pointer ${
+                    className={`py-3 px-2 rounded-2xl border flex items-center justify-center space-x-2 transition-all active:scale-95 cursor-pointer ${
                       paymentMethod === 'cash'
                         ? 'border-blue-600 bg-blue-50 text-blue-950 ring-2 ring-blue-500/20 font-black'
-                        : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
+                        : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold'
                     }`}
                   >
-                    <Banknote className="w-5 h-5 text-emerald-600 shrink-0" />
-                    <div className="min-w-0">
-                      <div className="text-xs font-black truncate">Efectivo</div>
-                      <div className="text-[10px] text-slate-500 truncate">Contado</div>
-                    </div>
+                    <Banknote className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span className="text-xs">Efectivo</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => handlePaymentMethodChange('deuna')}
-                    className={`p-2.5 sm:p-3 rounded-2xl border flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-1.5 sm:gap-2 transition-all active:scale-95 cursor-pointer ${
+                    className={`py-3 px-2 rounded-2xl border flex items-center justify-center space-x-2 transition-all active:scale-95 cursor-pointer ${
                       paymentMethod === 'deuna'
                         ? 'border-blue-600 bg-blue-50 text-blue-950 ring-2 ring-blue-500/20 font-black'
-                        : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
+                        : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold'
                     }`}
                   >
-                    <Zap className="w-5 h-5 text-purple-600 shrink-0" />
-                    <div className="min-w-0">
-                      <div className="text-xs font-black truncate">DeUna</div>
-                      <div className="text-[10px] text-slate-500 truncate">QR / Cel</div>
-                    </div>
+                    <Zap className="w-4 h-4 text-purple-600 shrink-0" />
+                    <span className="text-xs">DeUna</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => handlePaymentMethodChange('transfer')}
-                    className={`p-2.5 sm:p-3 rounded-2xl border flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-1.5 sm:gap-2 transition-all active:scale-95 cursor-pointer ${
+                    className={`py-3 px-2 rounded-2xl border flex items-center justify-center space-x-2 transition-all active:scale-95 cursor-pointer ${
                       paymentMethod === 'transfer'
                         ? 'border-blue-600 bg-blue-50 text-blue-950 ring-2 ring-blue-500/20 font-black'
-                        : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
+                        : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold'
                     }`}
                   >
-                    <Building2 className="w-5 h-5 text-blue-600 shrink-0" />
-                    <div className="min-w-0">
-                      <div className="text-xs font-black truncate">Transferencia</div>
-                      <div className="text-[10px] text-slate-500 truncate">Pichincha</div>
-                    </div>
+                    <Building2 className="w-4 h-4 text-blue-600 shrink-0" />
+                    <span className="text-xs">Transferencia</span>
                   </button>
                 </div>
 
@@ -756,24 +762,24 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
                       <button
                         type="button"
                         onClick={() => setAmountPaidInput(cartTotalAmount.toFixed(2))}
-                        className={`text-[11px] font-bold px-2 py-0.5 rounded-lg border transition-all active:scale-95 cursor-pointer ${
+                        className={`text-xs font-black px-3 py-1 rounded-xl border transition-all active:scale-95 cursor-pointer ${
                           numericPaid === cartTotalAmount
                             ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
-                            : 'bg-white hover:bg-blue-50 text-blue-700 border-blue-200'
+                            : 'bg-white hover:bg-blue-50 text-blue-700 border-slate-200'
                         }`}
                       >
-                        Pagar Total (${cartTotalAmount.toFixed(2)})
+                        Total
                       </button>
                       <button
                         type="button"
                         onClick={() => setAmountPaidInput('0.00')}
-                        className={`text-[11px] font-bold px-2 py-0.5 rounded-lg border transition-all active:scale-95 cursor-pointer ${
+                        className={`text-xs font-black px-3 py-1 rounded-xl border transition-all active:scale-95 cursor-pointer ${
                           numericPaid === 0 && amountPaidInput !== ''
                             ? 'bg-amber-600 text-white border-amber-600 shadow-2xs'
-                            : 'bg-white hover:bg-amber-50 text-amber-800 border-amber-200'
+                            : 'bg-white hover:bg-amber-50 text-amber-800 border-slate-200'
                         }`}
                       >
-                        Dejar a Crédito ($0.00)
+                        Crédito
                       </button>
                     </div>
                   </div>

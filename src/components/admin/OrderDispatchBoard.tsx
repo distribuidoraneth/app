@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useDistribution } from '@/context/DistributionContext';
-import { formatCurrency, formatDate, generateWhatsAppOrderLink } from '@/lib/utils/formatters';
+import { formatCurrency, formatDate, generateWhatsAppOrderLink, formatItemTitle } from '@/lib/utils/formatters';
 import { Order, Invoice } from '@/types';
 import { InvoiceModal } from '@/components/invoice/InvoiceModal';
 import { ThermalReceiptModal } from '@/components/receipt/ThermalReceiptModal';
@@ -238,18 +238,18 @@ export function OrderDispatchBoard() {
                               {it.quantityJavas}x Java
                             </span>{' '}
                             <span className="font-semibold text-slate-800">
-                              {it.beverageType} • {it.size} {it.container}
+                              {formatItemTitle(it)} • {it.size} {it.container}
                             </span>
-                            <div className="text-[11px] text-slate-500">
-                              {it.flavorType === 'single'
-                                ? `Sabor: ${it.selectedFlavor}`
-                                : `Surtido: ${
-                                    it.surtidoDetails &&
-                                    Object.entries(it.surtidoDetails)
-                                      .map(([f, q]) => `${q} ${f}`)
-                                      .join(', ')
-                                  }`}
-                            </div>
+                            {it.flavorType === 'surtido' && (
+                              <div className="text-[11px] text-slate-500">
+                                {`Surtido: ${
+                                  it.surtidoDetails &&
+                                  Object.entries(it.surtidoDetails)
+                                    .map(([f, q]) => `${q} ${f}`)
+                                    .join(', ')
+                                }`}
+                              </div>
+                            )}
                           </div>
                           <span className="font-mono font-extrabold text-slate-900">
                             {formatCurrency(it.subtotal)}

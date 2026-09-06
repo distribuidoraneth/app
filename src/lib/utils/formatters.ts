@@ -7,6 +7,37 @@ export function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
+export function formatItemTitle(item: {
+  beverageType?: string;
+  container?: string;
+  size?: string;
+  selectedFlavor?: string;
+  flavorType?: string;
+}): string {
+  const brand = 'Fructi';
+  let bev = 'Cola';
+  if (item.beverageType === 'Aguas') bev = 'Agua';
+  else if (item.beverageType === 'Tés') bev = 'Té';
+
+  const flavor = item.flavorType === 'surtido'
+    ? 'Surtida'
+    : (item.selectedFlavor ? item.selectedFlavor : '');
+
+  return `${brand} ${bev}${flavor ? ' ' + flavor : ''}`.trim();
+}
+
+export function formatItemFullDescription(item: {
+  beverageType?: string;
+  container?: string;
+  size?: string;
+  selectedFlavor?: string;
+  flavorType?: string;
+}): string {
+  const title = formatItemTitle(item);
+  const details = [item.size, item.container].filter(Boolean).join(' • ');
+  return details ? `${title} (${details})` : title;
+}
+
 export function formatDate(dateString: string): string {
   try {
     const date = new Date(dateString);

@@ -2,7 +2,7 @@
 
 import React, { useMemo, useRef } from 'react';
 import { Order, Client, Invoice } from '@/types';
-import { formatCurrency } from '@/lib/utils/formatters';
+import { formatCurrency, formatItemTitle } from '@/lib/utils/formatters';
 import { DEFAULT_TAX_PROFILE } from '@/lib/sri/xmlBuilder';
 import { generarClaveAcceso } from '@/lib/sri/claveAcceso';
 import { PoplQRCodeSVG } from '@/components/ui/PoplQRCodeSVG';
@@ -278,7 +278,7 @@ export function ThermalReceiptModal({
                     <div className="flex justify-between items-start">
                       <span className="w-10 font-bold">{qtyLabel}</span>
                       <span className="flex-1 text-left px-1 font-bold leading-tight">
-                        {it.beverageType} {it.container} {it.size}
+                        {formatItemTitle(it)}
                       </span>
                       <span className="w-10 text-right font-mono">
                         ${unitPrice.toFixed(2)}
@@ -288,7 +288,7 @@ export function ThermalReceiptModal({
                       </span>
                     </div>
                     <div className="pl-10 text-[9px] text-slate-700 leading-none">
-                      {flavorDesc} ({it.totalBottles} bots)
+                      {it.size} {it.container} {it.flavorType === 'surtido' ? `• ${flavorDesc}` : ''} ({it.totalBottles} bots)
                     </div>
                   </div>
                 );
