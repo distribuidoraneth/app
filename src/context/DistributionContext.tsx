@@ -18,7 +18,14 @@ import {
   INITIAL_ORDERS,
   INITIAL_INVOICES,
 } from '@/lib/mockData';
-import { saveOrderToDb, saveClientToDb, getClientsFromDb, getProductsFromDb, updateClientDebtInDb } from '@/lib/supabase/syncService';
+import {
+  saveOrderToDb,
+  saveClientToDb,
+  getClientsFromDb,
+  getProductsFromDb,
+  getOrdersFromDb,
+  updateClientDebtInDb,
+} from '@/lib/supabase/syncService';
 
 interface DistributionContextType {
   // Data
@@ -66,14 +73,15 @@ interface DistributionContextType {
   recordDebtPayment: (clientId: string, amount: number, method?: PaymentMethod, notes?: string) => void;
   generateInvoice: (orderId: string) => Invoice | null;
   updateStock: (optionId: string, newStock: number) => void;
+  refreshData: () => Promise<void>;
 }
 
 const DistributionContext = createContext<DistributionContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'distribuidora_aneth_oficial_v11';
+const STORAGE_KEY = 'distribuidora_aneth_oficial_v12';
 
 export function DistributionProvider({ children }: { children: React.ReactNode }) {
-  const [clients, setClients] = useState<Client[]>(INITIAL_CLIENTS);
+  const [clients, setClients] = useState<Client[]>([]);
   const [catalog, setCatalog] = useState<JavaProductOption[]>(JAVA_PRODUCT_CATALOG);
   const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS);
   const [invoices, setInvoices] = useState<Invoice[]>(INITIAL_INVOICES);
@@ -81,19 +89,42 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   const [cart, setCart] = useState<CartItem[]>([]);
 
-  // Load from local storage and sync from Supabase
+  // Sincronizar simultáneamente productos, clientes y órdenes con Supabase
+  const refreshData = async () => {
+    try {
+      const [dbProducts, dbClients, dbOrders] = await Promise.all([
+        getProductsFromDb(),
+        getClientsFromDb(),
+        getOrdersFromDb(),
+      ]);
+
+      if (dbProducts !== null) {
+        setCatalog(dbProducts);
+      }
+      if (dbClients !== null) {
+        setClients(dbClients);
+        setSelectedClientId((prev) =>
+          dbClients.some((c) => c.id === prev) ? prev : (dbClients[0]?.id || '')
+        );
+      }
+      if (dbOrders !== null) {
+        setOrders(dbOrders);
+      }
+    } catch (err) {
+      console.warn('Error al sincronizar datos desde Supabase:', err);
+    }
+  };
+
+  // Carga inicial: leer caché local y sincronizar de inmediato con Supabase PostgreSQL
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed.clients) setClients(parsed.clients);
-        // Validar que el catálogo en caché sea moderno (incluya Tés) antes de sobreescribir
-        if (parsed.catalog && Array.isArray(parsed.catalog) && parsed.catalog.some((p: any) => p.beverageType === 'Tés')) {
-          setCatalog(parsed.catalog);
-        }
-        if (parsed.orders) setOrders(parsed.orders);
-        if (parsed.invoices) setInvoices(parsed.invoices);
+        if (Array.isArray(parsed.clients)) setClients(parsed.clients);
+        if (Array.isArray(parsed.catalog) && parsed.catalog.length > 0) setCatalog(parsed.catalog);
+        if (Array.isArray(parsed.orders)) setOrders(parsed.orders);
+        if (Array.isArray(parsed.invoices)) setInvoices(parsed.invoices);
         if (parsed.clients && parsed.clients.length > 0 && !selectedClientId) {
           setSelectedClientId(parsed.clients[0].id);
         }
@@ -102,24 +133,8 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
       // ignore
     }
 
-    // 1. Sincronizar catálogo oficial de productos en tiempo real desde Supabase PostgreSQL
-    getProductsFromDb()
-      .then((dbProducts) => {
-        if (dbProducts && dbProducts.length > 0) {
-          setCatalog(dbProducts);
-        }
-      })
-      .catch((err) => console.warn('Sync products error:', err));
-
-    // 2. Sincronizar clientes desde Supabase
-    getClientsFromDb()
-      .then((dbClients) => {
-        if (dbClients && dbClients.length > 0) {
-          setClients(dbClients);
-          setSelectedClientId((prev) => prev || dbClients[0].id);
-        }
-      })
-      .catch((err) => console.warn('Sync clients error:', err));
+    // La verdad de la base de datos toma precedencia sobre la caché
+    refreshData();
   }, []);
 
   // Save to local storage
@@ -598,6 +613,7 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
         recordDebtPayment,
         generateInvoice,
         updateStock,
+        refreshData,
       }}
     >
       {children}

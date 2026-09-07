@@ -377,6 +377,44 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
     resetQuantities();
   };
 
+  if (catalog.length === 0) {
+    return (
+      <div className="p-8 bg-white rounded-3xl border border-dashed border-slate-300 text-center space-y-2">
+        <p className="text-sm font-bold text-slate-700">Catálogo vacío en la base de datos</p>
+        <p className="text-xs text-slate-500">Agrega productos en la tabla &apos;products&apos; de Supabase para visualizarlos aquí.</p>
+      </div>
+    );
+  }
+
+  if (availableOptionsForType.length === 0) {
+    return (
+      <div className="max-w-3xl mx-auto space-y-4">
+        <div className="flex items-center space-x-2 bg-slate-200/80 p-1.5 rounded-2xl border border-slate-200/60 shadow-inner">
+          {availableTypes.map((type) => {
+            const isSelected = selectedType === type;
+            return (
+              <button
+                key={type}
+                type="button"
+                onClick={() => handleTypeChange(type)}
+                className={`flex-1 py-3 px-4 rounded-xl font-black text-base sm:text-lg transition-all active:scale-95 ${
+                  isSelected
+                    ? 'bg-white text-slate-950 shadow-sm ring-1 ring-slate-300'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                {type}
+              </button>
+            );
+          })}
+        </div>
+        <div className="p-8 bg-white rounded-3xl border border-dashed border-slate-300 text-center space-y-2">
+          <p className="text-sm font-bold text-slate-700">No hay productos registrados en {selectedType}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-3xl mx-auto space-y-4">
       {/* Category Pills Header */}

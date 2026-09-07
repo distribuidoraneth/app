@@ -6,14 +6,19 @@ import { supabase } from '@/lib/supabase/client';
 import { Client, JavaProductOption, Order } from '@/types';
 import { INITIAL_CLIENTS, JAVA_PRODUCT_CATALOG } from '@/lib/mockData';
 
-export async function getClientsFromDb(): Promise<Client[]> {
+export async function getClientsFromDb(): Promise<Client[] | null> {
   try {
-    const { data, error } = await supabase.from('clients').select('*');
-    if (error || !data || data.length === 0) {
-      return INITIAL_CLIENTS;
+    const { data, error } = await supabase
+      .from('clients')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.warn('Advertencia al consultar clientes en Supabase:', error.message);
+      return null;
     }
 
-    return data.map((c: any) => {
+    return (data || []).map((c: any) => {
       const tierMatch = c.qr_token?.match(/\|tier:(normal|distribuidor|especial)/);
       const clientTier = tierMatch ? tierMatch[1] : (c.client_tier || 'normal');
       const cleanQr = c.qr_token ? c.qr_token.split('|')[0] : `aneth-${c.id}`;
@@ -40,8 +45,9 @@ export async function getClientsFromDb(): Promise<Client[]> {
         createdAt: c.created_at,
       };
     });
-  } catch {
-    return INITIAL_CLIENTS;
+  } catch (err) {
+    console.warn('Excepción al consultar clientes:', err);
+    return null;
   }
 }
 
@@ -97,11 +103,12 @@ export async function saveClientToDb(client: Client): Promise<{ success: boolean
   }
 }
 
-export async function getProductsFromDb(): Promise<JavaProductOption[]> {
+export async function getProductsFromDb(): Promise<JavaProductOption[] | null> {
   try {
     const { data, error } = await supabase.from('products').select('*');
-    if (error || !data || data.length === 0) {
-      return JAVA_PRODUCT_CATALOG;
+    if (error) {
+      console.warn('Advertencia al consultar productos en Supabase:', error.message);
+      return null;
     }
 
     const sortOrder: Record<string, number> = {
@@ -115,7 +122,7 @@ export async function getProductsFromDb(): Promise<JavaProductOption[]> {
       'opt-aguas-forest-1000': 8,
     };
 
-    return data
+    return (data || [])
       .sort((a: any, b: any) => (sortOrder[a.id] || 99) - (sortOrder[b.id] || 99))
       .map((p: any) => ({
         id: p.id,
@@ -133,8 +140,73 @@ export async function getProductsFromDb(): Promise<JavaProductOption[]> {
         description: p.description || '',
         stockJavas: Number(p.stock_javas || 100),
       }));
-  } catch {
-    return JAVA_PRODUCT_CATALOG;
+  } catch (err) {
+    console.warn('Excepción al consultar productos en Supabase:', err);
+    return null;
+  }
+}
+
+export async function getOrdersFromDb(): Promise<Order[] | null> {
+  try {
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*, order_items(*)')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.warn('Advertencia al consultar pedidos en Supabase:', error.message);
+      return null;
+    }
+
+    return (data || []).map((o: any) => ({
+      id: o.id,
+      orderNumber: o.order_number,
+      clientId: o.client_id || 'guest',
+      clientName: o.client_name,
+      businessName: o.business_name,
+      whatsappNumber: o.whatsapp_number,
+      latitude: Number(o.latitude),
+      longitude: Number(o.longitude),
+      addressReference: o.address_reference,
+      items: (o.order_items || []).map((it: any) => ({
+        id: it.id,
+        productOptionId: it.product_option_id,
+        brand: it.brand || 'Fructi',
+        beverageType: it.beverage_type,
+        container: it.container,
+        size: it.size,
+        flavorType: it.flavor_type,
+        selectedFlavor: it.selected_flavor,
+        surtidoDetails: it.surtido_details,
+        quantityJavas: Number(it.quantity_javas || 0),
+        quantityUnits: Number(it.quantity_units || 0),
+        unitsPerJava: Number(it.units_per_java || 12),
+        pricePerJava: Number(it.price_per_java || 0),
+        pricePerUnit: Number(it.price_per_unit || 0),
+        totalBottles: Number(it.total_bottles || 0),
+        subtotal: Number(it.subtotal || 0),
+      })),
+      totalJavas: Number(o.total_javas || 0),
+      totalUnits: Number(o.total_units || 0),
+      totalBottles: Number(o.total_bottles || 0),
+      totalAmount: Number(o.total_amount || 0),
+      status: o.status,
+      saleType: o.sale_type,
+      scheduledDeliveryDate: o.scheduled_delivery_date,
+      scheduledTimeSlot: o.scheduled_time_slot,
+      promisedCollectionDate: o.promised_collection_date,
+      promisedCollectionTime: o.promised_collection_time,
+      paymentStatus: o.payment_status,
+      paymentMethod: o.payment_method,
+      amountPaid: Number(o.amount_paid || 0),
+      debtBalance: Number(o.debt_balance || 0),
+      notes: o.notes,
+      createdAt: o.created_at,
+      deliveredAt: o.delivered_at,
+    }));
+  } catch (err) {
+    console.warn('Excepción al consultar pedidos en Supabase:', err);
+    return null;
   }
 }
 
