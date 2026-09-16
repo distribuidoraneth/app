@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import { useDistribution } from '@/context/DistributionContext';
 import { formatCurrency, formatDate, generateWhatsAppOrderLink, formatItemTitle } from '@/lib/utils/formatters';
 import { Order, Invoice } from '@/types';
@@ -69,42 +70,44 @@ export function OrderDispatchBoard() {
 
   return (
     <div className="space-y-4">
-      {/* Filter Tabs */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-slate-200 shadow-xs">
-        <div className="flex items-center space-x-1.5">
-          <button
-            type="button"
-            onClick={() => setStatusFilter('all')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all ${
-              statusFilter === 'all'
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'text-slate-600 hover:bg-slate-100'
-            }`}
-          >
-            Todos
-          </button>
-          <button
-            type="button"
-            onClick={() => setStatusFilter('pending')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all relative ${
-              statusFilter === 'pending'
-                ? 'bg-amber-500 text-slate-950 shadow-xs'
-                : 'text-slate-600 hover:bg-slate-100'
-            }`}
-          >
-            Por Despachar
-          </button>
-          <button
-            type="button"
-            onClick={() => setStatusFilter('delivered')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all ${
-              statusFilter === 'delivered'
-                ? 'bg-emerald-600 text-white shadow-xs'
-                : 'text-slate-600 hover:bg-slate-100'
-            }`}
-          >
-            Entregados
-          </button>
+      {/* Liquid Material Filter Pill (Full Width, Balanced & Neutral) */}
+      <div className="w-full">
+        <div
+          role="tablist"
+          className="w-full grid grid-cols-3 p-1.5 bg-slate-200/80 border border-white/90 backdrop-blur-2xl rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.06)]"
+        >
+          {(
+            [
+              { id: 'all', label: 'Todos' },
+              { id: 'pending', label: 'Por Despachar' },
+              { id: 'delivered', label: 'Entregados' },
+            ] as const
+          ).map((tab) => {
+            const isActive = statusFilter === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => setStatusFilter(tab.id)}
+                className={`relative z-10 flex items-center justify-center py-2 px-2 sm:px-4 rounded-full transition-colors duration-200 outline-none select-none cursor-pointer text-center text-xs sm:text-[13px] font-black ${
+                  isActive
+                    ? 'text-slate-900'
+                    : 'text-slate-500 hover:text-slate-800 font-bold'
+                }`}
+              >
+                {isActive && (
+                  <motion.div
+                    layoutId="order-filter-pill"
+                    className="absolute inset-0 bg-white shadow-[0_3px_12px_rgba(0,0,0,0.1)] border border-slate-200/80 rounded-full -z-10"
+                    transition={{ type: 'spring', stiffness: 450, damping: 32 }}
+                  />
+                )}
+                <span className="truncate">{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
