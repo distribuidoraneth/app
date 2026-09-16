@@ -59,6 +59,36 @@ export function formatItemFullDescription(item: {
   return formatItemTitle(item);
 }
 
+export function formatOrderNumber(orderNumber: string): string {
+  if (!orderNumber) return 'ORD - 1';
+  // Remove leading '#' or prefix 'ORD-' with leading zeros
+  const numPart = orderNumber.replace(/[^0-9]/g, '');
+  const cleanInt = parseInt(numPart, 10);
+  if (!isNaN(cleanInt)) {
+    return `ORD - ${cleanInt}`;
+  }
+  return orderNumber.replace(/^#/, '');
+}
+
+export function formatShortDateTime(dateString: string): string {
+  try {
+    const date = new Date(dateString);
+    const day = date.getDate().toString().padStart(2, '0');
+    const months = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+    const month = months[date.getMonth()];
+    
+    let hours = date.getHours();
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const ampm = hours >= 12 ? 'pm' : 'am';
+    hours = hours % 12;
+    hours = hours ? hours : 12; // '0' should be 12
+
+    return `${day} ${month} ${hours}:${minutes} ${ampm}`;
+  } catch {
+    return dateString;
+  }
+}
+
 export function formatDate(dateString: string): string {
   try {
     const date = new Date(dateString);
