@@ -211,19 +211,12 @@ export function OrderDispatchBoard() {
                   : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
               }`}
             >
-              <Calendar className="w-3.5 h-3.5 shrink-0" />
-              <span className="font-mono text-[11px] sm:text-xs truncate">
+              {!customDate && <Calendar className="w-3.5 h-3.5 shrink-0" />}
+              <span className={`font-mono text-center tracking-tight ${customDate ? 'text-[11px] sm:text-xs font-bold' : 'text-xs font-bold'}`}>
                 {customDate
                   ? (() => {
                       const parts = customDate.split('-');
-                      return parts.length === 3 ? (
-                        <>
-                          {parts[2]}/{parts[1]}
-                          <span className="hidden sm:inline">/{parts[0]}</span>
-                        </>
-                      ) : (
-                        customDate
-                      );
+                      return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : customDate;
                     })()
                   : 'Fecha'}
               </span>
