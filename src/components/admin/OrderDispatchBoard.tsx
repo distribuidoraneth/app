@@ -17,16 +17,21 @@ import {
 import { Order, Invoice } from '@/types';
 import { InvoiceModal } from '@/components/invoice/InvoiceModal';
 import { ThermalReceiptModal } from '@/components/receipt/ThermalReceiptModal';
-import { AppleMapPinIcon, AppleWhatsAppIcon } from '@/components/ui/AppleIcons';
+import { AppleMapPinIcon, AppleWhatsAppIcon, AppleCheckmarkSealIcon } from '@/components/ui/AppleIcons';
 import {
   Clock,
-  CheckCircle2,
   XCircle,
   FileText,
   Package,
   Phone,
   Check,
   Printer,
+  Search,
+  Calendar,
+  X,
+  RotateCw,
+  Loader2,
+  CheckCircle2,
 } from 'lucide-react';
 
 export function OrderDispatchBoard() {
@@ -37,15 +42,53 @@ export function OrderDispatchBoard() {
     clients,
     generateInvoice,
     updateOrderStatus,
+    loadOrders,
+    ordersFilter,
+    isOrdersLoading,
   } = useDistribution();
 
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'delivered'>('all');
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [selectedOrderForThermal, setSelectedOrderForThermal] = useState<Order | null>(null);
 
+  // Estados de búsqueda y selector de fecha
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [selectedDatePreset, setSelectedDatePreset] = useState<'today' | 'yesterday' | 'week' | 'all' | 'custom'>(
+    ordersFilter?.datePreset || 'today'
+  );
+  const [customDate, setCustomDate] = useState<string>('');
+
+  const handleSelectPreset = (preset: 'today' | 'yesterday' | 'week' | 'all') => {
+    setSelectedDatePreset(preset);
+    setSearchQuery('');
+    loadOrders({ datePreset: preset });
+  };
+
+  const handleSearchSubmit = () => {
+    if (searchQuery.trim()) {
+      loadOrders({ searchQuery: searchQuery.trim() });
+    } else {
+      loadOrders({ datePreset: selectedDatePreset, customDate });
+    }
+  };
+
   const filteredOrders = orders.filter((o) => {
-    if (statusFilter === 'pending') return o.status === 'pending';
-    if (statusFilter === 'delivered') return o.status === 'delivered';
+    // 1. Filtro de estado
+    if (statusFilter === 'pending' && o.status !== 'pending') return false;
+    if (statusFilter === 'delivered' && o.status !== 'delivered') return false;
+
+    // 2. Filtro instantáneo local por texto si el usuario escribe
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      const matchBusiness = (o.businessName || '').toLowerCase().includes(q);
+      const matchClient = (o.clientName || '').toLowerCase().includes(q);
+      const matchNumber = (o.orderNumber || '').toLowerCase().includes(q);
+      const matchPhone = (o.whatsappNumber || '').includes(q);
+      if (!matchBusiness && !matchClient && !matchNumber && !matchPhone) {
+        return false;
+      }
+    }
+
     return true;
   });
 
@@ -78,7 +121,137 @@ export function OrderDispatchBoard() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3.5 sm:space-y-4">
+      {/* Barra de Búsqueda y Filtros de Fecha */}
+      <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 p-3 sm:p-4 shadow-xs space-y-2.5">
+        {/* Fila 1: Input de Búsqueda por Comercio / Cliente / # Pedido */}
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleSearchSubmit();
+              }}
+              placeholder="Buscar por comercio, cliente o # de pedido..."
+              className="w-full pl-9 pr-8 py-2 bg-slate-50 hover:bg-slate-100/70 focus:bg-white rounded-xl border border-slate-200 text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-hidden focus:border-blue-500 transition-colors shadow-2xs"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery('');
+                  loadOrders({ datePreset: selectedDatePreset, customDate });
+                }}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-slate-400 hover:text-slate-600 rounded-full cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={handleSearchSubmit}
+            disabled={isOrdersLoading}
+            className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl text-xs sm:text-sm font-bold shadow-xs transition-all shrink-0 cursor-pointer disabled:opacity-50 flex items-center space-x-1.5"
+          >
+            {isOrdersLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <span>Buscar</span>
+            )}
+          </button>
+        </div>
+
+        {/* Fila 2: Selector Rápido de Fechas + Calendario + Recargar */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-100">
+          <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+            <button
+              type="button"
+              onClick={() => handleSelectPreset('today')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
+                selectedDatePreset === 'today' && !searchQuery
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+              }`}
+            >
+              Hoy
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSelectPreset('yesterday')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                selectedDatePreset === 'yesterday' && !searchQuery
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+              }`}
+            >
+              Ayer
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSelectPreset('week')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                selectedDatePreset === 'week' && !searchQuery
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+              }`}
+            >
+              Esta Semana
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSelectPreset('all')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                selectedDatePreset === 'all' && !searchQuery
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+              }`}
+            >
+              Historial
+            </button>
+
+            {/* Selector de Fecha Específica */}
+            <div className="flex items-center space-x-1 pl-1 border-l border-slate-200">
+              <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+              <input
+                type="date"
+                value={customDate}
+                onChange={(e) => {
+                  setCustomDate(e.target.value);
+                  if (e.target.value) {
+                    setSelectedDatePreset('custom');
+                    setSearchQuery('');
+                    loadOrders({ datePreset: 'custom', customDate: e.target.value });
+                  }
+                }}
+                className={`py-1 px-2 text-xs font-bold rounded-lg border transition-colors cursor-pointer ${
+                  selectedDatePreset === 'custom'
+                    ? 'bg-blue-50 border-blue-400 text-blue-800'
+                    : 'bg-slate-50 border-slate-200 text-slate-600'
+                }`}
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2 text-xs text-slate-500 font-medium">
+            <span>{filteredOrders.length} pedido{filteredOrders.length !== 1 ? 's' : ''}</span>
+            <button
+              type="button"
+              onClick={() => loadOrders({ datePreset: selectedDatePreset, customDate, searchQuery })}
+              disabled={isOrdersLoading}
+              className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+              title="Refrescar datos"
+            >
+              <RotateCw className={`w-3.5 h-3.5 ${isOrdersLoading ? 'animate-spin text-blue-600' : ''}`} />
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Liquid Material Filter Pill (Full Width, Balanced & Neutral) */}
       <div className="w-full">
         <div
@@ -123,10 +296,19 @@ export function OrderDispatchBoard() {
       {/* Orders List: Compact Apple Cards */}
       <div className="space-y-2.5">
         {filteredOrders.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-3xl border border-slate-200/80 space-y-2">
+          <div className="text-center py-14 bg-white rounded-3xl border border-slate-200/80 space-y-2.5 px-4">
             <Package className="w-10 h-10 text-slate-300 mx-auto" />
-            <p className="text-slate-700 font-extrabold text-sm">No hay pedidos en esta categoría</p>
-            <p className="text-slate-400 text-xs">Selecciona otra opción de la píldora para ver los registros.</p>
+            <p className="text-slate-800 font-black text-sm">No se encontraron pedidos</p>
+            <p className="text-slate-400 text-xs max-w-sm mx-auto">
+              No hay pedidos que coincidan con la fecha o búsqueda seleccionada.
+            </p>
+            <button
+              type="button"
+              onClick={() => handleSelectPreset('today')}
+              className="mt-2 inline-flex items-center px-4 py-2 bg-blue-50 text-blue-700 rounded-xl text-xs font-black hover:bg-blue-100 transition-colors cursor-pointer"
+            >
+              Ver pedidos de hoy
+            </button>
           </div>
         ) : (
           filteredOrders.map((order) => {
@@ -154,7 +336,7 @@ export function OrderDispatchBoard() {
                   <div>
                     {isDelivered ? (
                       <span className="inline-flex items-center text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200/70">
-                        <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
+                        <AppleCheckmarkSealIcon size={14} className="mr-1 text-emerald-700" />
                         Entregado
                       </span>
                     ) : (

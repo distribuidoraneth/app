@@ -147,12 +147,71 @@ export async function getProductsFromDb(): Promise<JavaProductOption[] | null> {
   }
 }
 
-export async function getOrdersFromDb(): Promise<Order[] | null> {
+export interface GetOrdersOptions {
+  datePreset?: 'today' | 'yesterday' | 'week' | 'all' | 'custom';
+  customDate?: string; // YYYY-MM-DD
+  startDate?: string;
+  endDate?: string;
+  searchQuery?: string;
+  status?: string;
+  limit?: number;
+}
+
+export async function getOrdersFromDb(options?: GetOrdersOptions): Promise<Order[] | null> {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('orders')
-      .select('*, order_items(*)')
-      .order('created_at', { ascending: false });
+      .select('*, order_items(*)');
+
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0).toISOString();
+    const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).toISOString();
+
+    // 1. Filtrado por búsqueda textual (nombre de comercio, cliente o número de pedido)
+    if (options?.searchQuery && options.searchQuery.trim()) {
+      const cleanQ = options.searchQuery.trim();
+      query = query.or(`business_name.ilike.%${cleanQ}%,client_name.ilike.%${cleanQ}%,order_number.ilike.%${cleanQ}%`);
+    } else {
+      // 2. Filtrado por fecha
+      const preset = options?.datePreset || 'today';
+
+      if (preset === 'today') {
+        // Por defecto: Pedidos creados hoy O pedidos que sigan pendientes de entrega (independiente de la fecha)
+        query = query.or(`status.eq.pending,created_at.gte.${startOfToday}`);
+      } else if (preset === 'yesterday') {
+        const yest = new Date(now);
+        yest.setDate(yest.getDate() - 1);
+        const startOfYest = new Date(yest.getFullYear(), yest.getMonth(), yest.getDate(), 0, 0, 0, 0).toISOString();
+        const endOfYest = new Date(yest.getFullYear(), yest.getMonth(), yest.getDate(), 23, 59, 59, 999).toISOString();
+        query = query.gte('created_at', startOfYest).lte('created_at', endOfYest);
+      } else if (preset === 'week') {
+        const weekAgo = new Date(now);
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        const startOfWeek = new Date(weekAgo.getFullYear(), weekAgo.getMonth(), weekAgo.getDate(), 0, 0, 0, 0).toISOString();
+        query = query.gte('created_at', startOfWeek);
+      } else if (preset === 'custom' && options?.customDate) {
+        const parts = options.customDate.split('-');
+        if (parts.length === 3) {
+          const year = parseInt(parts[0], 10);
+          const month = parseInt(parts[1], 10) - 1;
+          const day = parseInt(parts[2], 10);
+          const startOfCustom = new Date(year, month, day, 0, 0, 0, 0).toISOString();
+          const endOfCustom = new Date(year, month, day, 23, 59, 59, 999).toISOString();
+          query = query.gte('created_at', startOfCustom).lte('created_at', endOfCustom);
+        }
+      }
+      // Si preset === 'all', no agregamos filtro de fecha
+    }
+
+    // 3. Filtrado por estado si está especificado
+    if (options?.status && options.status !== 'all') {
+      query = query.eq('status', options.status);
+    }
+
+    const maxLimit = options?.limit || (options?.datePreset === 'all' ? 100 : 150);
+    query = query.order('created_at', { ascending: false }).limit(maxLimit);
+
+    const { data, error } = await query;
 
     if (error) {
       console.warn('Advertencia al consultar pedidos en Supabase:', error.message);

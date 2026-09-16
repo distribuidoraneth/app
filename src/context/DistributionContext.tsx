@@ -25,6 +25,7 @@ import {
   getProductsFromDb,
   getOrdersFromDb,
   updateClientDebtInDb,
+  GetOrdersOptions,
 } from '@/lib/supabase/syncService';
 
 interface DistributionContextType {
@@ -33,6 +34,11 @@ interface DistributionContextType {
   catalog: JavaProductOption[];
   orders: Order[];
   invoices: Invoice[];
+
+  // Orders Filter & Smart Querying
+  ordersFilter: GetOrdersOptions;
+  isOrdersLoading: boolean;
+  loadOrders: (options?: GetOrdersOptions) => Promise<void>;
 
   // Active state
   selectedClientId: string;
@@ -51,6 +57,7 @@ interface DistributionContextType {
 
   // Actions
   addClient: (client: Omit<Client, 'id' | 'qrToken' | 'createdAt'>) => Client;
+  updateClient: (client: Client) => void;
   createOrder: (orderData: {
     clientId: string;
     items: CartItem[];
@@ -89,13 +96,33 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   const [cart, setCart] = useState<CartItem[]>([]);
 
+  // Filtros de pedidos y estado de carga
+  const [ordersFilter, setOrdersFilter] = useState<GetOrdersOptions>({ datePreset: 'today' });
+  const [isOrdersLoading, setIsOrdersLoading] = useState<boolean>(false);
+
+  const loadOrders = async (options?: GetOrdersOptions) => {
+    setIsOrdersLoading(true);
+    try {
+      const opts = options || ordersFilter || { datePreset: 'today' };
+      setOrdersFilter(opts);
+      const dbOrders = await getOrdersFromDb(opts);
+      if (dbOrders !== null) {
+        setOrders(dbOrders);
+      }
+    } catch (err) {
+      console.warn('Error al cargar pedidos:', err);
+    } finally {
+      setIsOrdersLoading(false);
+    }
+  };
+
   // Sincronizar simultáneamente productos, clientes y órdenes con Supabase
   const refreshData = async () => {
     try {
       const [dbProducts, dbClients, dbOrders] = await Promise.all([
         getProductsFromDb(),
         getClientsFromDb(),
-        getOrdersFromDb(),
+        getOrdersFromDb(ordersFilter || { datePreset: 'today' }),
       ]);
 
       if (dbProducts !== null) {
@@ -137,12 +164,17 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
     refreshData();
   }, []);
 
-  // Save to local storage
+  // Save to local storage (Cap to 30 orders/20 invoices to strictly prevent QuotaExceededError)
   useEffect(() => {
     try {
       localStorage.setItem(
         STORAGE_KEY,
-        JSON.stringify({ clients, catalog, orders, invoices })
+        JSON.stringify({
+          clients,
+          catalog,
+          orders: orders.slice(0, 30),
+          invoices: invoices.slice(0, 20),
+        })
       );
     } catch {
       // ignore
@@ -263,6 +295,18 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
     });
 
     return newClient;
+  };
+
+  // Update Client
+  const updateClient = (updatedClient: Client) => {
+    setClients((prev) =>
+      prev.map((c) => (c.id === updatedClient.id ? updatedClient : c))
+    );
+
+    // Persist to Supabase in background
+    saveClientToDb(updatedClient).catch((err) => {
+      console.warn('Error updating client in Supabase:', err);
+    });
   };
 
   // Create Order
@@ -592,6 +636,9 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
         catalog,
         orders,
         invoices,
+        ordersFilter,
+        isOrdersLoading,
+        loadOrders,
         selectedClientId,
         setSelectedClientId,
         cart,
@@ -604,6 +651,7 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
         cartTotalUnits,
         cartTotalBottles,
         addClient,
+        updateClient,
         createOrder,
         cancelOrder,
         updateOrderStatus,

@@ -4,7 +4,8 @@ import React from 'react';
 import { Client } from '@/types';
 import { QRCodeSVG } from 'qrcode.react';
 import { AnethFullLogo } from '@/components/ui/AnethLogo';
-import { X, Printer, Copy, Check, QrCode, Store } from 'lucide-react';
+import { X, Printer, Copy, Check, Store } from 'lucide-react';
+import { AppleQrCodeIcon } from '@/components/ui/AppleIcons';
 
 interface QRCodeModalProps {
   client: Client | null;
@@ -38,7 +39,7 @@ export function QRCodeModal({ client, isOpen, onClose }: QRCodeModalProps) {
         {/* Header bar (Light theme) */}
         <div className="print:hidden bg-slate-50 border-b border-slate-200 px-5 py-3.5 flex items-center justify-between">
           <span className="text-xs font-extrabold text-slate-900 flex items-center">
-            <QrCode className="w-4 h-4 mr-1.5 text-blue-600" />
+            <AppleQrCodeIcon size={16} className="mr-1.5" />
             Código QR de Pedidos
           </span>
           <button

@@ -14,15 +14,15 @@ import {
 } from '@/lib/utils/formatters';
 import { InvoiceModal } from '@/components/invoice/InvoiceModal';
 import { ThermalReceiptModal } from '@/components/receipt/ThermalReceiptModal';
-import { AppleMapPinIcon, AppleWhatsAppIcon } from '@/components/ui/AppleIcons';
+import { AppleMapPinIcon, AppleWhatsAppIcon, AppleCheckmarkSealIcon } from '@/components/ui/AppleIcons';
 import {
   ArrowLeft,
   Phone,
   Printer,
   FileText,
-  CheckCircle2,
   Clock,
   AlertCircle,
+  CheckCircle2,
 } from 'lucide-react';
 
 export default function OrderDetailPage({
@@ -144,7 +144,7 @@ export default function OrderDetailPage({
           <div className="flex items-center">
             {isDelivered ? (
               <span className="inline-flex items-center text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200/70">
-                <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
+                <AppleCheckmarkSealIcon size={14} className="mr-1 text-emerald-700" />
                 Entregado
               </span>
             ) : (
@@ -274,7 +274,7 @@ export default function OrderDetailPage({
                 onClick={() => updateOrderStatus(order.id, 'delivered')}
                 className="col-span-2 py-3.5 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white rounded-xl text-xs sm:text-sm font-black flex items-center justify-center space-x-2 shadow-xs transition-all cursor-pointer"
               >
-                <CheckCircle2 className="w-4 h-4" />
+                <AppleCheckmarkSealIcon size={16} className="text-white" />
                 <span>Marcar como Entregado</span>
               </button>
             ) : (

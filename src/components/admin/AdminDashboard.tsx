@@ -23,7 +23,7 @@ import {
   FileText,
   DollarSign,
   Plus,
-  QrCode,
+  Pencil,
   MapPin,
   Phone,
   Store,
@@ -52,6 +52,7 @@ import {
   AppleTruckBoxIcon,
   AppleReceiptIcon,
   AppleSquareStackIcon,
+  AppleQrCodeIcon,
 } from '@/components/ui/AppleIcons';
 
 export function AdminDashboard() {
@@ -60,6 +61,7 @@ export function AdminDashboard() {
 
   const [activeTab, setActiveTab] = useState<'dispatch' | 'clients' | 'debts' | 'invoices' | 'catalog'>('dispatch');
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState<boolean>(false);
+  const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [selectedQRClient, setSelectedQRClient] = useState<Client | null>(null);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [userProfile, setUserProfile] = useState<{
@@ -371,16 +373,28 @@ export function AdminDashboard() {
                         <h3 className="font-extrabold text-base sm:text-lg text-slate-900 mt-1">
                           {client.businessName || client.fullName}
                         </h3>
-                        <p className="text-xs sm:text-sm text-slate-500">{client.fullName}</p>
+                        {client.businessName && client.businessName.trim().toLowerCase() !== client.fullName.trim().toLowerCase() && (
+                          <p className="text-xs sm:text-sm text-slate-500">{client.fullName}</p>
+                        )}
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedQRClient(client)}
-                        className="p-2.5 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-600 rounded-xl transition-colors cursor-pointer"
-                        title="Ver Código QR"
-                      >
-                        <QrCode className="w-5 h-5" />
-                      </button>
+                      <div className="flex items-center space-x-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setEditingClient(client)}
+                          className="p-2.5 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-600 rounded-xl transition-colors cursor-pointer"
+                          title="Modificar / Editar Cliente"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedQRClient(client)}
+                          className="p-2.5 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-600 rounded-xl transition-colors cursor-pointer flex items-center justify-center"
+                          title="Ver Código QR"
+                        >
+                          <AppleQrCodeIcon size={18} />
+                        </button>
+                      </div>
                     </div>
 
                     <div className="text-xs sm:text-sm text-slate-600 space-y-1 pt-1">
@@ -389,8 +403,11 @@ export function AdminDashboard() {
                         <span className="font-mono">{client.whatsappNumber}</span>
                       </p>
                       {client.taxId && (
-                        <p className="text-xs text-slate-500 font-mono">
-                          RUC/CI: {client.taxId} ({client.taxIdType === '04' ? 'RUC' : 'Cédula'})
+                        <p className="text-xs text-slate-600 font-mono">
+                          <span className="font-bold text-slate-700">
+                            {client.taxId.trim().length === 13 || client.taxIdType === '04' ? 'RUC:' : 'Cédula:'}
+                          </span>{' '}
+                          {client.taxId}
                         </p>
                       )}
                       {cleanAddress(client.addressReference) && (
@@ -432,6 +449,14 @@ export function AdminDashboard() {
                   </div>
 
                   <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => setEditingClient(client)}
+                      className="text-xs sm:text-sm font-extrabold text-slate-600 hover:text-blue-600 flex items-center space-x-1 cursor-pointer"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                      <span>Editar</span>
+                    </button>
                     <button
                       type="button"
                       onClick={() => setSelectedQRClient(client)}
@@ -645,8 +670,12 @@ export function AdminDashboard() {
 
       {/* Modals */}
       <ClientRegistrationModal
-        isOpen={isRegisterModalOpen}
-        onClose={() => setIsRegisterModalOpen(false)}
+        isOpen={isRegisterModalOpen || !!editingClient}
+        clientToEdit={editingClient}
+        onClose={() => {
+          setIsRegisterModalOpen(false);
+          setEditingClient(null);
+        }}
         onClientCreated={(client) => {
           setSelectedQRClient(client);
         }}

@@ -6,6 +6,7 @@ import { Gender, Client, ClientTier } from '@/types';
 import {
   X,
   UserPlus,
+  Pencil,
   Search,
   Loader2,
   CheckCircle2,
@@ -21,6 +22,7 @@ interface ClientRegistrationModalProps {
   onClose: () => void;
   onClientCreated?: (client: Client) => void;
   initialCoords?: { latitude: number; longitude: number };
+  clientToEdit?: Client | null;
 }
 
 export function ClientRegistrationModal({
@@ -28,8 +30,9 @@ export function ClientRegistrationModal({
   onClose,
   onClientCreated,
   initialCoords,
+  clientToEdit,
 }: ClientRegistrationModalProps) {
-  const { addClient } = useDistribution();
+  const { addClient, updateClient } = useDistribution();
 
   const [fullName, setFullName] = useState<string>('');
   const [businessName, setBusinessName] = useState<string>('');
@@ -93,9 +96,50 @@ export function ClientRegistrationModal({
     }
   }, []);
 
-  // Continuous GPS auto-refinement in real-time (no buttons needed)
+  // Initialize or reset form based on clientToEdit and isOpen
   useEffect(() => {
     if (!isOpen) return;
+
+    if (clientToEdit) {
+      setFullName(clientToEdit.fullName || '');
+      setBusinessName(clientToEdit.businessName || '');
+      setGender(clientToEdit.gender || 'Hombre');
+      setWhatsappNumber(clientToEdit.whatsappNumber || '');
+      setBirthDate(clientToEdit.birthDate || '');
+      setCoords({ lat: clientToEdit.latitude, lng: clientToEdit.longitude });
+      setTaxId(clientToEdit.taxId || '');
+      setTaxIdType((clientToEdit.taxIdType as '04' | '05') || (clientToEdit.taxId?.length === 13 ? '04' : '05'));
+      setEmail(clientToEdit.email || '');
+      setClientTier(clientToEdit.clientTier || 'normal');
+      setAddressReference(clientToEdit.addressReference || '');
+      setErrors({});
+      setApiFeedback(null);
+      setIsOfficialDataLocked(false);
+      setIsCalibratingGps(false);
+    } else {
+      setFullName('');
+      setBusinessName('');
+      setGender('Hombre');
+      setWhatsappNumber('');
+      setBirthDate('');
+      setCoords({
+        lat: initialCoords?.latitude ?? -1.24908,
+        lng: initialCoords?.longitude ?? -78.61675,
+      });
+      setTaxId('');
+      setTaxIdType('05');
+      setEmail('');
+      setClientTier('normal');
+      setAddressReference('');
+      setErrors({});
+      setApiFeedback(null);
+      setIsOfficialDataLocked(false);
+    }
+  }, [isOpen, clientToEdit, initialCoords]);
+
+  // Continuous GPS auto-refinement in real-time (no buttons needed, only for new registration)
+  useEffect(() => {
+    if (!isOpen || clientToEdit) return;
 
     if (initialCoords) {
       setCoords({ lat: initialCoords.latitude, lng: initialCoords.longitude });
@@ -225,6 +269,27 @@ export function ClientRegistrationModal({
 
     const formattedPhone = phoneValidation.cleanDigits;
 
+    if (clientToEdit) {
+      const updated: Client = {
+        ...clientToEdit,
+        fullName,
+        businessName: businessName.trim() || fullName,
+        gender,
+        clientTier,
+        whatsappNumber: formattedPhone,
+        latitude: coords.lat,
+        longitude: coords.lng,
+        addressReference: addressReference.trim(),
+        taxId: taxId.trim() || undefined,
+        taxIdType,
+        email: email.trim() || undefined,
+        birthDate: birthDate || undefined,
+      };
+      updateClient(updated);
+      onClose();
+      return;
+    }
+
     const created = addClient({
       fullName,
       businessName: businessName.trim() || fullName,
@@ -271,10 +336,10 @@ export function ClientRegistrationModal({
         <div className="bg-slate-50/90 border-b border-slate-200/90 px-5 sm:px-7 py-3.5 sm:py-4 flex items-center justify-between shrink-0">
           <div className="flex items-center space-x-3">
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-bold shadow-xs">
-              <UserPlus className="w-5 h-5" />
+              {clientToEdit ? <Pencil className="w-5 h-5" /> : <UserPlus className="w-5 h-5" />}
             </div>
             <h2 className="font-black text-lg sm:text-xl text-slate-900 leading-tight">
-              Registro de Cliente
+              {clientToEdit ? 'Modificar Cliente' : 'Registro de Cliente'}
             </h2>
           </div>
           <button
@@ -656,7 +721,7 @@ export function ClientRegistrationModal({
               type="submit"
               className="flex-1 sm:flex-none px-8 py-3.5 bg-blue-600 hover:bg-blue-700 active:scale-98 text-white rounded-2xl text-sm sm:text-base font-bold shadow-xs transition-all cursor-pointer text-center"
             >
-              Guardar
+              {clientToEdit ? 'Guardar Cambios' : 'Guardar'}
             </button>
           </div>
         </form>
