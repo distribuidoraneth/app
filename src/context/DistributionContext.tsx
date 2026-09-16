@@ -21,6 +21,7 @@ import {
 import {
   saveOrderToDb,
   saveClientToDb,
+  deleteClientFromDb,
   getClientsFromDb,
   getProductsFromDb,
   getOrdersFromDb,
@@ -58,6 +59,7 @@ interface DistributionContextType {
   // Actions
   addClient: (client: Omit<Client, 'id' | 'qrToken' | 'createdAt'>) => Client;
   updateClient: (client: Client) => void;
+  deleteClient: (clientId: string) => Promise<boolean>;
   createOrder: (orderData: {
     clientId: string;
     items: CartItem[];
@@ -307,6 +309,21 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
     saveClientToDb(updatedClient).catch((err) => {
       console.warn('Error updating client in Supabase:', err);
     });
+  };
+
+  // Delete Client
+  const deleteClient = async (clientId: string): Promise<boolean> => {
+    setClients((prev) => prev.filter((c) => c.id !== clientId));
+    if (selectedClientId === clientId) {
+      setSelectedClientId('');
+    }
+    try {
+      const res = await deleteClientFromDb(clientId);
+      return res.success;
+    } catch (err) {
+      console.warn('Error deleting client from Supabase:', err);
+      return false;
+    }
   };
 
   // Create Order
@@ -652,6 +669,7 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
         cartTotalBottles,
         addClient,
         updateClient,
+        deleteClient,
         createOrder,
         cancelOrder,
         updateOrderStatus,

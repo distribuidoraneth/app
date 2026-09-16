@@ -7,11 +7,16 @@ import { Client } from '@/types';
 import { ClientRegistrationModal } from './ClientRegistrationModal';
 import { QRCodeModal } from './QRCodeModal';
 import { cleanAddress } from '@/lib/utils/formatters';
-import { AppleMapPinIcon, AppleQrCodeIcon } from '@/components/ui/AppleIcons';
+import {
+  AppleMapPinIcon,
+  AppleQrCodeIcon,
+  ApplePencilIcon,
+  ApplePhoneIcon,
+  AppleTrashIcon,
+  AppleWhatsAppIcon,
+} from '@/components/ui/AppleIcons';
 import {
   Plus,
-  Pencil,
-  Phone,
   ArrowRight,
   ExternalLink,
   Search,
@@ -20,9 +25,10 @@ import {
 } from 'lucide-react';
 
 export function ClientsManager() {
-  const { clients } = useDistribution();
+  const { clients, deleteClient } = useDistribution();
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState<boolean>(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
   const [selectedQRClient, setSelectedQRClient] = useState<Client | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
@@ -127,10 +133,10 @@ export function ClientsManager() {
                     <button
                       type="button"
                       onClick={() => setEditingClient(client)}
-                      className="p-2.5 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-600 rounded-xl transition-colors cursor-pointer"
+                      className="p-2.5 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-600 rounded-xl transition-colors cursor-pointer flex items-center justify-center"
                       title="Modificar / Editar Cliente"
                     >
-                      <Pencil className="w-4 h-4" />
+                      <ApplePencilIcon size={16} />
                     </button>
                     <button
                       type="button"
@@ -140,14 +146,48 @@ export function ClientsManager() {
                     >
                       <AppleQrCodeIcon size={18} />
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => setClientToDelete(client)}
+                      className="p-2.5 bg-slate-100 hover:bg-rose-50 text-rose-500 hover:text-rose-600 rounded-xl transition-colors cursor-pointer flex items-center justify-center"
+                      title="Eliminar Cliente"
+                    >
+                      <AppleTrashIcon size={16} />
+                    </button>
                   </div>
                 </div>
 
-                <div className="text-xs sm:text-sm text-slate-600 space-y-1 pt-1">
-                  <p className="flex items-center">
-                    <Phone className="w-4 h-4 mr-1 text-slate-400 shrink-0" />
-                    <span className="font-mono">{client.whatsappNumber}</span>
-                  </p>
+                <div className="text-xs sm:text-sm text-slate-600 space-y-2 pt-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-mono font-medium text-xs sm:text-sm text-slate-700">
+                      {client.whatsappNumber}
+                    </span>
+                    <div className="flex items-center space-x-1.5 shrink-0">
+                      <a
+                        href={`tel:${client.whatsappNumber.replace(/\D/g, '')}`}
+                        className="px-2.5 py-1.5 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-600 rounded-xl text-xs font-bold transition-colors inline-flex items-center space-x-1 cursor-pointer active:scale-95"
+                        title="Llamar directamente"
+                      >
+                        <ApplePhoneIcon size={13} />
+                        <span>Llamar</span>
+                      </a>
+                      <a
+                        href={`https://wa.me/${(() => {
+                          const digits = client.whatsappNumber.replace(/\D/g, '');
+                          if (digits.startsWith('593')) return digits;
+                          if (digits.startsWith('0')) return '593' + digits.slice(1);
+                          return '593' + digits;
+                        })()}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-xl text-xs font-bold transition-colors inline-flex items-center space-x-1 cursor-pointer active:scale-95"
+                        title="Abrir chat de WhatsApp"
+                      >
+                        <AppleWhatsAppIcon size={14} />
+                        <span>WhatsApp</span>
+                      </a>
+                    </div>
+                  </div>
                   {client.taxId && (
                     <p className="text-xs text-slate-600 font-mono">
                       <span className="font-bold text-slate-700">
@@ -201,29 +241,13 @@ export function ClientsManager() {
                 )}
               </div>
 
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={() => setEditingClient(client)}
-                  className="text-xs sm:text-sm font-extrabold text-slate-600 hover:text-blue-600 flex items-center space-x-1 cursor-pointer"
-                >
-                  <Pencil className="w-3.5 h-3.5" />
-                  <span>Editar</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedQRClient(client)}
-                  className="text-xs sm:text-sm font-extrabold text-blue-600 hover:text-blue-700 flex items-center space-x-1 cursor-pointer"
-                >
-                  <span>Imprimir Sticker QR</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-end">
                 <Link
                   href={`/p/${client.qrToken}`}
                   target="_blank"
-                  className="text-xs sm:text-sm text-slate-500 hover:text-slate-900 font-bold"
+                  className="w-full sm:w-auto px-5 py-2.5 bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white rounded-xl text-xs sm:text-sm font-black transition-all text-center flex items-center justify-center cursor-pointer active:scale-95 shadow-2xs hover:shadow-xs"
                 >
-                  Abrir Portal ↗
+                  Abrir Portal
                 </Link>
               </div>
             </div>
@@ -249,6 +273,44 @@ export function ClientsManager() {
         isOpen={!!selectedQRClient}
         onClose={() => setSelectedQRClient(null)}
       />
+
+      {/* Modal de confirmación de eliminación */}
+      {clientToDelete && (
+        <div className="fixed inset-0 z-[10001] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl border border-slate-200 space-y-4 animate-in zoom-in-95 duration-150">
+            <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
+              <AppleTrashIcon size={24} />
+            </div>
+            <div className="text-center space-y-1.5">
+              <h3 className="font-black text-slate-900 text-lg">
+                ¿Eliminar Cliente?
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-500">
+                Se eliminará <strong className="text-slate-800">{clientToDelete.businessName || clientToDelete.fullName}</strong>. Esta acción no se puede deshacer.
+              </p>
+            </div>
+            <div className="flex items-center space-x-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setClientToDelete(null)}
+                className="flex-1 py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs sm:text-sm transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  await deleteClient(clientToDelete.id);
+                  setClientToDelete(null);
+                }}
+                className="flex-1 py-2.5 px-4 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold rounded-xl text-xs sm:text-sm transition-all cursor-pointer shadow-xs"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -104,6 +104,19 @@ export async function saveClientToDb(client: Client): Promise<{ success: boolean
   }
 }
 
+export async function deleteClientFromDb(clientId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { error } = await supabase.from('clients').delete().eq('id', clientId);
+    if (error) {
+      console.warn('Advertencia al eliminar cliente en Supabase:', error.message);
+      return { success: false, error: error.message };
+    }
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
 export async function getProductsFromDb(): Promise<JavaProductOption[] | null> {
   try {
     const { data, error } = await supabase.from('products').select('*');

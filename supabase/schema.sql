@@ -249,6 +249,9 @@ CREATE POLICY "Public insert clients" ON public.clients FOR INSERT WITH CHECK (t
 DROP POLICY IF EXISTS "Public update clients" ON public.clients;
 CREATE POLICY "Public update clients" ON public.clients FOR UPDATE USING (true);
 
+DROP POLICY IF EXISTS "Public delete clients" ON public.clients;
+CREATE POLICY "Public delete clients" ON public.clients FOR DELETE USING (true);
+
 DROP POLICY IF EXISTS "Public insert orders" ON public.orders;
 CREATE POLICY "Public insert orders" ON public.orders FOR INSERT WITH CHECK (true);
 
@@ -281,3 +284,29 @@ CREATE POLICY "Public insert payments" ON public.payments FOR INSERT WITH CHECK 
 
 DROP POLICY IF EXISTS "Public read payments" ON public.payments;
 CREATE POLICY "Public read payments" ON public.payments FOR SELECT USING (true);
+
+-- ============================================================================
+-- 11. Índices de Alto Rendimiento para Escalabilidad y Cero Cuellos de Botella
+-- ============================================================================
+-- Acelera consultas por fecha de pedido y filtros de despachos pendientes/entregados
+CREATE INDEX IF NOT EXISTS idx_orders_created_at ON public.orders (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_orders_status ON public.orders (status);
+CREATE INDEX IF NOT EXISTS idx_orders_client_id ON public.orders (client_id);
+CREATE INDEX IF NOT EXISTS idx_orders_delivery_date ON public.orders (scheduled_delivery_date DESC);
+CREATE INDEX IF NOT EXISTS idx_orders_status_created ON public.orders (status, created_at DESC);
+
+-- Acelera la vinculación de productos de cada pedido
+CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON public.order_items (order_id);
+CREATE INDEX IF NOT EXISTS idx_order_items_product_option_id ON public.order_items (product_option_id);
+
+-- Acelera la búsqueda de clientes por teléfono y token QR
+CREATE INDEX IF NOT EXISTS idx_clients_whatsapp ON public.clients (whatsapp_number);
+CREATE INDEX IF NOT EXISTS idx_clients_qr_token ON public.clients (qr_token);
+CREATE INDEX IF NOT EXISTS idx_clients_tax_id ON public.clients (tax_id);
+
+-- Acelera consultas de comprobantes electrónicos y pagos
+CREATE INDEX IF NOT EXISTS idx_invoices_order_id ON public.invoices (order_id);
+CREATE INDEX IF NOT EXISTS idx_invoices_invoice_number ON public.invoices (invoice_number);
+CREATE INDEX IF NOT EXISTS idx_payments_client_id ON public.payments (client_id);
+CREATE INDEX IF NOT EXISTS idx_payments_order_id ON public.payments (order_id);
+
