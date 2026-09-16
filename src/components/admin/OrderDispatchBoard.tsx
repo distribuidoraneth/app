@@ -81,7 +81,7 @@ export function OrderDispatchBoard() {
                 : 'text-slate-600 hover:bg-slate-100'
             }`}
           >
-            Todos • {orders.length}
+            Todos
           </button>
           <button
             type="button"
@@ -92,7 +92,7 @@ export function OrderDispatchBoard() {
                 : 'text-slate-600 hover:bg-slate-100'
             }`}
           >
-            Por Despachar • {orders.filter((o) => o.status === 'pending').length}
+            Por Despachar
           </button>
           <button
             type="button"
@@ -103,7 +103,7 @@ export function OrderDispatchBoard() {
                 : 'text-slate-600 hover:bg-slate-100'
             }`}
           >
-            Entregados • {orders.filter((o) => o.status === 'delivered').length}
+            Entregados
           </button>
         </div>
       </div>

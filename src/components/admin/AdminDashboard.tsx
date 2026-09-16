@@ -66,6 +66,7 @@ export function AdminDashboard() {
     email: string;
     avatarUrl?: string;
   } | null>(null);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState<boolean>(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -196,7 +197,7 @@ export function AdminDashboard() {
               href="/pedido?type=autoventa"
               className="px-3 sm:px-3.5 py-1.5 sm:py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl text-[11px] sm:text-xs font-black shadow-xs flex items-center space-x-1.5 transition-all"
             >
-              <Zap className="w-3.5 h-3.5 fill-white text-white" />
+              <AppleTruckBoxIcon className="w-3.5 h-3.5 brightness-0 invert" />
               <span>Autoventa</span>
             </Link>
 
@@ -208,10 +209,14 @@ export function AdminDashboard() {
               <span>Preventa</span>
             </Link>
 
-            {/* Google User Profile Chip */}
-            {userProfile && (
-              <div className="flex items-center space-x-2 pl-2 border-l border-slate-200">
-                {userProfile.avatarUrl ? (
+            {/* Google User Profile Chip with Dropdown for Logout */}
+            <div className="relative pl-1 sm:pl-2 border-l border-slate-200">
+              <button
+                type="button"
+                onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+                className="flex items-center space-x-2 p-0.5 rounded-full sm:rounded-xl hover:bg-slate-100 transition-colors focus:outline-hidden"
+              >
+                {userProfile?.avatarUrl ? (
                   <img
                     src={userProfile.avatarUrl}
                     alt={userProfile.name}
@@ -219,83 +224,107 @@ export function AdminDashboard() {
                   />
                 ) : (
                   <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-black text-xs flex items-center justify-center shadow-2xs">
-                    {userProfile.name.charAt(0).toUpperCase()}
+                    {userProfile?.name ? userProfile.name.charAt(0).toUpperCase() : 'A'}
                   </div>
                 )}
                 <div className="hidden lg:block text-left">
-                  <span className="text-xs font-black text-slate-900 block leading-tight truncate max-w-[130px]">
-                    {userProfile.name}
+                  <span className="text-xs font-black text-slate-900 block leading-tight truncate max-w-[120px]">
+                    {userProfile?.name || 'Administrador'}
                   </span>
                   <span className="text-[10px] text-emerald-600 font-bold block leading-none">
                     Admin Activo
                   </span>
                 </div>
-              </div>
-            )}
+              </button>
 
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl border border-slate-200 transition-colors"
-              title="Cerrar sesión"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
+              {/* Profile Dropdown Menu */}
+              {isProfileMenuOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setIsProfileMenuOpen(false)}
+                  />
+                  <div className="absolute right-0 mt-2 w-52 bg-white rounded-2xl shadow-xl border border-slate-200 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+                    <div className="px-3.5 py-2 border-b border-slate-100">
+                      <p className="text-xs font-black text-slate-900 truncate">
+                        {userProfile?.name || 'Administrador'}
+                      </p>
+                      <p className="text-[11px] text-slate-500 truncate">
+                        {userProfile?.email || 'admin@aneth.com'}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsProfileMenuOpen(false);
+                        handleLogout();
+                      }}
+                      className="w-full text-left px-3.5 py-2 text-xs font-bold text-red-600 hover:bg-red-50 flex items-center space-x-2 transition-colors"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      <span>Cerrar sesión</span>
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </header>
 
       <div className="max-w-7xl mx-auto px-3 sm:px-6 py-3.5 sm:py-5 space-y-4 sm:space-y-5">
-        {/* Apple Minimalist KPI Metrics */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
-          <div className="bg-white p-3 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between hover:border-slate-300 transition-colors">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
-                Ventas
-              </span>
-              <AppleGaugeDollarIcon className="w-4 h-4 text-emerald-600" />
+        {/* Apple Minimalist KPI Metrics (Shown strictly on dispatch/pedidos tab) */}
+        {activeTab === 'dispatch' && (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+            <div className="bg-white p-3 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between hover:border-slate-300 transition-colors">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  Ventas
+                </span>
+                <AppleGaugeDollarIcon className="w-4 h-4 text-emerald-600" />
+              </div>
+              <div className="mt-1 text-lg sm:text-2xl font-black font-mono tracking-tight text-slate-900">
+                {formatCurrency(totalSales)}
+              </div>
             </div>
-            <div className="mt-1 text-lg sm:text-2xl font-black font-mono tracking-tight text-slate-900">
-              {formatCurrency(totalSales)}
-            </div>
-          </div>
 
-          <div className="bg-white p-3 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between hover:border-slate-300 transition-colors">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
-                Por Despachar
-              </span>
-              <AppleShippingBoxIcon className="w-4 h-4 text-amber-500" />
+            <div className="bg-white p-3 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between hover:border-slate-300 transition-colors">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  Por Despachar
+                </span>
+                <AppleShippingBoxIcon className="w-4 h-4 text-amber-500" />
+              </div>
+              <div className="mt-1 text-lg sm:text-2xl font-black font-mono tracking-tight text-slate-900">
+                {pendingOrders.length}
+              </div>
             </div>
-            <div className="mt-1 text-lg sm:text-2xl font-black font-mono tracking-tight text-slate-900">
-              {pendingOrders.length}
-            </div>
-          </div>
 
-          <div className="bg-white p-3 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between hover:border-slate-300 transition-colors">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
-                Clientes
-              </span>
-              <ApplePersonsIcon className="w-4 h-4 text-blue-500" />
+            <div className="bg-white p-3 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between hover:border-slate-300 transition-colors">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  Clientes
+                </span>
+                <ApplePersonsIcon className="w-4 h-4 text-blue-500" />
+              </div>
+              <div className="mt-1 text-lg sm:text-2xl font-black font-mono tracking-tight text-slate-900">
+                {clients.length}
+              </div>
             </div>
-            <div className="mt-1 text-lg sm:text-2xl font-black font-mono tracking-tight text-slate-900">
-              {clients.length}
-            </div>
-          </div>
 
-          <div className="bg-white p-3 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between hover:border-slate-300 transition-colors">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
-                Por Cobrar
-              </span>
-              <AppleCreditCardIcon className="w-4 h-4 text-rose-500" />
-            </div>
-            <div className="mt-1 text-lg sm:text-2xl font-black font-mono tracking-tight text-slate-900">
-              {formatCurrency(totalDebt)}
+            <div className="bg-white p-3 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between hover:border-slate-300 transition-colors">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  Por Cobrar
+                </span>
+                <AppleCreditCardIcon className="w-4 h-4 text-rose-500" />
+              </div>
+              <div className="mt-1 text-lg sm:text-2xl font-black font-mono tracking-tight text-slate-900">
+                {formatCurrency(totalDebt)}
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Liquid Material Tab Pill Selector */}
         <div className="hidden md:flex justify-center w-full">
