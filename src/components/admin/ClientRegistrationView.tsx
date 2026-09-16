@@ -7,6 +7,7 @@ import { useDistribution } from '@/context/DistributionContext';
 import { Gender, Client, ClientTier } from '@/types';
 import {
   ApplePersonBadgePlusIcon,
+  ApplePersonTextRectangleIcon,
   AppleMapPinIcon,
   AppleWhatsAppIcon,
   AppleStorefrontIcon,
@@ -16,15 +17,11 @@ import {
   ArrowLeft,
   Search,
   Loader2,
-  CheckCircle2,
   AlertCircle,
   MapPin,
   ExternalLink,
-  ShieldCheck,
   RefreshCw,
-  Sparkles,
   DollarSign,
-  Calendar,
 } from 'lucide-react';
 import {
   formatEcuadorianPhone,
@@ -281,22 +278,18 @@ export function ClientRegistrationView({ clientIdToEdit }: ClientRegistrationVie
         </span>
       </div>
 
-      {/* Header Card de la Pantalla */}
-      <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 p-4 sm:p-5 shadow-xs flex items-center justify-between gap-4">
-        <div className="flex items-center space-x-3 sm:space-x-4">
-          <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-bold shadow-xs shrink-0">
-            {clientToEdit ? (
-              <ApplePencilIcon size={22} className="brightness-0 invert" alt="Editar" />
-            ) : (
-              <ApplePersonBadgePlusIcon size={24} className="brightness-0 invert" alt="Nuevo Local" />
-            )}
-          </div>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900">
-              {clientToEdit ? 'Modificar Local' : 'Registro de Local'}
-            </h1>
-          </div>
+      {/* Encabezado sin tarjeta: Título e ícono limpio con identidad azul celeste */}
+      <div className="flex items-center space-x-3 sm:space-x-4 pt-1">
+        <div className="shrink-0">
+          {clientToEdit ? (
+            <ApplePencilIcon size={32} className="text-blue-600" alt="Editar" />
+          ) : (
+            <ApplePersonBadgePlusIcon size={36} className="text-blue-600" alt="Nuevo Local" />
+          )}
         </div>
+        <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-blue-600">
+          {clientToEdit ? 'Modificar Local' : 'Registro de Local'}
+        </h1>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
@@ -304,7 +297,7 @@ export function ClientRegistrationView({ clientIdToEdit }: ClientRegistrationVie
         <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 p-4 sm:p-5 shadow-xs space-y-3.5">
           <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
             <h2 className="text-sm sm:text-base font-black text-slate-900 flex items-center space-x-2">
-              <ShieldCheck className="w-4.5 h-4.5 text-blue-600" />
+              <ApplePersonTextRectangleIcon size={20} alt="Identificación" />
               <span>Identificación</span>
             </h2>
 
@@ -400,7 +393,7 @@ export function ClientRegistrationView({ clientIdToEdit }: ClientRegistrationVie
                   onClick={handleLookup}
                   disabled={!taxValidation.isValid || isSearchingApi}
                   className="h-11 px-4 bg-blue-600 hover:bg-blue-700 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed text-white font-black text-xs sm:text-sm rounded-xl shadow-xs transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer"
-                  title={taxValidation.isValid ? 'Consultar en línea' : 'Completa el número válido para consultar'}
+                  title={taxValidation.isValid ? 'Consultar' : 'Completa el número válido'}
                 >
                   {isSearchingApi ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -412,36 +405,20 @@ export function ClientRegistrationView({ clientIdToEdit }: ClientRegistrationVie
               )}
             </div>
 
-            {/* Mensajes de Validación Algorítmica en Tiempo Real */}
-            <div className="pt-0.5">
-              {taxValidation.isValid ? (
-                <p className="text-xs font-bold text-emerald-700 flex items-center space-x-1">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                  <span>
-                    {isCedula ? 'Cédula' : 'RUC'} matemáticamente válido ({taxValidation.province})
-                  </span>
-                </p>
-              ) : currentLength === expectedLength && taxValidation.error ? (
-                <p className="text-xs font-bold text-rose-600 flex items-center space-x-1">
-                  <AlertCircle className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-                  <span>{taxValidation.error}</span>
-                </p>
-              ) : currentLength > 0 && currentLength < expectedLength ? (
-                <p className="text-xs font-medium text-slate-400">
-                  Faltan {expectedLength - currentLength} dígitos para completar la validación.
-                </p>
-              ) : null}
+            {/* Error si el número ingresado no es válido al completar la longitud */}
+            {currentLength === expectedLength && !taxValidation.isValid && taxValidation.error && (
+              <p className="text-xs font-bold text-rose-600 flex items-center space-x-1 pt-0.5">
+                <AlertCircle className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                <span>{taxValidation.error}</span>
+              </p>
+            )}
 
-              {apiFeedback && (
-                <p
-                  className={`text-xs font-bold mt-1 flex items-center space-x-1 ${
-                    apiFeedback.type === 'success' ? 'text-emerald-700' : 'text-rose-600'
-                  }`}
-                >
-                  <span>{apiFeedback.message}</span>
-                </p>
-              )}
-            </div>
+            {apiFeedback && apiFeedback.type === 'error' && (
+              <p className="text-xs font-bold text-rose-600 flex items-center space-x-1 pt-0.5">
+                <AlertCircle className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                <span>{apiFeedback.message}</span>
+              </p>
+            )}
           </div>
         </div>
 
