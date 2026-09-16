@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { useDistribution } from '@/context/DistributionContext';
 import { formatCurrency } from '@/lib/utils/formatters';
-import { AppleCreditCardIcon, AppleStorefrontIcon } from '@/components/ui/AppleIcons';
 import { Search, X } from 'lucide-react';
 
 export function DebtsManager() {
@@ -45,46 +44,36 @@ export function DebtsManager() {
 
   return (
     <div className="space-y-4 sm:space-y-5">
-      {/* Tarjetas Resumen de Cartera y Cobranzas (2 Columnas Equilibradas) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-        <div className="bg-white p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              Total por Cobrar
-            </span>
-            <AppleCreditCardIcon className="w-5 h-5 text-rose-500" />
-          </div>
-          <div className="mt-2 text-2xl sm:text-3xl font-black font-mono tracking-tight text-rose-600">
-            {formatCurrency(totalDebt)}
-          </div>
-          <span className="text-xs text-slate-500 mt-1 block">Deuda acumulada en ruta</span>
-        </div>
-
-        <div className="bg-white p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              Locales por Cobrar
-            </span>
-            <AppleStorefrontIcon size={20} className="text-slate-700" alt="Locales" />
-          </div>
-          <div className="mt-2 text-2xl sm:text-3xl font-black font-mono tracking-tight text-slate-900">
-            {clientsWithDebt.length}
-          </div>
-          <span className="text-xs text-slate-500 mt-1 block">
-            {clientsWithDebt.length === 1
-              ? '1 comercio con saldo pendiente'
-              : `${clientsWithDebt.length} comercios con saldo pendiente`}
-          </span>
-        </div>
-      </div>
-
-      {/* Cabecera y Buscador Simple (Estilo Clientes) */}
+      {/* Cabecera Unificada con KPIs y Buscador */}
       <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 p-4 sm:p-5 shadow-xs space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-blue-600">
               Deudas
             </h1>
+          </div>
+
+          {/* KPIs Compactos Integrados */}
+          <div className="flex items-center gap-4 sm:gap-6 self-start sm:self-auto">
+            <div className="text-left sm:text-right">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                Total por Cobrar
+              </span>
+              <span className="text-lg sm:text-xl font-black font-mono tracking-tight text-rose-600">
+                {formatCurrency(totalDebt)}
+              </span>
+            </div>
+
+            <div className="h-8 w-px bg-slate-200 hidden sm:block" />
+
+            <div className="text-left sm:text-right">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                Locales por Cobrar
+              </span>
+              <span className="text-lg sm:text-xl font-black font-mono tracking-tight text-slate-900">
+                {clientsWithDebt.length}
+              </span>
+            </div>
           </div>
         </div>
 
