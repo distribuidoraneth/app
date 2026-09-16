@@ -18,8 +18,6 @@ import {
   Search,
   Loader2,
   AlertCircle,
-  MapPin,
-  ExternalLink,
   RefreshCw,
   DollarSign,
 } from 'lucide-react';
@@ -113,7 +111,26 @@ export function ClientRegistrationView({ clientIdToEdit }: ClientRegistrationVie
     setTaxValidation(result);
   }, [taxId, taxIdType]);
 
-  // Obtener dirección oficial de Google Maps por coordenadas
+  // Referencias para calibración continua de GPS
+  const lastGeocodedCoordsRef = useRef<{ lat: number; lng: number } | null>(null);
+  const bestAccuracyRef = useRef<number>(999999);
+  const watchIdRef = useRef<number | null>(null);
+
+  // Helper: Distancia en metros (Haversine)
+  const getDistanceMeters = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371e3;
+    const φ1 = (lat1 * Math.PI) / 180;
+    const φ2 = (lat2 * Math.PI) / 180;
+    const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+    const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+    const a =
+      Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+      Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
+  // Obtener dirección oficial de Google Maps por coordenadas GPS
   const fetchGoogleAddress = useCallback(async (lat: number, lng: number) => {
     setIsGeocoding(true);
     try {
@@ -121,35 +138,85 @@ export function ClientRegistrationView({ clientIdToEdit }: ClientRegistrationVie
       const data = await res.json();
       if (data.success && data.address) {
         setAddressReference(data.address);
+        lastGeocodedCoordsRef.current = { lat, lng };
       }
     } catch (err) {
-      console.warn('Error al geocodificar dirección:', err);
+      console.warn('Error al geocodificar dirección con Google Maps:', err);
     } finally {
       setIsGeocoding(false);
     }
   }, []);
 
-  // Calibrar GPS del dispositivo
-  const handleCalibrateGps = () => {
+  // Sintonización satelital continua de alta precisión en tiempo real al abrir la pantalla
+  useEffect(() => {
+    if (clientToEdit) return; // Si es edición, conservamos sus coordenadas existentes
+
     if (typeof window === 'undefined' || !navigator.geolocation) {
-      alert('Tu navegador no soporta geolocalización.');
+      setIsCalibratingGps(false);
       return;
     }
 
     setIsCalibratingGps(true);
+    bestAccuracyRef.current = 999999;
+    lastGeocodedCoordsRef.current = null;
+
+    const id = navigator.geolocation.watchPosition(
+      (pos) => {
+        const { latitude, longitude, accuracy } = pos.coords;
+        setGpsAccuracy(Math.round(accuracy));
+        setIsCalibratingGps(false);
+
+        const last = lastGeocodedCoordsRef.current;
+        const distanceMoved = last ? getDistanceMeters(last.lat, last.lng, latitude, longitude) : 999;
+
+        // Auto-afinar coordenadas cuando la precisión mejore o se mueva
+        if (!last || (accuracy < bestAccuracyRef.current - 5 && distanceMoved > 2) || distanceMoved > 15) {
+          setCoords({ lat: latitude, lng: longitude });
+          if (accuracy < bestAccuracyRef.current) {
+            bestAccuracyRef.current = accuracy;
+          }
+          fetchGoogleAddress(latitude, longitude);
+        }
+      },
+      (err) => {
+        console.warn('Advertencia satelital GPS:', err.message);
+        setIsCalibratingGps(false);
+      },
+      {
+        enableHighAccuracy: true,
+        maximumAge: 0,
+        timeout: 25000,
+      }
+    );
+
+    watchIdRef.current = id;
+
+    return () => {
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+      }
+    };
+  }, [clientToEdit, fetchGoogleAddress]);
+
+  // Recalibración manual sutil si el usuario camina a la entrada
+  const handleForceRecalibrate = () => {
+    if (typeof window === 'undefined' || !navigator.geolocation) return;
+    setIsCalibratingGps(true);
+    bestAccuracyRef.current = 999999;
+    lastGeocodedCoordsRef.current = null;
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const { latitude, longitude, accuracy } = pos.coords;
         setCoords({ lat: latitude, lng: longitude });
         setGpsAccuracy(Math.round(accuracy));
+        bestAccuracyRef.current = accuracy;
         fetchGoogleAddress(latitude, longitude);
         setIsCalibratingGps(false);
       },
-      (err) => {
-        console.warn('Error de GPS:', err.message);
+      () => {
         setIsCalibratingGps(false);
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
     );
   };
 
@@ -179,7 +246,9 @@ export function ClientRegistrationView({ clientIdToEdit }: ClientRegistrationVie
         if (data.fullName) setFullName(data.fullName);
         if (data.businessName) setBusinessName(data.businessName);
         if (data.gender) setGender(data.gender as Gender);
-        if (data.addressReference && !addressReference) setAddressReference(data.addressReference);
+        if (data.addressReference && !addressReference && !lastGeocodedCoordsRef.current) {
+          setAddressReference(data.addressReference);
+        }
         if (data.birthDate) setBirthDate(data.birthDate);
 
         setIsOfficialDataLocked(true);
@@ -528,59 +597,66 @@ export function ClientRegistrationView({ clientIdToEdit }: ClientRegistrationVie
         </div>
 
         {/* SECCIÓN 3: Ubicación */}
-        <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 p-4 sm:p-5 shadow-xs space-y-4">
+        <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 p-4 sm:p-5 shadow-xs space-y-3.5">
           <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
             <h2 className="text-sm sm:text-base font-black text-slate-900 flex items-center space-x-2">
               <AppleMapPinIcon size={18} alt="Ubicación" />
               <span>Ubicación</span>
             </h2>
 
-            <button
-              type="button"
-              onClick={handleCalibrateGps}
-              disabled={isCalibratingGps || isGeocoding}
-              className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-800 font-bold rounded-xl border border-slate-200 text-xs transition-all flex items-center space-x-1.5 self-start sm:self-auto cursor-pointer"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${isCalibratingGps ? 'animate-spin text-blue-600' : ''}`} />
-              <span>{isCalibratingGps ? 'Obteniendo GPS...' : 'Fijar GPS'}</span>
-            </button>
+            {/* Micro-badge sutil de estado satelital */}
+            <div className="flex items-center space-x-1.5 text-xs font-bold">
+              {isCalibratingGps ? (
+                <span className="text-blue-600 flex items-center space-x-1.5">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
+                  <span className="text-2xs sm:text-xs">Sintonizando satélites...</span>
+                </span>
+              ) : isGeocoding ? (
+                <span className="text-slate-500 flex items-center space-x-1.5">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
+                  <span className="text-2xs sm:text-xs">Obteniendo dirección Google...</span>
+                </span>
+              ) : gpsAccuracy !== null ? (
+                <span
+                  className={`inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full border text-2xs font-black ${
+                    gpsAccuracy <= 15
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200/80'
+                      : 'bg-amber-50 text-amber-700 border-amber-200/80'
+                  }`}
+                >
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full ${
+                      gpsAccuracy <= 15 ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'
+                    }`}
+                  />
+                  <span>
+                    {gpsAccuracy <= 15 ? `GPS Alta Precisión (±${gpsAccuracy}m)` : `GPS (±${gpsAccuracy}m)`}
+                  </span>
+                </span>
+              ) : null}
+            </div>
           </div>
 
-          <div className="space-y-3">
-            <div>
-              <label className="text-xs font-black text-slate-700 uppercase tracking-wider mb-1 block">
-                Dirección y Referencia
-              </label>
+          <div className="space-y-2">
+            <div className="relative">
               <textarea
                 rows={2}
                 value={addressReference}
                 onChange={(e) => setAddressReference(e.target.value)}
-                placeholder="Ej. Av. Cevallos y Montalvo (frente a la farmacia, letrero azul)"
-                className="w-full px-3.5 py-2.5 bg-slate-50 hover:bg-slate-100/60 focus:bg-white rounded-xl border border-slate-200 text-sm font-medium text-slate-900 focus:outline-hidden focus:border-blue-500 transition-colors"
+                placeholder="Dirección del local (se obtiene automáticamente con Google Maps)..."
+                className="w-full pr-10 px-3.5 py-2.5 bg-slate-50 hover:bg-slate-100/60 focus:bg-white rounded-xl border border-slate-200 text-sm font-medium text-slate-900 focus:outline-hidden focus:border-blue-500 transition-colors"
               />
-            </div>
 
-            {/* Coordenadas Actuales */}
-            <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs text-slate-600">
-              <div className="flex items-center space-x-2 font-mono font-bold">
-                <MapPin className="w-4 h-4 text-blue-600" />
-                <span>Lat: {coords.lat.toFixed(5)}, Lng: {coords.lng.toFixed(5)}</span>
-                {gpsAccuracy && (
-                  <span className="text-emerald-700 font-sans font-bold bg-emerald-100/70 px-2 py-0.5 rounded-md text-2xs">
-                    ±{gpsAccuracy}m
-                  </span>
-                )}
-              </div>
-
-              <a
-                href={`https://www.google.com/maps/search/?api=1&query=${coords.lat},${coords.lng}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 hover:text-blue-800 font-bold flex items-center space-x-1"
+              {/* Botón sutil integrado de actualización satelital */}
+              <button
+                type="button"
+                onClick={handleForceRecalibrate}
+                disabled={isCalibratingGps || isGeocoding}
+                title="Actualizar ubicación satelital"
+                className="absolute right-2.5 top-2.5 p-1.5 text-slate-400 hover:text-blue-600 active:scale-90 rounded-lg hover:bg-slate-200/60 transition-all cursor-pointer disabled:opacity-40"
               >
-                <span>Ver mapa</span>
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
+                <RefreshCw className={`w-4 h-4 ${isCalibratingGps || isGeocoding ? 'animate-spin text-blue-600' : ''}`} />
+              </button>
             </div>
           </div>
         </div>
