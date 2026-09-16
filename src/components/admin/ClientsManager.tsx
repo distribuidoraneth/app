@@ -14,6 +14,7 @@ import {
   ApplePhoneIcon,
   AppleTrashIcon,
   AppleWhatsAppIcon,
+  ApplePersonsIcon,
 } from '@/components/ui/AppleIcons';
 import {
   Plus,
@@ -21,7 +22,6 @@ import {
   ExternalLink,
   Search,
   X,
-  Users,
 } from 'lucide-react';
 
 export function ClientsManager() {
@@ -94,7 +94,7 @@ export function ClientsManager() {
       {/* Clients Grid */}
       {filteredClients.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-3xl border border-slate-200/80 space-y-2.5 px-4">
-          <Users className="w-10 h-10 text-slate-300 mx-auto" />
+          <ApplePersonsIcon size={44} className="mx-auto opacity-30" alt="Sin clientes" />
           <p className="text-slate-800 font-black text-sm">No se encontraron clientes</p>
           <p className="text-slate-400 text-xs max-w-sm mx-auto">
             {searchQuery ? 'Prueba con otro término de búsqueda.' : 'Aún no hay clientes registrados.'}

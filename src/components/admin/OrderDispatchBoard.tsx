@@ -17,7 +17,7 @@ import {
 import { Order, Invoice } from '@/types';
 import { InvoiceModal } from '@/components/invoice/InvoiceModal';
 import { ThermalReceiptModal } from '@/components/receipt/ThermalReceiptModal';
-import { AppleMapPinIcon, AppleWhatsAppIcon, AppleCheckmarkSealIcon } from '@/components/ui/AppleIcons';
+import { AppleMapPinIcon, AppleWhatsAppIcon, AppleCheckmarkSealIcon, AppleShippingBoxIcon } from '@/components/ui/AppleIcons';
 import {
   Clock,
   XCircle,
@@ -297,7 +297,7 @@ export function OrderDispatchBoard() {
       <div className="space-y-2.5">
         {filteredOrders.length === 0 ? (
           <div className="text-center py-14 bg-white rounded-3xl border border-slate-200/80 space-y-2.5 px-4">
-            <Package className="w-10 h-10 text-slate-300 mx-auto" />
+            <AppleShippingBoxIcon size={44} className="mx-auto opacity-30" alt="Sin pedidos" />
             <p className="text-slate-800 font-black text-sm">No se encontraron pedidos</p>
             <p className="text-slate-400 text-xs max-w-sm mx-auto">
               No hay pedidos que coincidan con la fecha o búsqueda seleccionada.
