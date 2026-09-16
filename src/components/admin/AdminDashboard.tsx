@@ -14,6 +14,7 @@ import { MobileFloatingDock, DockNavItem } from '@/components/ui/MobileFloatingD
 import { formatCurrency, formatDate, cleanAddress } from '@/lib/utils/formatters';
 import { Client, Invoice } from '@/types';
 import { AnethFullLogo, AnethIsotype } from '@/components/ui/AnethLogo';
+import { AppleMapPinIcon } from '@/components/ui/AppleIcons';
 import Link from 'next/link';
 import {
   Building2,
@@ -395,7 +396,7 @@ export function AdminDashboard() {
                       {cleanAddress(client.addressReference) && (
                         <div className="flex items-start justify-between text-slate-500 text-xs pt-0.5">
                           <p className="flex items-start">
-                            <MapPin className="w-4 h-4 mr-1 text-slate-400 shrink-0 mt-0.5" />
+                            <AppleMapPinIcon size={14} className="mr-1 opacity-60 shrink-0 mt-0.5" alt="Ubicación" />
                             <span>{cleanAddress(client.addressReference)}</span>
                           </p>
                           {typeof client.latitude === 'number' && typeof client.longitude === 'number' && !isNaN(client.latitude) && !isNaN(client.longitude) && (

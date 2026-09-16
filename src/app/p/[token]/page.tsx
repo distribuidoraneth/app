@@ -17,11 +17,11 @@ import {
   XCircle,
   FileText,
   Download,
-  MapPin,
   User,
   Sparkles,
   ArrowRight,
 } from 'lucide-react';
+import { AppleMapPinIcon } from '@/components/ui/AppleIcons';
 
 export default function ClientExperiencePage({
   params,
@@ -116,7 +116,7 @@ export default function ClientExperiencePage({
               <>
                 <span className="text-slate-300 hidden sm:inline">•</span>
                 <span className="flex items-center font-medium text-slate-500">
-                  <MapPin className="w-4 h-4 mr-1.5 text-slate-400 flex-shrink-0" />
+                  <AppleMapPinIcon size={14} className="mr-1.5 opacity-60 flex-shrink-0" alt="Ubicación" />
                   {cleanAddress(client?.addressReference)}
                 </span>
               </>

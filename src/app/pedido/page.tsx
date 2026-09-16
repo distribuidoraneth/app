@@ -13,6 +13,7 @@ import { AnethFullLogo, AnethIsotype } from '@/components/ui/AnethLogo';
 import { sortClientsByProximity, calculateDistanceMeters, formatDistance, GeoCoordinates } from '@/lib/utils/geo';
 import { Client, SaleType } from '@/types';
 import { cleanAddress } from '@/lib/utils/formatters';
+import { AppleMapPinIcon } from '@/components/ui/AppleIcons';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import {
@@ -20,7 +21,6 @@ import {
   ArrowLeft,
   Store,
   Navigation,
-  MapPin,
   ChevronRight,
   Plus,
   Compass,
@@ -244,7 +244,7 @@ function StandaloneOrderContent() {
                   </div>
                   {cleanAddress(activeClient.addressReference) && (
                     <p className="text-xs sm:text-[13px] text-slate-500 truncate flex items-center mt-0.5">
-                      <MapPin className="w-3.5 h-3.5 mr-1 shrink-0 text-slate-400" />
+                      <AppleMapPinIcon size={14} className="mr-1 shrink-0 opacity-60" alt="Ubicación" />
                       <span className="truncate">{cleanAddress(activeClient.addressReference)}</span>
                     </p>
                   )}

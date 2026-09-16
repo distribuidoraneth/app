@@ -6,9 +6,9 @@ import { useDistribution } from '@/context/DistributionContext';
 import { ClientRegistrationModal } from '@/components/admin/ClientRegistrationModal';
 import { sortClientsByProximity, GeoCoordinates, ClientWithDistance } from '@/lib/utils/geo';
 import { cleanAddress } from '@/lib/utils/formatters';
+import { AppleMapPinIcon } from '@/components/ui/AppleIcons';
 import {
   Search,
-  MapPin,
   Plus,
   Navigation,
   Store,
@@ -246,7 +246,7 @@ export function ClientProximitySelectorModal({
 
                       {cleanAddress(client.addressReference) && (
                         <div className="text-xs text-slate-400 truncate flex items-center">
-                          <MapPin className="w-3.5 h-3.5 mr-1 text-slate-400 shrink-0" />
+                          <AppleMapPinIcon size={14} className="mr-1 opacity-60 shrink-0" alt="Ubicación" />
                           <span className="truncate">{cleanAddress(client.addressReference)}</span>
                         </div>
                       )}

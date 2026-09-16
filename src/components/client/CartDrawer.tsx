@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { PaymentMethod, SaleType, Invoice, Order } from '@/types';
 import { ThermalReceiptModal } from '@/components/receipt/ThermalReceiptModal';
+import { AppleWhatsAppIcon } from '@/components/ui/AppleIcons';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -407,9 +408,9 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
                 <button
                   type="button"
                   onClick={handleShareWhatsApp}
-                  className="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white rounded-2xl font-black text-sm flex items-center justify-center space-x-2 shadow-md transition-all cursor-pointer"
+                  className="w-full py-3.5 px-4 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/90 active:scale-98 text-emerald-900 rounded-2xl font-black text-sm flex items-center justify-center space-x-2 shadow-xs transition-all cursor-pointer"
                 >
-                  <Share2 className="w-4 h-4" />
+                  <AppleWhatsAppIcon size={18} alt="WhatsApp" />
                   <span>Enviar Comprobante por WhatsApp</span>
                 </button>
 

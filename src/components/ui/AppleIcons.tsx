@@ -10,7 +10,9 @@ interface AppleIconProps extends React.ImgHTMLAttributes<HTMLImageElement> {
     | 'truck.box'
     | 'receipt'
     | 'qrcode'
-    | 'square.stack.3d.up';
+    | 'square.stack.3d.up'
+    | 'mappin.and.ellipse'
+    | 'whatsapp';
   size?: number | string;
   className?: string;
   alt?: string;
@@ -78,4 +80,12 @@ export const AppleQrCodeIcon: React.FC<Omit<AppleIconProps, 'name'>> = (props) =
 
 export const AppleSquareStackIcon: React.FC<Omit<AppleIconProps, 'name'>> = (props) => (
   <AppleIcon name="square.stack.3d.up" {...props} />
+);
+
+export const AppleMapPinIcon: React.FC<Omit<AppleIconProps, 'name'>> = (props) => (
+  <AppleIcon name="mappin.and.ellipse" {...props} />
+);
+
+export const AppleWhatsAppIcon: React.FC<Omit<AppleIconProps, 'name'>> = (props) => (
+  <AppleIcon name="whatsapp" {...props} />
 );

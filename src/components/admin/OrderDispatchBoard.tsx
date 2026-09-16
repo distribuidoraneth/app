@@ -17,17 +17,15 @@ import {
 import { Order, Invoice } from '@/types';
 import { InvoiceModal } from '@/components/invoice/InvoiceModal';
 import { ThermalReceiptModal } from '@/components/receipt/ThermalReceiptModal';
+import { AppleMapPinIcon, AppleWhatsAppIcon } from '@/components/ui/AppleIcons';
 import {
   Clock,
   CheckCircle2,
   XCircle,
   FileText,
-  Share2,
   Package,
   Phone,
-  MapPin,
   Check,
-  Navigation,
   Printer,
 } from 'lucide-react';
 
@@ -176,7 +174,7 @@ export function OrderDispatchBoard() {
                     </h3>
                     {cleanAddress(order.addressReference) && (
                       <p className="text-xs sm:text-[13px] text-slate-500 truncate flex items-center">
-                        <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mr-1" />
+                        <AppleMapPinIcon size={14} className="shrink-0 mr-1 opacity-60" alt="Dirección" />
                         <span className="truncate">{cleanAddress(order.addressReference)}</span>
                       </p>
                     )}
@@ -216,10 +214,10 @@ export function OrderDispatchBoard() {
                       <button
                         type="button"
                         onClick={() => handleOpenNavigation(order.latitude, order.longitude)}
-                        className="p-2 rounded-lg bg-slate-100 hover:bg-blue-50 text-slate-600 hover:text-blue-600 border border-slate-200/70 transition-colors cursor-pointer"
+                        className="p-2 rounded-lg bg-slate-100 hover:bg-blue-50 text-slate-600 hover:text-blue-600 border border-slate-200/70 transition-colors cursor-pointer flex items-center justify-center"
                         title="Navegar con GPS"
                       >
-                        <Navigation className="w-4 h-4" />
+                        <AppleMapPinIcon size={18} alt="Navegar con GPS" />
                       </button>
                     )}
 
@@ -228,10 +226,10 @@ export function OrderDispatchBoard() {
                       <button
                         type="button"
                         onClick={() => handleShareWhatsApp(order)}
-                        className="p-2 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/80 transition-colors cursor-pointer"
+                        className="p-2 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/80 transition-colors cursor-pointer flex items-center justify-center"
                         title="Enviar mensaje por WhatsApp"
                       >
-                        <Share2 className="w-4 h-4" />
+                        <AppleWhatsAppIcon size={18} alt="Enviar mensaje por WhatsApp" />
                       </button>
                     )}
 

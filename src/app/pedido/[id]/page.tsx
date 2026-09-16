@@ -14,12 +14,10 @@ import {
 } from '@/lib/utils/formatters';
 import { InvoiceModal } from '@/components/invoice/InvoiceModal';
 import { ThermalReceiptModal } from '@/components/receipt/ThermalReceiptModal';
+import { AppleMapPinIcon, AppleWhatsAppIcon } from '@/components/ui/AppleIcons';
 import {
   ArrowLeft,
   Phone,
-  MapPin,
-  Navigation,
-  Share2,
   Printer,
   FileText,
   CheckCircle2,
@@ -172,7 +170,7 @@ export default function OrderDetailPage({
                 onClick={handleOpenGps}
                 className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-xl text-xs sm:text-sm font-bold transition-colors cursor-pointer"
               >
-                <Navigation className="w-3.5 h-3.5" />
+                <AppleMapPinIcon size={16} alt="GPS" />
                 <span>Navegar GPS</span>
               </button>
             )}
@@ -196,7 +194,7 @@ export default function OrderDetailPage({
             )}
             {cleanAddress(order.addressReference || client?.addressReference) && (
               <div className="flex items-start space-x-2">
-                <MapPin className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                <AppleMapPinIcon size={16} className="opacity-60 shrink-0 mt-0.5" alt="Ubicación" />
                 <span className="text-slate-600 leading-relaxed">
                   {cleanAddress(order.addressReference || client?.addressReference)}
                 </span>
@@ -296,7 +294,7 @@ export default function OrderDetailPage({
               onClick={handleShareWhatsApp}
               className="py-3 px-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center space-x-1.5 border border-emerald-200/60 transition-colors cursor-pointer"
             >
-              <Share2 className="w-4 h-4 text-emerald-600" />
+              <AppleWhatsAppIcon size={18} alt="WhatsApp" />
               <span>WhatsApp</span>
             </button>
 

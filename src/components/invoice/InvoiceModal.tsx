@@ -5,10 +5,10 @@ import { Invoice } from '@/types';
 import { formatCurrency, formatDate, generateWhatsAppOrderLink } from '@/lib/utils/formatters';
 import { QRCodeSVG } from 'qrcode.react';
 import { AnethFullLogo } from '@/components/ui/AnethLogo';
+import { AppleWhatsAppIcon } from '@/components/ui/AppleIcons';
 import {
   X,
   Printer,
-  Share2,
   CheckCircle2,
   FileText,
   Download,
@@ -146,9 +146,9 @@ export function InvoiceModal({ invoice, isOpen, onClose }: InvoiceModalProps) {
             <button
               type="button"
               onClick={handleShareWhatsApp}
-              className="flex items-center space-x-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs font-bold transition-all"
+              className="flex items-center space-x-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 text-emerald-800 rounded-xl text-xs font-bold transition-all"
             >
-              <Share2 className="w-3.5 h-3.5" />
+              <AppleWhatsAppIcon size={16} alt="WhatsApp" />
               <span className="hidden sm:inline">WhatsApp</span>
             </button>
             <button

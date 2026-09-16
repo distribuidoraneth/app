@@ -6,11 +6,11 @@ import { formatCurrency, formatDate, generateWhatsAppOrderLink } from '@/lib/uti
 import { PoplQRCodeSVG } from '@/components/ui/PoplQRCodeSVG';
 import Link from 'next/link';
 import { AnethFullLogo } from '@/components/ui/AnethLogo';
+import { AppleWhatsAppIcon } from '@/components/ui/AppleIcons';
 import { generarClaveAcceso } from '@/lib/sri/claveAcceso';
 import { buildFacturaXml, DEFAULT_TAX_PROFILE } from '@/lib/sri/xmlBuilder';
 import {
   Printer,
-  Share2,
   Download,
   Code,
   ArrowLeft,
@@ -183,9 +183,9 @@ export default function PublicInvoicePage({
           <button
             type="button"
             onClick={handleShareWhatsApp}
-            className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 transition-all shadow-xs"
+            className="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 text-emerald-800 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition-all shadow-xs"
           >
-            <Share2 className="w-3.5 h-3.5" />
+            <AppleWhatsAppIcon size={16} alt="WhatsApp" />
             <span>WhatsApp</span>
           </button>
 
