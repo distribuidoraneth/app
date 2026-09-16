@@ -339,12 +339,9 @@ export function AdminDashboard() {
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <h2 className="text-lg font-extrabold text-slate-900">
-                  Directorio de Locales y Códigos QR
+                <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-blue-600">
+                  Clientes
                 </h2>
-                <p className="text-xs text-slate-500">
-                  Genera credenciales QR impresas para cada local comercial. Los clientes escanean y piden directamente.
-                </p>
               </div>
 
               <button
