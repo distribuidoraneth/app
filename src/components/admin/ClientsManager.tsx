@@ -220,23 +220,13 @@ export function ClientsManager() {
                   )}
                 </div>
 
-                {/* Credit Status */}
-                {(client.creditLimit || 0) > 0 && (
-                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs sm:text-sm flex justify-between items-center">
-                    <div>
-                      <span className="text-xs text-slate-500 block">Cupo Crédito</span>
-                      <span className="font-bold font-mono text-slate-800">${client.creditLimit || 0}</span>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-xs text-slate-500 block">Deuda Actual</span>
-                      <span
-                        className={`font-bold font-mono ${
-                          (client.currentDebt || 0) > 0 ? 'text-amber-600' : 'text-emerald-600'
-                        }`}
-                      >
-                        ${(client.currentDebt || 0).toFixed(2)}
-                      </span>
-                    </div>
+                {/* Saldo Pendiente (Solo si existe deuda) */}
+                {(client.currentDebt || 0) > 0 && (
+                  <div className="bg-amber-50/80 px-3.5 py-2.5 rounded-xl border border-amber-200/70 flex justify-between items-center">
+                    <span className="text-xs font-semibold text-amber-800">Saldo pendiente</span>
+                    <span className="font-mono font-black text-amber-700 text-sm">
+                      ${(client.currentDebt || 0).toFixed(2)}
+                    </span>
                   </div>
                 )}
               </div>

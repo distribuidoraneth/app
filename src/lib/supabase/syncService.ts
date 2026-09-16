@@ -88,7 +88,6 @@ export async function saveClientToDb(client: Client): Promise<{ success: boolean
       tax_id: client.taxId || null,
       tax_id_type: client.taxIdType || (client.taxId?.length === 13 ? '04' : client.taxId?.length === 10 ? '05' : '07'),
       email: client.email || null,
-      credit_limit: 0,
       current_debt: client.currentDebt || 0,
       created_at: client.createdAt || new Date().toISOString(),
     };

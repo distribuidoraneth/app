@@ -470,19 +470,13 @@ export function AdminDashboard() {
                       )}
                     </div>
 
-                    {/* Credit Status */}
-                    {(client.creditLimit || 0) > 0 && (
-                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs sm:text-sm flex justify-between items-center">
-                        <div>
-                          <span className="text-xs text-slate-500 block">Cupo Crédito</span>
-                          <span className="font-bold font-mono text-slate-800">${client.creditLimit || 0}</span>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-xs text-slate-500 block">Deuda Actual</span>
-                          <span className={`font-bold font-mono ${(client.currentDebt || 0) > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
-                            ${(client.currentDebt || 0).toFixed(2)}
-                          </span>
-                        </div>
+                    {/* Saldo Pendiente */}
+                    {(client.currentDebt || 0) > 0 && (
+                      <div className="bg-amber-50/80 px-3.5 py-2.5 rounded-xl border border-amber-200/70 flex justify-between items-center">
+                        <span className="text-xs font-semibold text-amber-800">Saldo pendiente</span>
+                        <span className="font-mono font-black text-amber-700 text-sm">
+                          ${(client.currentDebt || 0).toFixed(2)}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -523,23 +517,20 @@ export function AdminDashboard() {
                     <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-xs">
                       <th className="py-3 px-4">Cliente / Local</th>
                       <th className="py-3 px-4">Contacto</th>
-                      <th className="py-3 px-4 text-right">Cupo Asignado</th>
-                      <th className="py-3 px-4 text-right">Deuda Actual</th>
-                      <th className="py-3 px-4 text-right">Disponible</th>
+                      <th className="py-3 px-4 text-right">Deuda Pendiente</th>
                       <th className="py-3 px-4 text-center">Acciones</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-slate-800">
                     {clients.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="py-8 text-center text-slate-400">
+                        <td colSpan={4} className="py-8 text-center text-slate-400">
                           No hay clientes registrados aún.
                         </td>
                       </tr>
                     ) : (
                       clients.map((client) => {
                         const debt = client.currentDebt || 0;
-                        const available = Math.max(0, (client.creditLimit || 0) - debt);
 
                         return (
                           <tr key={client.id} className="hover:bg-slate-50">
@@ -548,14 +539,8 @@ export function AdminDashboard() {
                               <p className="text-xs text-slate-500">{client.fullName}</p>
                             </td>
                             <td className="py-3 px-4 font-mono">{client.whatsappNumber}</td>
-                            <td className="py-3 px-4 text-right font-mono font-bold">
-                              ${(client.creditLimit || 0).toFixed(2)}
-                            </td>
                             <td className="py-3 px-4 text-right font-mono font-extrabold text-amber-600">
                               ${debt.toFixed(2)}
-                            </td>
-                            <td className="py-3 px-4 text-right font-mono font-bold text-emerald-600">
-                              ${available.toFixed(2)}
                             </td>
                             <td className="py-3 px-4 text-center">
                               {debt > 0 ? (
