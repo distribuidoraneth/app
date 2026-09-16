@@ -5,8 +5,6 @@ import { useDistribution } from '@/context/DistributionContext';
 import { Gender, Client, ClientTier } from '@/types';
 import {
   X,
-  UserPlus,
-  Pencil,
   Search,
   Loader2,
   CheckCircle2,
@@ -15,7 +13,16 @@ import {
   RefreshCw,
   ExternalLink,
 } from 'lucide-react';
-import { formatEcuadorianPhone, validateEcuadorianPhone } from '@/lib/utils/ecuadorValidators';
+import {
+  ApplePersonBadgePlusIcon,
+  ApplePencilIcon,
+} from '@/components/ui/AppleIcons';
+import {
+  formatEcuadorianPhone,
+  validateEcuadorianPhone,
+  validateEcuadorianCedula,
+  validateEcuadorianRuc,
+} from '@/lib/utils/ecuadorValidators';
 
 interface ClientRegistrationModalProps {
   isOpen: boolean;
@@ -336,7 +343,11 @@ export function ClientRegistrationModal({
         <div className="bg-slate-50/90 border-b border-slate-200/90 px-5 sm:px-7 py-3.5 sm:py-4 flex items-center justify-between shrink-0">
           <div className="flex items-center space-x-3">
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-bold shadow-xs">
-              {clientToEdit ? <Pencil className="w-5 h-5" /> : <UserPlus className="w-5 h-5" />}
+              {clientToEdit ? (
+                <ApplePencilIcon size={20} className="brightness-0 invert" alt="Editar" />
+              ) : (
+                <ApplePersonBadgePlusIcon size={22} className="brightness-0 invert" alt="Nuevo Local" />
+              )}
             </div>
             <h2 className="font-black text-lg sm:text-xl text-slate-900 leading-tight">
               {clientToEdit ? 'Modificar Cliente' : 'Registro de Cliente'}
@@ -395,11 +406,13 @@ export function ClientRegistrationModal({
               <div className="flex items-stretch gap-2 w-full">
                 <input
                   type="text"
+                  inputMode="numeric"
+                  maxLength={taxIdType === '04' ? 13 : 10}
                   value={taxId}
                   disabled={isOfficialDataLocked}
                   onChange={(e) => {
-                    setTaxId(e.target.value);
-                    const clean = e.target.value.replace(/\D/g, '');
+                    const clean = e.target.value.replace(/\D/g, '').slice(0, taxIdType === '04' ? 13 : 10);
+                    setTaxId(clean);
                     if (clean.length === 13) setTaxIdType('04');
                     else if (clean.length === 10) setTaxIdType('05');
                   }}
@@ -430,8 +443,11 @@ export function ClientRegistrationModal({
                   <button
                     type="button"
                     onClick={handleLookup}
-                    disabled={isSearchingApi || !taxId.trim()}
-                    className="w-13 sm:w-14 shrink-0 bg-blue-600 hover:bg-blue-700 active:scale-95 disabled:opacity-50 text-white rounded-xl flex items-center justify-center transition-all shadow-xs cursor-pointer"
+                    disabled={
+                      isSearchingApi ||
+                      !(taxIdType === '04' ? validateEcuadorianRuc(taxId).isValid : validateEcuadorianCedula(taxId).isValid)
+                    }
+                    className="w-13 sm:w-14 shrink-0 bg-blue-600 hover:bg-blue-700 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl flex items-center justify-center transition-all shadow-xs cursor-pointer"
                     title="Consultar Cédula o RUC"
                   >
                     {isSearchingApi ? (

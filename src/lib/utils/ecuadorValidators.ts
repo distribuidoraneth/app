@@ -209,3 +209,309 @@ export function validateEcuadorianPhone(input: string): PhoneValidationResult {
     isProvided: true,
   };
 }
+
+// Mapa oficial de Provincias de Ecuador (Códigos 01 a 24 y 30)
+export const ECUADOR_PROVINCES: Record<string, string> = {
+  '01': 'Azuay',
+  '02': 'Bolívar',
+  '03': 'Cañar',
+  '04': 'Carchi',
+  '05': 'Cotopaxi',
+  '06': 'Chimborazo',
+  '07': 'El Oro',
+  '08': 'Esmeraldas',
+  '09': 'Guayas',
+  '10': 'Imbabura',
+  '11': 'Loja',
+  '12': 'Los Ríos',
+  '13': 'Manabí',
+  '14': 'Morona Santiago',
+  '15': 'Napo',
+  '16': 'Pastaza',
+  '17': 'Pichincha',
+  '18': 'Tungurahua',
+  '19': 'Zamora Chinchipe',
+  '20': 'Galápagos',
+  '21': 'Sucumbíos',
+  '22': 'Orellana',
+  '23': 'Santo Domingo de los Tsáchilas',
+  '24': 'Santa Elena',
+  '30': 'Ecuatorianos en el Exterior',
+};
+
+export interface TaxIdValidationResult {
+  isValid: boolean;
+  type: '04' | '05'; // '04' RUC, '05' Cédula
+  cleanDigits: string;
+  error?: string;
+  province?: string;
+  taxpayerType?: 'natural' | 'publica' | 'privada';
+}
+
+/**
+ * Valida una Cédula de Identidad Ecuatoriana (10 dígitos)
+ * Aplica algoritmo oficial de Módulo 10 con coeficientes [2,1,2,1,2,1,2,1,2] y validación de provincia.
+ */
+export function validateEcuadorianCedula(input: string): TaxIdValidationResult {
+  const digits = (input || '').replace(/\D/g, '');
+
+  if (!digits) {
+    return { isValid: false, type: '05', cleanDigits: '', error: 'Ingrese el número de cédula' };
+  }
+
+  if (digits.length !== 10) {
+    return {
+      isValid: false,
+      type: '05',
+      cleanDigits: digits,
+      error: `La cédula debe tener exactamente 10 dígitos (${digits.length}/10)`,
+    };
+  }
+
+  // 1. Validar código de provincia (01 - 24 o 30)
+  const provCode = digits.substring(0, 2);
+  const provNum = parseInt(provCode, 10);
+  if (!((provNum >= 1 && provNum <= 24) || provNum === 30)) {
+    return {
+      isValid: false,
+      type: '05',
+      cleanDigits: digits,
+      error: `El código de provincia "${provCode}" no existe en Ecuador (01-24 o 30)`,
+    };
+  }
+
+  const provinceName = ECUADOR_PROVINCES[provCode] || 'Provincia Especial';
+
+  // 2. Tercer dígito debe ser menor a 6 (0 al 5) para personas naturales
+  const thirdDigit = parseInt(digits.charAt(2), 10);
+  if (thirdDigit >= 6) {
+    return {
+      isValid: false,
+      type: '05',
+      cleanDigits: digits,
+      error: 'El tercer dígito de una cédula debe estar entre 0 y 5',
+    };
+  }
+
+  // 3. Algoritmo Módulo 10
+  const coefficients = [2, 1, 2, 1, 2, 1, 2, 1, 2];
+  let sum = 0;
+  for (let i = 0; i < 9; i++) {
+    let product = parseInt(digits.charAt(i), 10) * coefficients[i];
+    if (product >= 10) {
+      product -= 9;
+    }
+    sum += product;
+  }
+
+  const expectedVerifier = (10 - (sum % 10)) % 10;
+  const actualVerifier = parseInt(digits.charAt(9), 10);
+
+  if (expectedVerifier !== actualVerifier) {
+    return {
+      isValid: false,
+      type: '05',
+      cleanDigits: digits,
+      error: 'Dígito verificador incorrecto. Cédula inválida',
+      province: provinceName,
+    };
+  }
+
+  return {
+    isValid: true,
+    type: '05',
+    cleanDigits: digits,
+    province: provinceName,
+    taxpayerType: 'natural',
+  };
+}
+
+/**
+ * Valida un RUC Ecuatoriano (13 dígitos)
+ * Aplica los 3 algoritmos oficiales según el tipo de contribuyente:
+ * - Persona Natural: Módulo 10 sobre cédula + sufijo 001..999
+ * - Sociedad Pública: Módulo 11 (coeficientes [3,2,7,6,5,4,3,2]) + sufijo 0001..9999
+ * - Sociedad Privada / Jurídica: Módulo 11 (coeficientes [4,3,2,7,6,5,4,3,2]) + sufijo 001..999
+ */
+export function validateEcuadorianRuc(input: string): TaxIdValidationResult {
+  const digits = (input || '').replace(/\D/g, '');
+
+  if (!digits) {
+    return { isValid: false, type: '04', cleanDigits: '', error: 'Ingrese el número de RUC' };
+  }
+
+  if (digits.length !== 13) {
+    return {
+      isValid: false,
+      type: '04',
+      cleanDigits: digits,
+      error: `El RUC debe tener exactamente 13 dígitos (${digits.length}/13)`,
+    };
+  }
+
+  // 1. Validar código de provincia
+  const provCode = digits.substring(0, 2);
+  const provNum = parseInt(provCode, 10);
+  if (!((provNum >= 1 && provNum <= 24) || provNum === 30)) {
+    return {
+      isValid: false,
+      type: '04',
+      cleanDigits: digits,
+      error: `El código de provincia "${provCode}" no existe en Ecuador`,
+    };
+  }
+
+  const provinceName = ECUADOR_PROVINCES[provCode] || 'Provincia Especial';
+  const thirdDigit = parseInt(digits.charAt(2), 10);
+
+  // CASO 1: Persona Natural (Tercer dígito: 0 a 5)
+  if (thirdDigit < 6) {
+    const cedulaPart = digits.substring(0, 10);
+    const cedulaRes = validateEcuadorianCedula(cedulaPart);
+
+    if (!cedulaRes.isValid) {
+      return {
+        isValid: false,
+        type: '04',
+        cleanDigits: digits,
+        error: cedulaRes.error || 'La base de cédula del RUC no es válida',
+        province: provinceName,
+      };
+    }
+
+    const establishment = digits.substring(10, 13);
+    if (establishment === '000') {
+      return {
+        isValid: false,
+        type: '04',
+        cleanDigits: digits,
+        error: 'El establecimiento del RUC no puede ser 000 (mínimo 001)',
+        province: provinceName,
+      };
+    }
+
+    return {
+      isValid: true,
+      type: '04',
+      cleanDigits: digits,
+      province: provinceName,
+      taxpayerType: 'natural',
+    };
+  }
+
+  // CASO 2: Sociedad Pública / Institución Estatal (Tercer dígito = 6)
+  if (thirdDigit === 6) {
+    const coefficients = [3, 2, 7, 6, 5, 4, 3, 2];
+    let sum = 0;
+    for (let i = 0; i < 8; i++) {
+      sum += parseInt(digits.charAt(i), 10) * coefficients[i];
+    }
+
+    const remainder = sum % 11;
+    const expectedVerifier = remainder === 0 ? 0 : 11 - remainder;
+    const actualVerifier = parseInt(digits.charAt(8), 10);
+
+    if (expectedVerifier !== actualVerifier) {
+      return {
+        isValid: false,
+        type: '04',
+        cleanDigits: digits,
+        error: 'Dígito verificador de institución pública incorrecto',
+        province: provinceName,
+      };
+    }
+
+    const establishment = digits.substring(9, 13);
+    if (establishment === '0000') {
+      return {
+        isValid: false,
+        type: '04',
+        cleanDigits: digits,
+        error: 'El establecimiento del RUC público no puede ser 0000',
+        province: provinceName,
+      };
+    }
+
+    return {
+      isValid: true,
+      type: '04',
+      cleanDigits: digits,
+      province: provinceName,
+      taxpayerType: 'publica',
+    };
+  }
+
+  // CASO 3: Sociedad Privada / Jurídica / Extranjeros (Tercer dígito = 9)
+  if (thirdDigit === 9) {
+    const coefficients = [4, 3, 2, 7, 6, 5, 4, 3, 2];
+    let sum = 0;
+    for (let i = 0; i < 9; i++) {
+      sum += parseInt(digits.charAt(i), 10) * coefficients[i];
+    }
+
+    const remainder = sum % 11;
+    const expectedVerifier = remainder === 0 ? 0 : 11 - remainder;
+    const actualVerifier = parseInt(digits.charAt(9), 10);
+
+    if (expectedVerifier !== actualVerifier) {
+      return {
+        isValid: false,
+        type: '04',
+        cleanDigits: digits,
+        error: 'Dígito verificador de sociedad privada incorrecto',
+        province: provinceName,
+      };
+    }
+
+    const establishment = digits.substring(10, 13);
+    if (establishment === '000') {
+      return {
+        isValid: false,
+        type: '04',
+        cleanDigits: digits,
+        error: 'El establecimiento del RUC privado no puede ser 000',
+        province: provinceName,
+      };
+    }
+
+    return {
+      isValid: true,
+      type: '04',
+      cleanDigits: digits,
+      province: provinceName,
+      taxpayerType: 'privada',
+    };
+  }
+
+  // Si el tercer dígito es 7 u 8
+  return {
+    isValid: false,
+    type: '04',
+    cleanDigits: digits,
+    error: `El tercer dígito (${thirdDigit}) no es válido para RUC en Ecuador`,
+    province: provinceName,
+  };
+}
+
+/**
+ * Validador Universal de Identificación Fiscal Ecuatoriana (Cédula o RUC)
+ */
+export function validateEcuadorianTaxId(input: string, expectedType?: '04' | '05'): TaxIdValidationResult {
+  const digits = (input || '').replace(/\D/g, '');
+
+  if (expectedType === '04') {
+    return validateEcuadorianRuc(digits);
+  }
+
+  if (expectedType === '05') {
+    return validateEcuadorianCedula(digits);
+  }
+
+  // Si no se especifica tipo, deducir por longitud
+  if (digits.length === 13) {
+    return validateEcuadorianRuc(digits);
+  }
+
+  return validateEcuadorianCedula(digits);
+}
+

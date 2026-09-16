@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useDistribution } from '@/context/DistributionContext';
 import { Client } from '@/types';
 import { ClientRegistrationModal } from './ClientRegistrationModal';
@@ -15,9 +16,9 @@ import {
   AppleTrashIcon,
   AppleWhatsAppIcon,
   ApplePersonsIcon,
+  ApplePersonBadgePlusIcon,
 } from '@/components/ui/AppleIcons';
 import {
-  Plus,
   ArrowRight,
   ExternalLink,
   Search,
@@ -25,6 +26,7 @@ import {
 } from 'lucide-react';
 
 export function ClientsManager() {
+  const router = useRouter();
   const { clients, deleteClient } = useDistribution();
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState<boolean>(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
@@ -54,14 +56,13 @@ export function ClientsManager() {
             </h1>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setIsRegisterModalOpen(true)}
-            className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl text-xs sm:text-sm font-black shadow-xs flex items-center space-x-1.5 transition-all self-start sm:self-auto cursor-pointer"
+          <Link
+            href="/admin/clientes/nuevo"
+            className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl text-xs sm:text-sm font-black shadow-xs flex items-center space-x-2 transition-all self-start sm:self-auto"
           >
-            <Plus className="w-4 h-4" />
+            <ApplePersonBadgePlusIcon size={18} className="brightness-0 invert" alt="Nuevo Local" />
             <span>Nuevo Local</span>
-          </button>
+          </Link>
         </div>
 
         {/* Buscador de Clientes */}
@@ -132,7 +133,7 @@ export function ClientsManager() {
                   <div className="flex items-center space-x-1.5">
                     <button
                       type="button"
-                      onClick={() => setEditingClient(client)}
+                      onClick={() => router.push(`/admin/clientes/nuevo?id=${client.id}`)}
                       className="p-2.5 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-600 rounded-xl transition-colors cursor-pointer flex items-center justify-center"
                       title="Modificar / Editar Cliente"
                     >

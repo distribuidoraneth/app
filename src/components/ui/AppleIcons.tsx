@@ -14,6 +14,7 @@ interface AppleIconProps extends React.ImgHTMLAttributes<HTMLImageElement> {
     | 'mappin.and.ellipse'
     | 'whatsapp'
     | 'checkmark.seal'
+    | 'person.badge.plus'
     | 'storefront';
   size?: number | string;
   className?: string;
@@ -90,6 +91,10 @@ export const AppleMapPinIcon: React.FC<Omit<AppleIconProps, 'name'>> = (props) =
 
 export const AppleWhatsAppIcon: React.FC<Omit<AppleIconProps, 'name'>> = (props) => (
   <AppleIcon name="whatsapp" {...props} />
+);
+
+export const ApplePersonBadgePlusIcon: React.FC<Omit<AppleIconProps, 'name'>> = (props) => (
+  <AppleIcon name="person.badge.plus" {...props} />
 );
 
 export const AppleCheckmarkSealIcon: React.FC<{
