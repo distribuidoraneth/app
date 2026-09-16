@@ -500,8 +500,14 @@ export function ClientRegistrationView({ clientIdToEdit }: ClientRegistrationVie
               <input
                 type="date"
                 value={birthDate}
+                readOnly={isOfficialDataLocked && !!birthDate}
+                tabIndex={isOfficialDataLocked && !!birthDate ? -1 : 0}
                 onChange={(e) => setBirthDate(e.target.value)}
-                className="w-full h-11 px-3.5 bg-slate-50 hover:bg-slate-100/60 focus:bg-white rounded-xl border border-slate-200 text-sm font-bold text-slate-900 focus:outline-hidden focus:border-blue-500 transition-colors"
+                className={`w-full h-11 px-3.5 rounded-xl border text-sm font-bold transition-colors ${
+                  isOfficialDataLocked && birthDate
+                    ? 'bg-slate-100/90 border-slate-200 text-slate-600 cursor-not-allowed select-none'
+                    : 'bg-slate-50 hover:bg-slate-100/60 focus:bg-white border-slate-200 text-slate-900 focus:outline-hidden focus:border-blue-500'
+                }`}
               />
             </div>
 
