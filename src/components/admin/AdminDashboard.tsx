@@ -350,7 +350,7 @@ export function AdminDashboard() {
                 className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-extrabold shadow-xs flex items-center space-x-1.5 transition-all self-start sm:self-auto active:scale-95"
               >
                 <Plus className="w-4 h-4" />
-                <span>Registrar Nuevo Local</span>
+                <span>Nuevo Local</span>
               </button>
             </div>
 
