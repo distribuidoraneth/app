@@ -65,7 +65,7 @@ export function DebtsManager() {
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
               Locales por Cobrar
             </span>
-            <AppleStorefrontIcon size={20} className="text-amber-500" alt="Locales" />
+            <AppleStorefrontIcon size={20} className="text-slate-700" alt="Locales" />
           </div>
           <div className="mt-2 text-2xl sm:text-3xl font-black font-mono tracking-tight text-slate-900">
             {clientsWithDebt.length}
@@ -78,35 +78,41 @@ export function DebtsManager() {
         </div>
       </div>
 
-      {/* Cabecera y Buscador */}
+      {/* Cabecera y Buscador Simple (Estilo Clientes) */}
       <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 p-4 sm:p-5 shadow-xs space-y-3">
-        <div>
-          <h2 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900">
-            Control de Cuentas por Cobrar
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-500 font-medium">
-            Monitoreo de saldos pendientes por comercio y registro directo de abonos.
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-blue-600">
+              Deudas
+            </h1>
+          </div>
         </div>
 
-        {/* Buscador */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Buscar por nombre de local o contacto para registrar abono..."
-            className="w-full pl-9 pr-8 py-2 bg-slate-50 hover:bg-slate-100/70 focus:bg-white rounded-xl border border-slate-200 text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-hidden focus:border-blue-500 transition-colors shadow-2xs"
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-slate-400 hover:text-slate-600 rounded-full cursor-pointer"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
+        {/* Buscador Simple */}
+        <div className="flex items-center gap-2 pt-1 border-t border-slate-100">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Buscar por comercio, contacto o teléfono..."
+              className="w-full pl-9 pr-8 py-2 bg-slate-50 hover:bg-slate-100/70 focus:bg-white rounded-xl border border-slate-200 text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-hidden focus:border-blue-500 transition-colors shadow-2xs"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-slate-400 hover:text-slate-600 rounded-full cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+          {filteredClients.length > 0 && (
+            <span className="text-xs text-slate-500 font-bold shrink-0 px-2">
+              {filteredClients.length} {filteredClients.length === 1 ? 'local' : 'locales'}
+            </span>
           )}
         </div>
       </div>
@@ -154,7 +160,7 @@ export function DebtsManager() {
                       <td className="py-3.5 px-4 font-mono font-medium text-slate-700">
                         {client.whatsappNumber}
                       </td>
-                      <td className="py-3.5 px-4 text-right font-mono font-black text-amber-600 text-base sm:text-lg">
+                      <td className="py-3.5 px-4 text-right font-mono font-black text-rose-600 text-base sm:text-lg">
                         ${debt.toFixed(2)}
                       </td>
                       <td className="py-3.5 px-4 text-center">
