@@ -42,6 +42,15 @@ import {
   Calendar,
   ExternalLink,
 } from 'lucide-react';
+import {
+  AppleGaugeDollarIcon,
+  AppleShippingBoxIcon,
+  ApplePersonsIcon,
+  AppleCreditCardIcon,
+  AppleCalendarClockIcon,
+  AppleTruckBoxIcon,
+  AppleReceiptIcon,
+} from '@/components/ui/AppleIcons';
 
 export function AdminDashboard() {
   const router = useRouter();
@@ -110,25 +119,25 @@ export function AdminDashboard() {
     {
       id: 'dispatch',
       label: 'Despachos',
-      icon: <Truck className="w-4 h-4" />,
+      icon: <AppleTruckBoxIcon className="w-4 h-4" />,
       badge: pendingOrders.length > 0 ? pendingOrders.length : undefined,
     },
     {
       id: 'clients',
       label: 'Clientes',
-      icon: <Users className="w-4 h-4" />,
+      icon: <ApplePersonsIcon className="w-4 h-4" />,
       badge: clients.length,
     },
     {
       id: 'debts',
       label: 'Deudas',
-      icon: <CreditCard className="w-4 h-4" />,
+      icon: <AppleCreditCardIcon className="w-4 h-4" />,
       badge: totalDebt > 0 ? `$${Math.round(totalDebt)}` : undefined,
     },
     {
       id: 'invoices',
       label: 'Facturación',
-      icon: <FileText className="w-4 h-4" />,
+      icon: <AppleReceiptIcon className="w-4 h-4" />,
       badge: invoices.length,
     },
     {
@@ -142,23 +151,23 @@ export function AdminDashboard() {
     {
       id: 'dispatch',
       label: 'Pedidos',
-      icon: <Truck className="w-5 h-5" />,
+      icon: <AppleTruckBoxIcon className="w-5 h-5" />,
       badge: pendingOrders.length > 0 ? pendingOrders.length : undefined,
     },
     {
       id: 'clients',
       label: 'Clientes',
-      icon: <Users className="w-5 h-5" />,
+      icon: <ApplePersonsIcon className="w-5 h-5" />,
     },
     {
       id: 'debts',
       label: 'Deudas',
-      icon: <CreditCard className="w-5 h-5" />,
+      icon: <AppleCreditCardIcon className="w-5 h-5" />,
     },
     {
       id: 'invoices',
       label: 'Facturas',
-      icon: <FileText className="w-5 h-5" />,
+      icon: <AppleReceiptIcon className="w-5 h-5" />,
     },
     {
       id: 'catalog',
@@ -184,7 +193,7 @@ export function AdminDashboard() {
           <div className="flex items-center space-x-2">
             <Link
               href="/pedido?type=autoventa"
-              className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl text-xs font-black shadow-xs flex items-center space-x-1.5 transition-all"
+              className="px-3 sm:px-3.5 py-1.5 sm:py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl text-[11px] sm:text-xs font-black shadow-xs flex items-center space-x-1.5 transition-all"
             >
               <Zap className="w-3.5 h-3.5 fill-white text-white" />
               <span>Autoventa</span>
@@ -192,10 +201,10 @@ export function AdminDashboard() {
 
             <Link
               href="/pedido?type=preventa"
-              className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-900 rounded-xl text-xs font-black border border-slate-300 flex items-center space-x-1.5 transition-colors"
+              className="px-3 sm:px-3.5 py-1.5 sm:py-2 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-800 rounded-xl text-[11px] sm:text-xs font-black border border-slate-200/80 flex items-center space-x-1.5 transition-colors"
             >
-              <Calendar className="w-3.5 h-3.5 text-slate-700" />
-              <span className="hidden sm:inline">Preventa</span>
+              <AppleCalendarClockIcon className="w-3.5 h-3.5 text-slate-600" />
+              <span>Preventa</span>
             </Link>
 
             {/* Google User Profile Chip */}
@@ -235,75 +244,55 @@ export function AdminDashboard() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5 space-y-5">
-        {/* KPI Metrics */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
-          <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs space-y-1">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-3.5 sm:py-5 space-y-4 sm:space-y-5">
+        {/* Apple Minimalist KPI Metrics */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+          <div className="bg-white p-3 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between hover:border-slate-300 transition-colors">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] sm:text-xs font-extrabold text-slate-500 uppercase tracking-wider">
-                Ventas Totales
+              <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
+                Ventas
               </span>
-              <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                <DollarSign className="w-4 h-4" />
-              </div>
+              <AppleGaugeDollarIcon className="w-4 h-4 text-emerald-600" />
             </div>
-            <div className="text-xl sm:text-3xl font-black font-mono text-slate-900">
+            <div className="mt-1 text-lg sm:text-2xl font-black font-mono tracking-tight text-slate-900">
               {formatCurrency(totalSales)}
             </div>
-            <p className="text-[11px] sm:text-xs text-emerald-700 font-bold">
-              {totalJavasSold} javas despachadas
-            </p>
           </div>
 
-          <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs space-y-1">
+          <div className="bg-white p-3 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between hover:border-slate-300 transition-colors">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] sm:text-xs font-extrabold text-slate-500 uppercase tracking-wider">
+              <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
                 Por Despachar
               </span>
-              <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
-                <Package className="w-4 h-4" />
-              </div>
+              <AppleShippingBoxIcon className="w-4 h-4 text-amber-500" />
             </div>
-            <div className="text-xl sm:text-3xl font-black font-mono text-slate-900">
+            <div className="mt-1 text-lg sm:text-2xl font-black font-mono tracking-tight text-slate-900">
               {pendingOrders.length}
             </div>
-            <p className="text-[11px] sm:text-xs text-amber-700 font-bold">
-              {deliveredOrders.length} pedidos entregados
-            </p>
           </div>
 
-          <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs space-y-1">
+          <div className="bg-white p-3 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between hover:border-slate-300 transition-colors">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] sm:text-xs font-extrabold text-slate-500 uppercase tracking-wider">
+              <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
                 Clientes
               </span>
-              <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-                <Users className="w-4 h-4" />
-              </div>
+              <ApplePersonsIcon className="w-4 h-4 text-blue-500" />
             </div>
-            <div className="text-xl sm:text-3xl font-black font-mono text-slate-900">
+            <div className="mt-1 text-lg sm:text-2xl font-black font-mono tracking-tight text-slate-900">
               {clients.length}
             </div>
-            <p className="text-[11px] sm:text-xs text-blue-700 font-bold">
-              Clientes registrados
-            </p>
           </div>
 
-          <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs space-y-1">
+          <div className="bg-white p-3 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between hover:border-slate-300 transition-colors">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] sm:text-xs font-extrabold text-slate-500 uppercase tracking-wider">
-                Cuentas por Cobrar
+              <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
+                Por Cobrar
               </span>
-              <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-                <CreditCard className="w-4 h-4" />
-              </div>
+              <AppleCreditCardIcon className="w-4 h-4 text-rose-500" />
             </div>
-            <div className="text-xl sm:text-3xl font-black font-mono text-slate-900">
+            <div className="mt-1 text-lg sm:text-2xl font-black font-mono tracking-tight text-slate-900">
               {formatCurrency(totalDebt)}
             </div>
-            <p className="text-[11px] sm:text-xs text-indigo-700 font-bold">
-              Saldo pendiente total
-            </p>
           </div>
         </div>
 
