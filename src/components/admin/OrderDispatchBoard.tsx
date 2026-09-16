@@ -12,6 +12,7 @@ import {
   generateWhatsAppOrderLink,
   formatItemTitle,
   getGoogleMapsNavigationUrl,
+  cleanAddress,
 } from '@/lib/utils/formatters';
 import { Order, Invoice } from '@/types';
 import { InvoiceModal } from '@/components/invoice/InvoiceModal';
@@ -173,10 +174,10 @@ export function OrderDispatchBoard() {
                     <h3 className="text-base font-black text-slate-900 truncate">
                       {order.businessName || order.clientName}
                     </h3>
-                    {order.addressReference && (
+                    {cleanAddress(order.addressReference) && (
                       <p className="text-xs sm:text-[13px] text-slate-500 truncate flex items-center">
                         <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mr-1" />
-                        <span className="truncate">{order.addressReference}</span>
+                        <span className="truncate">{cleanAddress(order.addressReference)}</span>
                       </p>
                     )}
                   </div>

@@ -12,6 +12,7 @@ import { SaleTypeBadgeSelector } from '@/components/order/SaleTypeBadgeSelector'
 import { AnethFullLogo, AnethIsotype } from '@/components/ui/AnethLogo';
 import { sortClientsByProximity, calculateDistanceMeters, formatDistance, GeoCoordinates } from '@/lib/utils/geo';
 import { Client, SaleType } from '@/types';
+import { cleanAddress } from '@/lib/utils/formatters';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import {
@@ -241,10 +242,12 @@ function StandaloneOrderContent() {
                       </span>
                     )}
                   </div>
-                  <p className="text-xs sm:text-[13px] text-slate-500 truncate flex items-center mt-0.5">
-                    <MapPin className="w-3.5 h-3.5 mr-1 shrink-0 text-slate-400" />
-                    <span className="truncate">{activeClient.addressReference || 'Sin dirección registrada'}</span>
-                  </p>
+                  {cleanAddress(activeClient.addressReference) && (
+                    <p className="text-xs sm:text-[13px] text-slate-500 truncate flex items-center mt-0.5">
+                      <MapPin className="w-3.5 h-3.5 mr-1 shrink-0 text-slate-400" />
+                      <span className="truncate">{cleanAddress(activeClient.addressReference)}</span>
+                    </p>
+                  )}
                 </div>
               </div>
 

@@ -5,6 +5,7 @@ import { Client } from '@/types';
 import { useDistribution } from '@/context/DistributionContext';
 import { ClientRegistrationModal } from '@/components/admin/ClientRegistrationModal';
 import { sortClientsByProximity, GeoCoordinates, ClientWithDistance } from '@/lib/utils/geo';
+import { cleanAddress } from '@/lib/utils/formatters';
 import {
   Search,
   MapPin,
@@ -243,10 +244,12 @@ export function ClientProximitySelectorModal({
                         {client.taxId && <span>• RUC/CI: {client.taxId}</span>}
                       </div>
 
-                      <div className="text-xs text-slate-400 truncate flex items-center">
-                        <MapPin className="w-3.5 h-3.5 mr-1 text-slate-400 shrink-0" />
-                        <span className="truncate">{client.addressReference || 'Sin dirección registrada'}</span>
-                      </div>
+                      {cleanAddress(client.addressReference) && (
+                        <div className="text-xs text-slate-400 truncate flex items-center">
+                          <MapPin className="w-3.5 h-3.5 mr-1 text-slate-400 shrink-0" />
+                          <span className="truncate">{cleanAddress(client.addressReference)}</span>
+                        </div>
+                      )}
 
                       {(client.currentDebt || 0) > 0 && (
                         <div className="text-xs font-bold text-red-600 flex items-center pt-0.5">

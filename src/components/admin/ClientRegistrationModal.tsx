@@ -233,7 +233,7 @@ export function ClientRegistrationModal({
       whatsappNumber: formattedPhone,
       latitude: coords.lat,
       longitude: coords.lng,
-      addressReference: addressReference.trim() || 'Ubicación GPS confirmada',
+      addressReference: addressReference.trim(),
       taxId: taxId.trim() || undefined,
       taxIdType,
       email: email.trim() || undefined,

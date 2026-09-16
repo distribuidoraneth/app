@@ -11,7 +11,7 @@ import { QRCodeModal } from './QRCodeModal';
 import { InvoiceModal } from '@/components/invoice/InvoiceModal';
 import { LiquidMobileTabPill, TabItem } from '@/components/ui/LiquidMobileTabPill';
 import { MobileFloatingDock, DockNavItem } from '@/components/ui/MobileFloatingDock';
-import { formatCurrency, formatDate } from '@/lib/utils/formatters';
+import { formatCurrency, formatDate, cleanAddress } from '@/lib/utils/formatters';
 import { Client, Invoice } from '@/types';
 import { AnethFullLogo, AnethIsotype } from '@/components/ui/AnethLogo';
 import Link from 'next/link';
@@ -116,31 +116,27 @@ export function AdminDashboard() {
     router.push('/');
   };
 
-  // Tab definitions for Liquid Pill and Dock
+  // Tab definitions for Liquid Pill and Dock (Minimalist, without distracting badge numbers)
   const tabsList: TabItem[] = [
     {
       id: 'dispatch',
       label: 'Despachos',
       icon: <AppleTruckBoxIcon className="w-4 h-4" />,
-      badge: pendingOrders.length > 0 ? pendingOrders.length : undefined,
     },
     {
       id: 'clients',
       label: 'Clientes',
       icon: <ApplePersonsIcon className="w-4 h-4" />,
-      badge: clients.length,
     },
     {
       id: 'debts',
       label: 'Deudas',
       icon: <AppleCreditCardIcon className="w-4 h-4" />,
-      badge: totalDebt > 0 ? `$${Math.round(totalDebt)}` : undefined,
     },
     {
       id: 'invoices',
       label: 'Facturación',
       icon: <AppleReceiptIcon className="w-4 h-4" />,
-      badge: invoices.length,
     },
     {
       id: 'catalog',
@@ -154,7 +150,6 @@ export function AdminDashboard() {
       id: 'dispatch',
       label: 'Pedidos',
       icon: <AppleTruckBoxIcon className="w-5 h-5" />,
-      badge: pendingOrders.length > 0 ? pendingOrders.length : undefined,
     },
     {
       id: 'clients',
@@ -400,23 +395,25 @@ export function AdminDashboard() {
                           RUC/CI: {client.taxId} ({client.taxIdType === '04' ? 'RUC' : 'Cédula'})
                         </p>
                       )}
-                      <div className="flex items-start justify-between text-slate-500 text-xs pt-0.5">
-                        <p className="flex items-start">
-                          <MapPin className="w-4 h-4 mr-1 text-slate-400 shrink-0 mt-0.5" />
-                          <span>{client.addressReference || 'Sin dirección registrada'}</span>
-                        </p>
-                        {typeof client.latitude === 'number' && typeof client.longitude === 'number' && !isNaN(client.latitude) && !isNaN(client.longitude) && (
-                          <a
-                            href={`https://www.google.com/maps/search/?api=1&query=${client.latitude},${client.longitude}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center text-blue-600 hover:text-blue-800 font-bold shrink-0 ml-1.5 p-1 rounded-md hover:bg-blue-50 transition-colors"
-                            title="Abrir ubicación en Google Maps"
-                          >
-                            <ExternalLink className="w-4 h-4" />
-                          </a>
-                        )}
-                      </div>
+                      {cleanAddress(client.addressReference) && (
+                        <div className="flex items-start justify-between text-slate-500 text-xs pt-0.5">
+                          <p className="flex items-start">
+                            <MapPin className="w-4 h-4 mr-1 text-slate-400 shrink-0 mt-0.5" />
+                            <span>{cleanAddress(client.addressReference)}</span>
+                          </p>
+                          {typeof client.latitude === 'number' && typeof client.longitude === 'number' && !isNaN(client.latitude) && !isNaN(client.longitude) && (
+                            <a
+                              href={`https://www.google.com/maps/search/?api=1&query=${client.latitude},${client.longitude}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center text-blue-600 hover:text-blue-800 font-bold shrink-0 ml-1.5 p-1 rounded-md hover:bg-blue-50 transition-colors"
+                              title="Abrir ubicación en Google Maps"
+                            >
+                              <ExternalLink className="w-4 h-4" />
+                            </a>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     {/* Credit Status */}

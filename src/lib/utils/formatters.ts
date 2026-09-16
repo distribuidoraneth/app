@@ -141,3 +141,22 @@ export function getWazeNavigationUrl(lat: number, lng: number): string {
 export function getGoogleMapsNavigationUrl(lat: number, lng: number): string {
   return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
 }
+
+export function cleanAddress(address?: string | null): string {
+  if (!address) return '';
+  const trimmed = address.trim();
+  const lower = trimmed.toLowerCase();
+  if (
+    lower === 'ubicación gps confirmada' ||
+    lower === 'ubicacion gps confirmada' ||
+    lower === 'ubicación de entrega' ||
+    lower === 'ubicacion de entrega' ||
+    lower === 'sin dirección registrada' ||
+    lower === 'sin direccion registrada' ||
+    lower === 'dirección registrada' ||
+    lower === 'direccion registrada'
+  ) {
+    return '';
+  }
+  return trimmed;
+}

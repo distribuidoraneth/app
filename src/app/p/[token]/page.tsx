@@ -5,7 +5,7 @@ import { useDistribution } from '@/context/DistributionContext';
 import { BeverageOrderPasarela } from '@/components/order/BeverageOrderPasarela';
 import { CartDrawer } from '@/components/client/CartDrawer';
 import { InvoiceModal } from '@/components/invoice/InvoiceModal';
-import { formatCurrency, formatDate } from '@/lib/utils/formatters';
+import { formatCurrency, formatDate, cleanAddress } from '@/lib/utils/formatters';
 import { Invoice } from '@/types';
 import { AnethFullLogo } from '@/components/ui/AnethLogo';
 import { MobileTestButton } from '@/components/ui/MobileTestQRModal';
@@ -44,7 +44,7 @@ export default function ClientExperiencePage({
       whatsappNumber: '+593',
       latitude: -0.180653,
       longitude: -78.467834,
-      addressReference: 'Ubicación de entrega',
+      addressReference: '',
       createdAt: new Date().toISOString(),
     };
 
@@ -112,11 +112,15 @@ export default function ClientExperiencePage({
               <User className="w-4 h-4 mr-1.5 text-slate-400" />
               {client?.fullName}
             </span>
-            <span className="text-slate-300 hidden sm:inline">•</span>
-            <span className="flex items-center font-medium text-slate-500">
-              <MapPin className="w-4 h-4 mr-1.5 text-slate-400 flex-shrink-0" />
-              {client?.addressReference || 'Dirección registrada'}
-            </span>
+            {cleanAddress(client?.addressReference) && (
+              <>
+                <span className="text-slate-300 hidden sm:inline">•</span>
+                <span className="flex items-center font-medium text-slate-500">
+                  <MapPin className="w-4 h-4 mr-1.5 text-slate-400 flex-shrink-0" />
+                  {cleanAddress(client?.addressReference)}
+                </span>
+              </>
+            )}
           </div>
         </div>
 

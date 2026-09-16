@@ -10,6 +10,7 @@ import {
   generateWhatsAppOrderLink,
   formatItemTitle,
   getGoogleMapsNavigationUrl,
+  cleanAddress,
 } from '@/lib/utils/formatters';
 import { InvoiceModal } from '@/components/invoice/InvoiceModal';
 import { ThermalReceiptModal } from '@/components/receipt/ThermalReceiptModal';
@@ -193,11 +194,11 @@ export default function OrderDetailPage({
                 <span className="font-mono text-slate-800 font-medium">{order.whatsappNumber}</span>
               </div>
             )}
-            {(order.addressReference || client?.addressReference) && (
+            {cleanAddress(order.addressReference || client?.addressReference) && (
               <div className="flex items-start space-x-2">
                 <MapPin className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
                 <span className="text-slate-600 leading-relaxed">
-                  {order.addressReference || client?.addressReference}
+                  {cleanAddress(order.addressReference || client?.addressReference)}
                 </span>
               </div>
             )}

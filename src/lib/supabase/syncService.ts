@@ -5,6 +5,7 @@
 import { supabase } from '@/lib/supabase/client';
 import { Client, JavaProductOption, Order } from '@/types';
 import { INITIAL_CLIENTS, JAVA_PRODUCT_CATALOG } from '@/lib/mockData';
+import { cleanAddress } from '@/lib/utils/formatters';
 
 export async function getClientsFromDb(): Promise<Client[] | null> {
   try {
@@ -33,7 +34,7 @@ export async function getClientsFromDb(): Promise<Client[] | null> {
         whatsappNumber: c.whatsapp_number,
         latitude: Number(c.latitude),
         longitude: Number(c.longitude),
-        addressReference: c.address_reference,
+        addressReference: cleanAddress(c.address_reference),
         taxId: c.tax_id,
         taxIdType: c.tax_id_type,
         email: c.email,
@@ -83,7 +84,7 @@ export async function saveClientToDb(client: Client): Promise<{ success: boolean
       whatsapp_number: client.whatsappNumber || '',
       latitude: client.latitude,
       longitude: client.longitude,
-      address_reference: client.addressReference || '',
+      address_reference: cleanAddress(client.addressReference) || '',
       tax_id: client.taxId || null,
       tax_id_type: client.taxIdType || (client.taxId?.length === 13 ? '04' : client.taxId?.length === 10 ? '05' : '07'),
       email: client.email || null,
@@ -167,7 +168,7 @@ export async function getOrdersFromDb(): Promise<Order[] | null> {
       whatsappNumber: o.whatsapp_number,
       latitude: Number(o.latitude),
       longitude: Number(o.longitude),
-      addressReference: o.address_reference,
+      addressReference: cleanAddress(o.address_reference),
       items: (o.order_items || []).map((it: any) => ({
         id: it.id,
         productOptionId: it.product_option_id,
@@ -229,7 +230,7 @@ export async function saveOrderToDb(order: Order): Promise<{ success: boolean; e
       whatsapp_number: order.whatsappNumber,
       latitude: order.latitude,
       longitude: order.longitude,
-      address_reference: order.addressReference,
+      address_reference: cleanAddress(order.addressReference) || '',
       total_javas: order.totalJavas,
       total_units: order.totalUnits || 0,
       total_bottles: order.totalBottles || (order.totalJavas * 12),
