@@ -477,21 +477,21 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <div>
-                      <label className="text-[11px] font-bold text-emerald-800 block mb-1">Fecha de Entrega:</label>
+                      <label className="text-xs font-bold text-emerald-800 block mb-1">Fecha de Entrega:</label>
                       <input
                         type="date"
                         value={scheduledDate}
                         onChange={(e) => setScheduledDate(e.target.value)}
-                        className="w-full text-xs font-bold px-3 py-2 bg-white border border-emerald-300 rounded-xl focus:ring-2 focus:ring-emerald-600 focus:outline-hidden"
+                        className="w-full text-xs sm:text-sm font-bold px-3 py-2 bg-white border border-emerald-300 rounded-xl focus:ring-2 focus:ring-emerald-600 focus:outline-hidden"
                       />
                     </div>
 
                     <div>
-                      <label className="text-[11px] font-bold text-emerald-800 block mb-1">Franja Horaria:</label>
+                      <label className="text-xs font-bold text-emerald-800 block mb-1">Franja Horaria:</label>
                       <select
                         value={scheduledTimeSlot}
                         onChange={(e) => setScheduledTimeSlot(e.target.value)}
-                        className="w-full text-xs font-bold px-3 py-2 bg-white border border-emerald-300 rounded-xl focus:ring-2 focus:ring-emerald-600 focus:outline-hidden"
+                        className="w-full text-xs sm:text-sm font-bold px-3 py-2 bg-white border border-emerald-300 rounded-xl focus:ring-2 focus:ring-emerald-600 focus:outline-hidden"
                       >
                         <option value="Mañana (8:00 - 12:00)">Mañana (8:00 - 12:00)</option>
                         <option value="Tarde (13:00 - 17:00)">Tarde (13:00 - 17:00)</option>
@@ -504,7 +504,7 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
 
               {/* Cart Items List */}
               <div className="space-y-3">
-                <span className="text-xs font-black text-slate-500 uppercase tracking-wider block">
+                <span className="text-xs sm:text-sm font-black text-slate-500 uppercase tracking-wider block">
                   Productos en el Pedido • {cartTotalBottles} {cartTotalBottles === 1 ? 'botella' : 'botellas'}
                 </span>
 
@@ -519,21 +519,21 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
                           <span className="font-black text-sm sm:text-base text-slate-900">
                             {formatItemTitle(item)}
                           </span>
-                          <span className="bg-slate-100 text-slate-600 border border-slate-200 text-[11px] font-bold px-1.5 py-0.5 rounded-md">
+                          <span className="bg-slate-100 text-slate-600 border border-slate-200 text-xs font-bold px-2 py-0.5 rounded-md">
                             {item.unitsPerJava} un/paca
                           </span>
                         </div>
 
                         {item.flavorType === 'surtido' && item.surtidoDetails && (
                           <div className="pt-0.5">
-                            <span className="text-[11px] font-bold text-slate-500 block mb-0.5">
+                            <span className="text-xs font-bold text-slate-500 block mb-0.5">
                               {item.container === 'Vidrio' ? 'Java Surtida:' : 'Pack Surtido:'}
                             </span>
                             <div className="flex flex-wrap gap-1">
                               {Object.entries(item.surtidoDetails).map(([fl, qty]) => (
                                 <span
                                   key={fl}
-                                  className="bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md text-[11px] text-slate-800 font-bold"
+                                  className="bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md text-xs text-slate-800 font-bold"
                                 >
                                   {qty}x {fl}
                                 </span>
@@ -544,15 +544,15 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
                       </div>
 
                       <div className="text-right">
-                        <span className="text-base font-mono font-black text-blue-700 block">
+                        <span className="text-base sm:text-lg font-mono font-black text-blue-700 block">
                           {formatCurrency(item.subtotal)}
                         </span>
                         <button
                           type="button"
                           onClick={() => removeFromCart(item.id)}
-                          className="text-slate-400 hover:text-red-600 p-1 transition-colors"
+                          className="text-slate-400 hover:text-red-600 p-1 transition-colors cursor-pointer"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                     </div>
@@ -560,44 +560,44 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
                     {/* Steppers */}
                     <div className="flex items-center justify-between pt-2 border-t border-slate-100 gap-2">
                       <div className="flex items-center space-x-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200">
-                        <span className="text-[11px] font-black text-slate-700 px-1">
+                        <span className="text-xs font-black text-slate-700 px-1">
                           {item.container === 'Vidrio' ? 'Javas:' : 'Packs:'}
                         </span>
                         <button
                           type="button"
                           onClick={() => updateCartQuantity(item.id, item.quantityJavas - 1, item.quantityUnits)}
-                          className="w-6 h-6 rounded-md bg-white hover:bg-slate-200 flex items-center justify-center text-slate-800 font-black shadow-2xs active:scale-95"
+                          className="w-6 h-6 rounded-md bg-white hover:bg-slate-200 flex items-center justify-center text-slate-800 font-black shadow-2xs active:scale-95 cursor-pointer"
                         >
                           <Minus className="w-3 h-3" />
                         </button>
-                        <span className="w-5 text-center text-xs font-black font-mono text-slate-900">
+                        <span className="w-6 text-center text-sm font-black font-mono text-slate-900">
                           {item.quantityJavas}
                         </span>
                         <button
                           type="button"
                           onClick={() => updateCartQuantity(item.id, item.quantityJavas + 1, item.quantityUnits)}
-                          className="w-6 h-6 rounded-md bg-white hover:bg-slate-200 flex items-center justify-center text-slate-800 font-black shadow-2xs active:scale-95"
+                          className="w-6 h-6 rounded-md bg-white hover:bg-slate-200 flex items-center justify-center text-slate-800 font-black shadow-2xs active:scale-95 cursor-pointer"
                         >
                           <Plus className="w-3 h-3" />
                         </button>
                       </div>
 
                       <div className="flex items-center space-x-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200">
-                        <span className="text-[11px] font-black text-slate-700 px-1">Sueltas:</span>
+                        <span className="text-xs font-black text-slate-700 px-1">Sueltas:</span>
                         <button
                           type="button"
                           onClick={() => updateCartQuantity(item.id, item.quantityJavas, item.quantityUnits - 1)}
-                          className="w-6 h-6 rounded-md bg-white hover:bg-slate-200 flex items-center justify-center text-slate-800 font-black shadow-2xs active:scale-95"
+                          className="w-6 h-6 rounded-md bg-white hover:bg-slate-200 flex items-center justify-center text-slate-800 font-black shadow-2xs active:scale-95 cursor-pointer"
                         >
                           <Minus className="w-3 h-3" />
                         </button>
-                        <span className="w-5 text-center text-xs font-black font-mono text-slate-900">
+                        <span className="w-6 text-center text-sm font-black font-mono text-slate-900">
                           {item.quantityUnits}
                         </span>
                         <button
                           type="button"
                           onClick={() => updateCartQuantity(item.id, item.quantityJavas, item.quantityUnits + 1)}
-                          className="w-6 h-6 rounded-md bg-white hover:bg-slate-200 flex items-center justify-center text-slate-800 font-black shadow-2xs active:scale-95"
+                          className="w-6 h-6 rounded-md bg-white hover:bg-slate-200 flex items-center justify-center text-slate-800 font-black shadow-2xs active:scale-95 cursor-pointer"
                         >
                           <Plus className="w-3 h-3" />
                         </button>
@@ -685,25 +685,25 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
                       </button>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 text-xs bg-white p-3 rounded-xl border border-blue-100 font-medium">
+                    <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm bg-white p-3 rounded-xl border border-blue-100 font-medium">
                       <div>
-                        <span className="text-slate-400 block text-[10px] font-bold">Banco:</span>
+                        <span className="text-slate-400 block text-xs font-bold">Banco:</span>
                         <span className="font-black text-slate-800">Banco Pichincha</span>
                       </div>
                       <div>
-                        <span className="text-slate-400 block text-[10px] font-bold">Tipo:</span>
+                        <span className="text-slate-400 block text-xs font-bold">Tipo:</span>
                         <span className="font-bold text-slate-800">Ahorros</span>
                       </div>
                       <div>
-                        <span className="text-slate-400 block text-[10px] font-bold">N° Cuenta:</span>
+                        <span className="text-slate-400 block text-xs font-bold">N° Cuenta:</span>
                         <span className="font-mono font-black text-blue-700 select-all">2204567890</span>
                       </div>
                       <div>
-                        <span className="text-slate-400 block text-[10px] font-bold">Cédula / RUC:</span>
+                        <span className="text-slate-400 block text-xs font-bold">Cédula / RUC:</span>
                         <span className="font-mono font-bold text-slate-800 select-all">1803013810</span>
                       </div>
                       <div className="col-span-2 pt-1.5 border-t border-slate-100">
-                        <span className="text-slate-400 block text-[10px] font-bold">Titular:</span>
+                        <span className="text-slate-400 block text-xs font-bold">Titular:</span>
                         <span className="font-black text-slate-900">ANDRADE CONSTANTE ANA ELIZABETH</span>
                       </div>
                     </div>
@@ -739,13 +739,13 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
 
                     <div className="bg-white p-3 rounded-xl border border-purple-100 flex items-center justify-between">
                       <div>
-                        <span className="text-slate-400 block text-[10px] font-bold">Número Celular DeUna:</span>
+                        <span className="text-slate-400 block text-xs font-bold">Número Celular DeUna:</span>
                         <span className="font-mono text-base font-black text-purple-950 select-all">096 390 6286</span>
-                        <span className="text-[11px] text-slate-500 font-bold block mt-0.5">
+                        <span className="text-xs text-slate-500 font-bold block mt-0.5">
                           Titular: Ana Andrade
                         </span>
                       </div>
-                      <div className="px-2.5 py-1 bg-purple-100 text-purple-800 font-black text-[11px] rounded-lg">
+                      <div className="px-2.5 py-1 bg-purple-100 text-purple-800 font-black text-xs rounded-lg">
                         Sin comisión
                       </div>
                     </div>
@@ -846,7 +846,7 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
                               dateInputRef.current?.focus();
                             }
                           }}
-                          className="text-[11px] font-black text-amber-800 hover:text-amber-950 bg-amber-100/90 hover:bg-amber-200 px-2.5 py-1 rounded-lg transition-colors cursor-pointer shrink-0 ml-2"
+                          className="text-xs font-black text-amber-800 hover:text-amber-950 bg-amber-100/90 hover:bg-amber-200 px-2.5 py-1 rounded-lg transition-colors cursor-pointer shrink-0 ml-2"
                         >
                           Abrir Calendario 📅
                         </button>
@@ -855,9 +855,9 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-0.5">
                         {/* Selector de Fecha */}
                         <div className="space-y-1.5">
-                          <label className="text-[11px] font-black text-amber-950 flex items-center justify-between">
+                          <label className="text-xs font-black text-amber-950 flex items-center justify-between">
                             <span>Fecha de Cobro Pactada:</span>
-                            <span className="text-[10px] text-amber-700 font-semibold">Toca para cambiar</span>
+                            <span className="text-xs text-amber-700 font-semibold">Toca para cambiar</span>
                           </label>
 
                           <div
@@ -882,7 +882,7 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
                                   e.currentTarget.showPicker();
                                 } catch {}
                               }}
-                              className="w-full text-xs font-black text-slate-900 bg-transparent focus:outline-hidden cursor-pointer"
+                              className="w-full text-xs sm:text-sm font-black text-slate-900 bg-transparent focus:outline-hidden cursor-pointer"
                             />
                           </div>
 
@@ -891,7 +891,7 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
                             <button
                               type="button"
                               onClick={() => setPromisedDate(todayIso)}
-                              className={`text-[10px] font-black px-2.5 py-1 rounded-lg transition-all cursor-pointer border ${
+                              className={`text-xs font-black px-2.5 py-1 rounded-lg transition-all cursor-pointer border ${
                                 promisedDate === todayIso
                                   ? 'bg-amber-600 text-white border-amber-600 shadow-2xs'
                                   : 'bg-white hover:bg-amber-100 text-amber-900 border-amber-200'
@@ -902,7 +902,7 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
                             <button
                               type="button"
                               onClick={() => setPromisedDate(tomorrowIso)}
-                              className={`text-[10px] font-black px-2.5 py-1 rounded-lg transition-all cursor-pointer border ${
+                              className={`text-xs font-black px-2.5 py-1 rounded-lg transition-all cursor-pointer border ${
                                 promisedDate === tomorrowIso
                                   ? 'bg-amber-600 text-white border-amber-600 shadow-2xs'
                                   : 'bg-white hover:bg-amber-100 text-amber-900 border-amber-200'
@@ -913,7 +913,7 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
                             <button
                               type="button"
                               onClick={() => setPromisedDate(in3DaysIso)}
-                              className={`text-[10px] font-black px-2.5 py-1 rounded-lg transition-all cursor-pointer border ${
+                              className={`text-xs font-black px-2.5 py-1 rounded-lg transition-all cursor-pointer border ${
                                 promisedDate === in3DaysIso
                                   ? 'bg-amber-600 text-white border-amber-600 shadow-2xs'
                                   : 'bg-white hover:bg-amber-100 text-amber-900 border-amber-200'
@@ -924,7 +924,7 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
                             <button
                               type="button"
                               onClick={() => setPromisedDate(nextSatIso)}
-                              className={`text-[10px] font-black px-2.5 py-1 rounded-lg transition-all cursor-pointer border ${
+                              className={`text-xs font-black px-2.5 py-1 rounded-lg transition-all cursor-pointer border ${
                                 promisedDate === nextSatIso
                                   ? 'bg-amber-600 text-white border-amber-600 shadow-2xs'
                                   : 'bg-white hover:bg-amber-100 text-amber-900 border-amber-200'
@@ -935,7 +935,7 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
                             <button
                               type="button"
                               onClick={() => setPromisedDate(nextMonIso)}
-                              className={`text-[10px] font-black px-2.5 py-1 rounded-lg transition-all cursor-pointer border ${
+                              className={`text-xs font-black px-2.5 py-1 rounded-lg transition-all cursor-pointer border ${
                                 promisedDate === nextMonIso
                                   ? 'bg-amber-600 text-white border-amber-600 shadow-2xs'
                                   : 'bg-white hover:bg-amber-100 text-amber-900 border-amber-200'
@@ -946,7 +946,7 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
                             <button
                               type="button"
                               onClick={() => setPromisedDate(in7DaysIso)}
-                              className={`text-[10px] font-black px-2.5 py-1 rounded-lg transition-all cursor-pointer border ${
+                              className={`text-xs font-black px-2.5 py-1 rounded-lg transition-all cursor-pointer border ${
                                 promisedDate === in7DaysIso
                                   ? 'bg-amber-600 text-white border-amber-600 shadow-2xs'
                                   : 'bg-white hover:bg-amber-100 text-amber-900 border-amber-200'
@@ -957,7 +957,7 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
                             <button
                               type="button"
                               onClick={() => setPromisedDate(endMonthIso)}
-                              className={`text-[10px] font-black px-2.5 py-1 rounded-lg transition-all cursor-pointer border ${
+                              className={`text-xs font-black px-2.5 py-1 rounded-lg transition-all cursor-pointer border ${
                                 promisedDate === endMonthIso
                                   ? 'bg-amber-600 text-white border-amber-600 shadow-2xs'
                                   : 'bg-white hover:bg-amber-100 text-amber-900 border-amber-200'
@@ -970,7 +970,7 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
 
                         {/* Selector de Hora / Franja Horaria con Opción Personalizada */}
                         <div className="space-y-1.5">
-                          <label className="text-[11px] font-black text-amber-950 block">
+                          <label className="text-xs font-black text-amber-950 block">
                             Hora o Franja de Cobro:
                           </label>
                           <select
@@ -983,7 +983,7 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
                                 setPromisedTime(e.target.value);
                               }
                             }}
-                            className="w-full text-xs font-black px-3 py-2 bg-white border-2 border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:outline-hidden cursor-pointer shadow-2xs"
+                            className="w-full text-xs sm:text-sm font-black px-3 py-2 bg-white border-2 border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:outline-hidden cursor-pointer shadow-2xs"
                           >
                             <option value="Mañana (8:00 - 11:00)">Mañana (8:00 - 11:00)</option>
                             <option value="Mediodía (11:00 - 13:00)">Mediodía (11:00 - 13:00)</option>
@@ -999,13 +999,13 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
                                 placeholder="Ej: 10:30 AM, o después del almuerzo"
                                 value={customTimeInput}
                                 onChange={(e) => setCustomTimeInput(e.target.value)}
-                                className="w-full text-xs font-black px-3 py-2 bg-white border-2 border-amber-400 rounded-xl focus:ring-2 focus:ring-amber-500 focus:outline-hidden shadow-2xs placeholder:text-amber-900/40"
+                                className="w-full text-xs sm:text-sm font-black px-3 py-2 bg-white border-2 border-amber-400 rounded-xl focus:ring-2 focus:ring-amber-500 focus:outline-hidden shadow-2xs placeholder:text-amber-900/40"
                                 autoFocus
                               />
                             </div>
                           )}
 
-                          <div className="flex items-center space-x-1 text-[10px] text-amber-800 font-bold mt-1.5">
+                          <div className="flex items-center space-x-1 text-xs text-amber-800 font-bold mt-1.5">
                             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                             <span>Se guarda en PostgreSQL (Supabase), cartera y recibo.</span>
                           </div>
@@ -1038,7 +1038,7 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
           <div className="p-4 sm:p-5 bg-white border-t border-slate-200 space-y-3 sticky bottom-0 z-20 shadow-lg pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
             <div className="flex justify-between items-end">
               <div>
-                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
                   {debtBalance === 0
                     ? `Cobro Total (${cartTotalBottles} botellas):`
                     : numericPaid > 0
@@ -1070,8 +1070,8 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
 
               {debtBalance > 0 && (
                 <div className="text-right">
-                  <span className="text-[11px] text-slate-400 font-bold block">Total Pedido:</span>
-                  <span className="font-mono text-sm font-black text-slate-700">
+                  <span className="text-xs text-slate-400 font-bold block">Total Pedido:</span>
+                  <span className="font-mono text-sm sm:text-base font-black text-slate-700">
                     {formatCurrency(cartTotalAmount)}
                   </span>
                 </div>

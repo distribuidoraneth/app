@@ -192,20 +192,20 @@ export function AdminDashboard() {
             </div>
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 sm:space-x-2.5">
             <Link
               href="/pedido?type=autoventa"
-              className="px-3 sm:px-3.5 py-1.5 sm:py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl text-[11px] sm:text-xs font-black shadow-xs flex items-center space-x-1.5 transition-all"
+              className="px-3.5 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl text-xs sm:text-sm font-black shadow-xs flex items-center space-x-2 transition-all"
             >
-              <AppleTruckBoxIcon className="w-3.5 h-3.5 brightness-0 invert" />
+              <AppleTruckBoxIcon className="w-4 h-4 brightness-0 invert" />
               <span>Autoventa</span>
             </Link>
 
             <Link
               href="/pedido?type=preventa"
-              className="px-3 sm:px-3.5 py-1.5 sm:py-2 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-800 rounded-xl text-[11px] sm:text-xs font-black border border-slate-200/80 flex items-center space-x-1.5 transition-colors"
+              className="px-3.5 sm:px-4 py-2 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-800 rounded-xl text-xs sm:text-sm font-black border border-slate-200/80 flex items-center space-x-2 transition-colors"
             >
-              <AppleCalendarClockIcon className="w-3.5 h-3.5 text-slate-600" />
+              <AppleCalendarClockIcon className="w-4 h-4 text-slate-600" />
               <span>Preventa</span>
             </Link>
 
@@ -214,24 +214,24 @@ export function AdminDashboard() {
               <button
                 type="button"
                 onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-                className="flex items-center space-x-2 p-0.5 rounded-full sm:rounded-xl hover:bg-slate-100 transition-colors focus:outline-hidden"
+                className="flex items-center space-x-2 p-1 rounded-full sm:rounded-xl hover:bg-slate-100 transition-colors focus:outline-hidden"
               >
                 {userProfile?.avatarUrl ? (
                   <img
                     src={userProfile.avatarUrl}
                     alt={userProfile.name}
-                    className="w-8 h-8 rounded-full border border-slate-200 shadow-2xs object-cover"
+                    className="w-9 h-9 rounded-full border border-slate-200 shadow-2xs object-cover"
                   />
                 ) : (
-                  <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-black text-xs flex items-center justify-center shadow-2xs">
+                  <div className="w-9 h-9 rounded-full bg-blue-600 text-white font-black text-sm flex items-center justify-center shadow-2xs">
                     {userProfile?.name ? userProfile.name.charAt(0).toUpperCase() : 'A'}
                   </div>
                 )}
                 <div className="hidden lg:block text-left">
-                  <span className="text-xs font-black text-slate-900 block leading-tight truncate max-w-[120px]">
+                  <span className="text-sm font-black text-slate-900 block leading-tight truncate max-w-[130px]">
                     {userProfile?.name || 'Administrador'}
                   </span>
-                  <span className="text-[10px] text-emerald-600 font-bold block leading-none">
+                  <span className="text-xs text-emerald-600 font-bold block leading-none">
                     Admin Activo
                   </span>
                 </div>
@@ -244,12 +244,12 @@ export function AdminDashboard() {
                     className="fixed inset-0 z-40"
                     onClick={() => setIsProfileMenuOpen(false)}
                   />
-                  <div className="absolute right-0 mt-2 w-52 bg-white rounded-2xl shadow-xl border border-slate-200 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
-                    <div className="px-3.5 py-2 border-b border-slate-100">
-                      <p className="text-xs font-black text-slate-900 truncate">
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50 animate-in fade-in zoom-in-95 duration-150">
+                    <div className="px-4 py-2.5 border-b border-slate-100">
+                      <p className="text-sm font-black text-slate-900 truncate">
                         {userProfile?.name || 'Administrador'}
                       </p>
-                      <p className="text-[11px] text-slate-500 truncate">
+                      <p className="text-xs text-slate-500 truncate mt-0.5">
                         {userProfile?.email || 'admin@aneth.com'}
                       </p>
                     </div>
@@ -259,9 +259,9 @@ export function AdminDashboard() {
                         setIsProfileMenuOpen(false);
                         handleLogout();
                       }}
-                      className="w-full text-left px-3.5 py-2 text-xs font-bold text-red-600 hover:bg-red-50 flex items-center space-x-2 transition-colors"
+                      className="w-full text-left px-4 py-2.5 text-xs sm:text-sm font-bold text-red-600 hover:bg-red-50 flex items-center space-x-2 transition-colors cursor-pointer"
                     >
-                      <LogOut className="w-3.5 h-3.5" />
+                      <LogOut className="w-4 h-4" />
                       <span>Cerrar sesión</span>
                     </button>
                   </div>
@@ -276,50 +276,50 @@ export function AdminDashboard() {
         {/* Apple Minimalist KPI Metrics (Shown strictly on dispatch/pedidos tab) */}
         {activeTab === 'dispatch' && (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
-            <div className="bg-white p-3 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between hover:border-slate-300 transition-colors">
+            <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between hover:border-slate-300 transition-colors">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
+                <span className="text-xs sm:text-[13px] font-bold text-slate-400 uppercase tracking-wider">
                   Ventas
                 </span>
-                <AppleGaugeDollarIcon className="w-4 h-4 text-emerald-600" />
+                <AppleGaugeDollarIcon className="w-4.5 h-4.5 text-emerald-600" />
               </div>
-              <div className="mt-1 text-lg sm:text-2xl font-black font-mono tracking-tight text-slate-900">
+              <div className="mt-1 text-xl sm:text-2xl font-black font-mono tracking-tight text-slate-900">
                 {formatCurrency(totalSales)}
               </div>
             </div>
 
-            <div className="bg-white p-3 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between hover:border-slate-300 transition-colors">
+            <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between hover:border-slate-300 transition-colors">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
+                <span className="text-xs sm:text-[13px] font-bold text-slate-400 uppercase tracking-wider">
                   Por Despachar
                 </span>
-                <AppleShippingBoxIcon className="w-4 h-4 text-amber-500" />
+                <AppleShippingBoxIcon className="w-4.5 h-4.5 text-amber-500" />
               </div>
-              <div className="mt-1 text-lg sm:text-2xl font-black font-mono tracking-tight text-slate-900">
+              <div className="mt-1 text-xl sm:text-2xl font-black font-mono tracking-tight text-slate-900">
                 {pendingOrders.length}
               </div>
             </div>
 
-            <div className="bg-white p-3 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between hover:border-slate-300 transition-colors">
+            <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between hover:border-slate-300 transition-colors">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
+                <span className="text-xs sm:text-[13px] font-bold text-slate-400 uppercase tracking-wider">
                   Clientes
                 </span>
-                <ApplePersonsIcon className="w-4 h-4 text-blue-500" />
+                <ApplePersonsIcon className="w-4.5 h-4.5 text-blue-500" />
               </div>
-              <div className="mt-1 text-lg sm:text-2xl font-black font-mono tracking-tight text-slate-900">
+              <div className="mt-1 text-xl sm:text-2xl font-black font-mono tracking-tight text-slate-900">
                 {clients.length}
               </div>
             </div>
 
-            <div className="bg-white p-3 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between hover:border-slate-300 transition-colors">
+            <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between hover:border-slate-300 transition-colors">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
+                <span className="text-xs sm:text-[13px] font-bold text-slate-400 uppercase tracking-wider">
                   Por Cobrar
                 </span>
-                <AppleCreditCardIcon className="w-4 h-4 text-rose-500" />
+                <AppleCreditCardIcon className="w-4.5 h-4.5 text-rose-500" />
               </div>
-              <div className="mt-1 text-lg sm:text-2xl font-black font-mono tracking-tight text-slate-900">
+              <div className="mt-1 text-xl sm:text-2xl font-black font-mono tracking-tight text-slate-900">
                 {formatCurrency(totalDebt)}
               </div>
             </div>
@@ -372,37 +372,37 @@ export function AdminDashboard() {
                   <div className="space-y-2">
                     <div className="flex items-start justify-between">
                       <div>
-                        <span className="text-[10px] font-black uppercase tracking-wider text-blue-700 bg-blue-50 px-2 py-0.5 rounded">
+                        <span className="text-xs font-black uppercase tracking-wider text-blue-700 bg-blue-50 px-2 py-0.5 rounded">
                           {client.gender}
                         </span>
-                        <h3 className="font-extrabold text-base text-slate-900 mt-1">
+                        <h3 className="font-extrabold text-base sm:text-lg text-slate-900 mt-1">
                           {client.businessName || client.fullName}
                         </h3>
-                        <p className="text-xs text-slate-500">{client.fullName}</p>
+                        <p className="text-xs sm:text-sm text-slate-500">{client.fullName}</p>
                       </div>
                       <button
                         type="button"
                         onClick={() => setSelectedQRClient(client)}
-                        className="p-2 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-600 rounded-xl transition-colors"
+                        className="p-2.5 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-600 rounded-xl transition-colors cursor-pointer"
                         title="Ver Código QR"
                       >
                         <QrCode className="w-5 h-5" />
                       </button>
                     </div>
 
-                    <div className="text-xs text-slate-600 space-y-1 pt-1">
+                    <div className="text-xs sm:text-sm text-slate-600 space-y-1 pt-1">
                       <p className="flex items-center">
-                        <Phone className="w-3.5 h-3.5 mr-1 text-slate-400" />
+                        <Phone className="w-4 h-4 mr-1 text-slate-400 shrink-0" />
                         <span className="font-mono">{client.whatsappNumber}</span>
                       </p>
                       {client.taxId && (
-                        <p className="text-[11px] text-slate-500 font-mono">
+                        <p className="text-xs text-slate-500 font-mono">
                           RUC/CI: {client.taxId} ({client.taxIdType === '04' ? 'RUC' : 'Cédula'})
                         </p>
                       )}
-                      <div className="flex items-start justify-between text-slate-500 text-[11px] pt-0.5">
+                      <div className="flex items-start justify-between text-slate-500 text-xs pt-0.5">
                         <p className="flex items-start">
-                          <MapPin className="w-3.5 h-3.5 mr-1 text-slate-400 shrink-0 mt-0.5" />
+                          <MapPin className="w-4 h-4 mr-1 text-slate-400 shrink-0 mt-0.5" />
                           <span>{client.addressReference || 'Sin dirección registrada'}</span>
                         </p>
                         {typeof client.latitude === 'number' && typeof client.longitude === 'number' && !isNaN(client.latitude) && !isNaN(client.longitude) && (
@@ -413,7 +413,7 @@ export function AdminDashboard() {
                             className="inline-flex items-center text-blue-600 hover:text-blue-800 font-bold shrink-0 ml-1.5 p-1 rounded-md hover:bg-blue-50 transition-colors"
                             title="Abrir ubicación en Google Maps"
                           >
-                            <ExternalLink className="w-3.5 h-3.5" />
+                            <ExternalLink className="w-4 h-4" />
                           </a>
                         )}
                       </div>
@@ -421,13 +421,13 @@ export function AdminDashboard() {
 
                     {/* Credit Status */}
                     {(client.creditLimit || 0) > 0 && (
-                      <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-xs flex justify-between items-center">
+                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs sm:text-sm flex justify-between items-center">
                         <div>
-                          <span className="text-[10px] text-slate-500 block">Cupo Crédito</span>
+                          <span className="text-xs text-slate-500 block">Cupo Crédito</span>
                           <span className="font-bold font-mono text-slate-800">${client.creditLimit || 0}</span>
                         </div>
                         <div className="text-right">
-                          <span className="text-[10px] text-slate-500 block">Deuda Actual</span>
+                          <span className="text-xs text-slate-500 block">Deuda Actual</span>
                           <span className={`font-bold font-mono ${(client.currentDebt || 0) > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
                             ${(client.currentDebt || 0).toFixed(2)}
                           </span>
@@ -440,15 +440,15 @@ export function AdminDashboard() {
                     <button
                       type="button"
                       onClick={() => setSelectedQRClient(client)}
-                      className="text-xs font-extrabold text-blue-600 hover:text-blue-700 flex items-center space-x-1"
+                      className="text-xs sm:text-sm font-extrabold text-blue-600 hover:text-blue-700 flex items-center space-x-1 cursor-pointer"
                     >
                       <span>Imprimir Sticker QR</span>
-                      <ArrowRight className="w-3 h-3" />
+                      <ArrowRight className="w-3.5 h-3.5" />
                     </button>
                     <Link
                       href={`/p/${client.qrToken}`}
                       target="_blank"
-                      className="text-xs text-slate-500 hover:text-slate-900 font-medium"
+                      className="text-xs sm:text-sm text-slate-500 hover:text-slate-900 font-bold"
                     >
                       Abrir Portal ↗
                     </Link>
@@ -475,9 +475,9 @@ export function AdminDashboard() {
 
             <div className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-xs text-left border-collapse">
+                <table className="w-full text-xs sm:text-sm text-left border-collapse">
                   <thead>
-                    <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+                    <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-xs">
                       <th className="py-3 px-4">Cliente / Local</th>
                       <th className="py-3 px-4">Contacto</th>
                       <th className="py-3 px-4 text-right">Cupo Asignado</th>
@@ -502,7 +502,7 @@ export function AdminDashboard() {
                           <tr key={client.id} className="hover:bg-slate-50">
                             <td className="py-3 px-4">
                               <p className="font-extrabold text-slate-900">{client.businessName || client.fullName}</p>
-                              <p className="text-[11px] text-slate-500">{client.fullName}</p>
+                              <p className="text-xs text-slate-500">{client.fullName}</p>
                             </td>
                             <td className="py-3 px-4 font-mono">{client.whatsappNumber}</td>
                             <td className="py-3 px-4 text-right font-mono font-bold">
@@ -528,12 +528,12 @@ export function AdminDashboard() {
                                       }
                                     }
                                   }}
-                                  className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs"
+                                  className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs sm:text-sm font-bold transition-all shadow-xs cursor-pointer"
                                 >
                                   Registrar Abono
                                 </button>
                               ) : (
-                                <span className="text-[11px] text-emerald-700 font-bold bg-emerald-50 px-2.5 py-1 rounded-lg">
+                                <span className="text-xs text-emerald-700 font-bold bg-emerald-50 px-2.5 py-1 rounded-lg">
                                   Al día
                                 </span>
                               )}
@@ -565,9 +565,9 @@ export function AdminDashboard() {
 
             <div className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-xs text-left border-collapse">
+                <table className="w-full text-xs sm:text-sm text-left border-collapse">
                   <thead>
-                    <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+                    <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-xs">
                       <th className="py-3 px-4">No. Factura</th>
                       <th className="py-3 px-4">Cliente</th>
                       <th className="py-3 px-4">Fecha Emisión</th>
@@ -592,7 +592,7 @@ export function AdminDashboard() {
                           </td>
                           <td className="py-3 px-4">
                             <p className="font-bold text-slate-900">{inv.clientName}</p>
-                            <p className="text-[11px] text-slate-500 font-mono">{inv.clientTaxId || 'Consumidor Final'}</p>
+                            <p className="text-xs text-slate-500 font-mono">{inv.clientTaxId || 'Consumidor Final'}</p>
                           </td>
                           <td className="py-3 px-4">{formatDate(inv.issuedAt)}</td>
                           <td className="py-3 px-4 text-right font-mono font-medium">
@@ -602,7 +602,7 @@ export function AdminDashboard() {
                             {formatCurrency(inv.total)}
                           </td>
                           <td className="py-3 px-4 text-center">
-                            <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <span className="inline-block px-2.5 py-1 rounded-full text-xs font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
                               AUTORIZADA SRI
                             </span>
                           </td>
@@ -611,7 +611,7 @@ export function AdminDashboard() {
                               <button
                                 type="button"
                                 onClick={() => setSelectedInvoice(inv)}
-                                className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-xs font-bold transition-colors"
+                                className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-xs font-bold transition-colors cursor-pointer"
                               >
                                 Ver RIDE
                               </button>

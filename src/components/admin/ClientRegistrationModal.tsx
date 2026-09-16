@@ -478,9 +478,9 @@ export function ClientRegistrationModal({
                   }`}
                 />
                 {errors.whatsappNumber ? (
-                  <p className="text-xs text-red-600 font-bold">{errors.whatsappNumber}</p>
+                  <p className="text-xs sm:text-sm text-red-600 font-bold">{errors.whatsappNumber}</p>
                 ) : (
-                  <p className="text-[11px] text-slate-500 font-medium">10 dígitos • Empieza con 09 (Opcional)</p>
+                  <p className="text-xs text-slate-500 font-medium">10 dígitos • Empieza con 09 (Opcional)</p>
                 )}
               </div>
 
@@ -561,8 +561,8 @@ export function ClientRegistrationModal({
                   Dirección y Referencias del Local
                 </label>
                 {isGeocoding && (
-                  <span className="text-[11px] text-blue-600 font-bold flex items-center animate-pulse">
-                    <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                  <span className="text-xs text-blue-600 font-bold flex items-center animate-pulse">
+                    <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
                     Obteniendo dirección oficial...
                   </span>
                 )}
@@ -574,7 +574,7 @@ export function ClientRegistrationModal({
                 placeholder="Ej. Galápagos 629 y Montalvo (frente a la farmacia)"
                 className="w-full text-base px-4 py-3.5 border border-slate-200 rounded-xl bg-white text-slate-900 font-medium focus:outline-hidden focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 leading-relaxed shadow-2xs"
               />
-              <p className="text-[11px] text-slate-500">
+              <p className="text-xs sm:text-[13px] text-slate-500">
                 Se autocompleta con tu GPS mediante Google Maps. Puedes editarla o agregar referencias.
               </p>
             </div>
@@ -587,8 +587,8 @@ export function ClientRegistrationModal({
                     <Navigation className="w-4 h-4" />
                   </div>
                   <div className="min-w-0">
-                    <h4 className="text-xs font-black text-slate-900">Coordenadas GPS del Local</h4>
-                    <p className="text-[11px] text-slate-600 font-mono truncate">
+                    <h4 className="text-sm font-black text-slate-900">Coordenadas GPS del Local</h4>
+                    <p className="text-xs text-slate-600 font-mono truncate">
                       {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}
                       {gpsAccuracy !== null && ` (±${Math.round(gpsAccuracy)}m)`}
                     </p>
@@ -618,14 +618,14 @@ export function ClientRegistrationModal({
                     }
                   }}
                   disabled={isCalibratingGps}
-                  className="px-3 py-2 bg-white hover:bg-slate-100 text-blue-600 border border-slate-200 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center space-x-1.5 cursor-pointer active:scale-95 shrink-0"
+                  className="px-3 py-2 bg-white hover:bg-slate-100 text-blue-600 border border-slate-200 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-2xs flex items-center space-x-1.5 cursor-pointer active:scale-95 shrink-0"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${isCalibratingGps ? 'animate-spin text-blue-600' : ''}`} />
                   <span>{isCalibratingGps ? 'Detectando...' : 'Re-capturar GPS'}</span>
                 </button>
               </div>
 
-              <div className="flex items-center justify-between pt-2 border-t border-slate-200/80 text-[11px]">
+              <div className="flex items-center justify-between pt-2 border-t border-slate-200/80 text-xs">
                 <span className="text-emerald-700 font-bold flex items-center">
                   <CheckCircle2 className="w-3.5 h-3.5 mr-1 text-emerald-600" />
                   Ubicación lista para cálculo de cercanía
@@ -637,7 +637,7 @@ export function ClientRegistrationModal({
                   className="text-blue-600 hover:text-blue-800 font-bold flex items-center space-x-1"
                 >
                   <span>Verificar en Google Maps</span>
-                  <ExternalLink className="w-3 h-3" />
+                  <ExternalLink className="w-3.5 h-3.5" />
                 </a>
               </div>
             </div>

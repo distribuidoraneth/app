@@ -241,7 +241,7 @@ export default function ClientExperiencePage({
                             <span className="font-bold text-slate-800">
                               {it.beverageType} • {it.size} {it.container}
                             </span>
-                            <div className="text-[11px] text-slate-500 mt-0.5">
+                            <div className="text-xs text-slate-500 mt-0.5">
                               {it.flavorType === 'single'
                                 ? `Sabor: ${it.selectedFlavor}`
                                 : `Surtido: ${
@@ -252,7 +252,7 @@ export default function ClientExperiencePage({
                                   }`}
                             </div>
                           </div>
-                          <span className="font-mono font-black text-slate-900 text-sm">
+                          <span className="font-mono font-black text-slate-900 text-sm sm:text-base">
                             {formatCurrency(it.subtotal)}
                           </span>
                         </div>
@@ -274,13 +274,13 @@ export default function ClientExperiencePage({
                           <button
                             type="button"
                             onClick={() => setActiveInvoice(orderInvoice)}
-                            className="px-3.5 py-2 bg-blue-50 hover:bg-blue-100 active:scale-95 text-blue-800 border border-blue-200 rounded-xl text-xs font-black flex items-center space-x-1.5 transition-all shadow-2xs"
+                            className="px-3.5 py-2 bg-blue-50 hover:bg-blue-100 active:scale-95 text-blue-800 border border-blue-200 rounded-xl text-xs sm:text-sm font-black flex items-center space-x-1.5 transition-all shadow-2xs cursor-pointer"
                           >
                             <FileText className="w-3.5 h-3.5 text-blue-600" />
                             <span>Factura #{orderInvoice.invoiceNumber}</span>
                           </button>
                         ) : order.status === 'delivered' ? (
-                          <span className="text-[11px] text-slate-400 font-medium">
+                          <span className="text-xs text-slate-400 font-medium">
                             Factura en proceso
                           </span>
                         ) : null}
@@ -289,7 +289,7 @@ export default function ClientExperiencePage({
                           <button
                             type="button"
                             onClick={() => handleOrderCancel(order.id)}
-                            className="px-3.5 py-1.5 text-xs text-red-600 hover:bg-red-50 active:scale-95 border border-red-200 rounded-xl font-bold transition-all"
+                            className="px-3.5 py-1.5 text-xs sm:text-sm text-red-600 hover:bg-red-50 active:scale-95 border border-red-200 rounded-xl font-bold transition-all cursor-pointer"
                           >
                             Cancelar Pedido
                           </button>
@@ -313,7 +313,7 @@ export default function ClientExperiencePage({
                 {cartTotalJavas}
               </div>
               <div>
-                <span className="text-[11px] text-slate-400 font-bold block">
+                <span className="text-xs text-slate-400 font-bold block">
                   {cartTotalJavas} {cartTotalJavas === 1 ? 'Java en pedido' : 'Javas en pedido'}
                 </span>
                 <span className="text-lg sm:text-xl font-black font-mono text-white">
@@ -325,7 +325,7 @@ export default function ClientExperiencePage({
             <button
               type="button"
               onClick={() => setIsCartOpen(true)}
-              className="py-3 px-5 sm:px-6 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-2xl text-xs sm:text-sm font-black flex items-center space-x-2 shadow-xs transition-all"
+              className="py-3 px-5 sm:px-6 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-2xl text-xs sm:text-sm font-black flex items-center space-x-2 shadow-xs transition-all cursor-pointer"
             >
               <span>Finalizar Pedido</span>
               <ArrowRight className="w-4 h-4" />

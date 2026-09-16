@@ -450,7 +450,7 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
                 </span>
                 Elige el Tamaño
               </label>
-              <span className="text-xs text-slate-500 font-bold">Tamaño • Unidades • Valor</span>
+              <span className="text-xs sm:text-sm text-slate-500 font-bold">Tamaño • Unidades • Valor</span>
             </div>
 
             {/* Grid compacto de mini-tiles horizontales */}
@@ -495,7 +495,7 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
                       <div className="text-sm sm:text-base font-black text-slate-900 leading-tight truncate">
                         {displayTitle}
                       </div>
-                      <div className="text-[11px] font-bold text-slate-500">
+                      <div className="text-xs font-bold text-slate-500">
                         {option.unitsPerJava} unidades
                       </div>
                       <div className="text-sm sm:text-base font-black text-blue-700 font-mono">
@@ -524,7 +524,7 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
                     <button
                       type="button"
                       onClick={() => handleFlavorModeChange('single')}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all active:scale-95 ${
+                      className={`px-2.5 py-1 rounded-lg text-xs sm:text-sm font-black transition-all active:scale-95 ${
                         flavorMode === 'single'
                           ? 'bg-white text-slate-950 shadow-xs'
                           : 'text-slate-600 hover:text-slate-900'
@@ -535,7 +535,7 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
                     <button
                       type="button"
                       onClick={() => handleFlavorModeChange('surtido')}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all active:scale-95 ${
+                      className={`px-2.5 py-1 rounded-lg text-xs sm:text-sm font-black transition-all active:scale-95 ${
                         flavorMode === 'surtido'
                           ? 'bg-blue-600 text-white shadow-xs'
                           : 'text-slate-600 hover:text-slate-900'
@@ -578,7 +578,7 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
                           {hasFlavorGraphic ? <FruitVectorIcon flavor={flavor} size={32} /> : null}
                         </div>
 
-                        <div className="text-xs sm:text-sm font-black text-slate-900 leading-tight truncate">
+                        <div className="text-sm sm:text-base font-black text-slate-900 leading-tight truncate">
                           {flavor}
                         </div>
                       </button>
@@ -679,17 +679,17 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
                 {/* Total Price Display */}
                 <div>
                   <div className="flex items-center space-x-1.5 flex-wrap gap-y-1">
-                    <span className="text-xs font-bold text-slate-500">Precio Total:</span>
-                    <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200">
+                    <span className="text-xs sm:text-sm font-bold text-slate-500">Precio Total:</span>
+                    <span className="text-xs sm:text-sm font-bold text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-md border border-blue-200">
                       {currentTotalBottles} {currentTotalBottles === 1 ? 'botella' : 'botellas'}
                     </span>
                     {clientTier === 'distribuidor' && (
-                      <span className="text-[10px] font-black text-purple-700 bg-purple-100 border border-purple-200 px-2 py-0.5 rounded-md">
+                      <span className="text-xs font-black text-purple-700 bg-purple-100 border border-purple-200 px-2.5 py-0.5 rounded-md">
                         Tarifa Distribuidor
                       </span>
                     )}
                     {clientTier === 'especial' && (
-                      <span className="text-[10px] font-black text-amber-700 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-md">
+                      <span className="text-xs font-black text-amber-700 bg-amber-100 border border-amber-200 px-2.5 py-0.5 rounded-md">
                         Tarifa Especial
                       </span>
                     )}
@@ -697,7 +697,7 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
                   <div className="text-2xl sm:text-3xl font-black text-slate-900 font-mono mt-0.5">
                     {javasCount === 0 && unitsCount === 0 ? '$0.00' : formatCurrency(currentTotalSubtotal)}
                   </div>
-                  <div className="text-[11px] font-bold text-slate-500 mt-0.5">
+                  <div className="text-xs sm:text-sm font-bold text-slate-500 mt-0.5">
                     {javasCount > 0 && `${javasCount} ${javasCount === 1 ? (currentOption?.container === 'Vidrio' ? 'Java' : 'Pack') : (currentOption?.container === 'Vidrio' ? 'Javas' : 'Packs')}`}
                     {javasCount > 0 && unitsCount > 0 && ' + '}
                     {unitsCount > 0 && `${unitsCount} ${unitsCount === 1 ? 'Unidad suelta' : 'Unidades sueltas'}`}
@@ -709,7 +709,7 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
                 <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
                   {/* Javas / Packs Pill */}
                   <div className="flex items-center space-x-1.5 bg-white p-1.5 rounded-xl border border-slate-200 shadow-2xs">
-                    <span className="text-xs font-black text-slate-700 px-1">
+                    <span className="text-xs sm:text-sm font-black text-slate-700 px-1">
                       {currentOption?.container === 'Vidrio' ? 'Javas:' : 'Packs:'}
                     </span>
                     <button
@@ -720,7 +720,7 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
                     >
                       <Minus className="w-3.5 h-3.5" />
                     </button>
-                    <span className="w-6 text-center font-black font-mono text-sm sm:text-base text-slate-900">
+                    <span className="w-7 text-center font-black font-mono text-base sm:text-lg text-slate-900">
                       {javasCount}
                     </span>
                     <button
@@ -734,7 +734,7 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
 
                   {/* Loose Units Pill */}
                   <div className="flex items-center space-x-1.5 bg-white p-1.5 rounded-xl border border-slate-200 shadow-2xs">
-                    <span className="text-xs font-black text-slate-700 px-1">Unidades:</span>
+                    <span className="text-xs sm:text-sm font-black text-slate-700 px-1">Unidades:</span>
                     <button
                       type="button"
                       disabled={unitsCount <= 0}
@@ -743,7 +743,7 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
                     >
                       <Minus className="w-3.5 h-3.5" />
                     </button>
-                    <span className="w-6 text-center font-black font-mono text-sm sm:text-base text-slate-900">
+                    <span className="w-7 text-center font-black font-mono text-base sm:text-lg text-slate-900">
                       {unitsCount}
                     </span>
                     <button

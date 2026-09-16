@@ -167,7 +167,7 @@ function StandaloneOrderContent() {
             <ShoppingBag className="w-4 h-4 text-blue-400" />
             <span>Mi Pedido</span>
             {(cartTotalJavas > 0 || cartTotalUnits > 0) && (
-              <span className="px-2 py-0.5 bg-blue-600 text-white text-[11px] font-black rounded-full min-w-[20px] text-center">
+              <span className="px-2 py-0.5 bg-blue-600 text-white text-xs font-black rounded-full min-w-[20px] text-center">
                 {cart.length}
               </span>
             )}
@@ -178,7 +178,7 @@ function StandaloneOrderContent() {
       <main className="max-w-4xl mx-auto px-4 py-5 space-y-4">
         {/* MODALIDAD DE VENTA */}
         <div className="bg-white p-4 sm:p-5 rounded-3xl border border-slate-200 shadow-xs space-y-3">
-          <span className="text-xs font-black text-slate-900 uppercase tracking-wider block">
+          <span className="text-xs sm:text-sm font-black text-slate-900 uppercase tracking-wider block">
             Modalidad de Venta
           </span>
 
@@ -188,18 +188,18 @@ function StandaloneOrderContent() {
         {/* CLIENTE MÁS CERCANO (GPS) */}
         <div className="bg-white p-4 sm:p-5 rounded-3xl border border-slate-200 shadow-xs space-y-3">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-xs font-black text-slate-900 uppercase tracking-wider block">
+            <span className="text-xs sm:text-sm font-black text-slate-900 uppercase tracking-wider block">
               Cliente
             </span>
             <div className="flex items-center space-x-1.5">
               {isLocating && !userLocation ? (
-                <span className="text-[11px] font-bold text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200 flex items-center animate-pulse">
-                  <Navigation className="w-3 h-3 mr-1 text-blue-600 shrink-0 animate-spin" />
+                <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200 flex items-center animate-pulse">
+                  <Navigation className="w-3.5 h-3.5 mr-1 text-blue-600 shrink-0 animate-spin" />
                   Buscando local por GPS...
                 </span>
               ) : formattedDistance ? (
-                <span className="text-[11px] font-black text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 flex items-center">
-                  <Navigation className="w-3 h-3 mr-1 text-emerald-600 shrink-0" />
+                <span className="text-xs font-black text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 flex items-center">
+                  <Navigation className="w-3.5 h-3.5 mr-1 text-emerald-600 shrink-0" />
                   {formattedDistance}
                 </span>
               ) : null}
@@ -227,22 +227,22 @@ function StandaloneOrderContent() {
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center space-x-2">
-                    <h2 className="text-sm font-black text-slate-900 truncate">
+                    <h2 className="text-base font-black text-slate-900 truncate">
                       {activeClient.businessName || activeClient.fullName}
                     </h2>
                     {activeClient.clientTier === 'distribuidor' && (
-                      <span className="text-[10px] font-black text-purple-700 bg-purple-100 border border-purple-200 px-2 py-0.5 rounded-full shrink-0">
+                      <span className="text-xs font-black text-purple-700 bg-purple-100 border border-purple-200 px-2 py-0.5 rounded-full shrink-0">
                         Distribuidor
                       </span>
                     )}
                     {activeClient.clientTier === 'especial' && (
-                      <span className="text-[10px] font-black text-amber-700 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-full shrink-0">
+                      <span className="text-xs font-black text-amber-700 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-full shrink-0">
                         Especial
                       </span>
                     )}
                   </div>
-                  <p className="text-[11px] text-slate-500 truncate flex items-center mt-0.5">
-                    <MapPin className="w-3 h-3 mr-1 shrink-0 text-slate-400" />
+                  <p className="text-xs sm:text-[13px] text-slate-500 truncate flex items-center mt-0.5">
+                    <MapPin className="w-3.5 h-3.5 mr-1 shrink-0 text-slate-400" />
                     <span className="truncate">{activeClient.addressReference || 'Sin dirección registrada'}</span>
                   </p>
                 </div>
@@ -255,7 +255,7 @@ function StandaloneOrderContent() {
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
-                    className="p-2 bg-white hover:bg-blue-50 text-slate-600 hover:text-blue-600 border border-slate-200 rounded-xl transition-colors shadow-2xs flex items-center space-x-1 text-xs font-bold"
+                    className="p-2 bg-white hover:bg-blue-50 text-slate-600 hover:text-blue-600 border border-slate-200 rounded-xl transition-colors shadow-2xs flex items-center space-x-1 text-xs sm:text-sm font-bold"
                     title="Abrir ruta en Google Maps"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
@@ -268,7 +268,7 @@ function StandaloneOrderContent() {
                     e.stopPropagation();
                     setIsClientModalOpen(true);
                   }}
-                  className="px-3.5 py-2 bg-white hover:bg-slate-100 text-blue-600 border border-slate-300 rounded-xl text-xs font-black transition-colors shadow-2xs cursor-pointer flex items-center space-x-1"
+                  className="px-3.5 py-2 bg-white hover:bg-slate-100 text-blue-600 border border-slate-300 rounded-xl text-xs sm:text-sm font-black transition-colors shadow-2xs cursor-pointer flex items-center space-x-1"
                 >
                   <span>Cambiar</span>
                   <ChevronRight className="w-3.5 h-3.5 text-blue-500" />
@@ -279,13 +279,13 @@ function StandaloneOrderContent() {
             <div className="p-5 bg-slate-50 rounded-2xl border border-dashed border-slate-300 text-center space-y-3">
               <Store className="w-8 h-8 text-slate-400 mx-auto" />
               <div>
-                <p className="text-xs font-bold text-slate-700">No tienes clientes registrados aún</p>
-                <p className="text-[11px] text-slate-500 mt-0.5">Registra un cliente para asociar el despacho y la factura SRI</p>
+                <p className="text-sm font-bold text-slate-700">No tienes clientes registrados aún</p>
+                <p className="text-xs sm:text-sm text-slate-500 mt-0.5">Registra un cliente para asociar el despacho y la factura SRI</p>
               </div>
               <button
                 type="button"
                 onClick={() => setIsRegisterModalOpen(true)}
-                className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black shadow-xs inline-flex items-center space-x-1.5 transition-all cursor-pointer"
+                className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs sm:text-sm font-black shadow-xs inline-flex items-center space-x-1.5 transition-all cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
                 <span>Registrar Primer Cliente</span>
@@ -296,7 +296,7 @@ function StandaloneOrderContent() {
 
         {/* CATÁLOGO DE PRODUCTOS */}
         <div className="space-y-3">
-          <span className="text-xs font-black text-slate-900 uppercase tracking-wider block px-1">
+          <span className="text-xs sm:text-sm font-black text-slate-900 uppercase tracking-wider block px-1">
             Catálogo de Bebidas
           </span>
           <BeverageOrderPasarela />

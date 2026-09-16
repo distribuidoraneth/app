@@ -94,15 +94,15 @@ export function ClientProximitySelectorModal({
                 <h3 className="font-black text-sm sm:text-base text-slate-900 leading-tight">
                   Seleccionar Cliente
                 </h3>
-                <p className="text-[11px] text-slate-500 font-semibold flex items-center mt-0.5">
+                <p className="text-xs text-slate-500 font-semibold flex items-center mt-0.5">
                   {userLocation ? (
                     <span className="text-emerald-600 flex items-center">
-                      <Navigation className="w-3 h-3 mr-1 text-emerald-600" />
+                      <Navigation className="w-3.5 h-3.5 mr-1 text-emerald-600" />
                       Ordenados por cercanía GPS
                     </span>
                   ) : isLocating ? (
                     <span className="text-blue-600 flex items-center">
-                      <RefreshCw className="w-3 h-3 mr-1 animate-spin" />
+                      <RefreshCw className="w-3.5 h-3.5 mr-1 animate-spin" />
                       Detectando ubicación GPS...
                     </span>
                   ) : (
@@ -217,40 +217,40 @@ export function ClientProximitySelectorModal({
                   >
                     <div className="space-y-1 min-w-0">
                       <div className="flex items-center space-x-2">
-                        <span className="font-black text-xs sm:text-sm text-slate-900 truncate">
+                        <span className="font-black text-sm sm:text-base text-slate-900 truncate">
                           {client.businessName || client.fullName}
                         </span>
                         {client.clientTier === 'distribuidor' && (
-                          <span className="text-[10px] font-black bg-purple-100 text-purple-800 border border-purple-200 px-2 py-0.5 rounded-full shrink-0">
+                          <span className="text-xs font-black bg-purple-100 text-purple-800 border border-purple-200 px-2 py-0.5 rounded-full shrink-0">
                             Distribuidor
                           </span>
                         )}
                         {client.clientTier === 'especial' && (
-                          <span className="text-[10px] font-black bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-full shrink-0">
+                          <span className="text-xs font-black bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-full shrink-0">
                             Especial
                           </span>
                         )}
                         {client.distanceFormatted && userLocation && (
-                          <span className="text-[10px] font-black bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full shrink-0 flex items-center">
-                            <Navigation className="w-2.5 h-2.5 mr-0.5" />
+                          <span className="text-xs font-black bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full shrink-0 flex items-center">
+                            <Navigation className="w-3 h-3 mr-0.5" />
                             {client.distanceFormatted}
                           </span>
                         )}
                       </div>
 
-                      <div className="text-[11px] text-slate-500 font-medium truncate flex items-center space-x-2">
+                      <div className="text-xs text-slate-500 font-medium truncate flex items-center space-x-2">
                         <span>Contacto: {client.fullName}</span>
                         {client.taxId && <span>• RUC/CI: {client.taxId}</span>}
                       </div>
 
-                      <div className="text-[11px] text-slate-400 truncate flex items-center">
-                        <MapPin className="w-3 h-3 mr-1 text-slate-400 shrink-0" />
+                      <div className="text-xs text-slate-400 truncate flex items-center">
+                        <MapPin className="w-3.5 h-3.5 mr-1 text-slate-400 shrink-0" />
                         <span className="truncate">{client.addressReference || 'Sin dirección registrada'}</span>
                       </div>
 
                       {(client.currentDebt || 0) > 0 && (
-                        <div className="text-[10px] font-bold text-red-600 flex items-center pt-0.5">
-                          <CreditCard className="w-3 h-3 mr-1" />
+                        <div className="text-xs font-bold text-red-600 flex items-center pt-0.5">
+                          <CreditCard className="w-3.5 h-3.5 mr-1" />
                           <span>Deuda pendiente: ${Number(client.currentDebt).toFixed(2)}</span>
                         </div>
                       )}

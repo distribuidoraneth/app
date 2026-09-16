@@ -69,9 +69,9 @@ export const LiquidMobileTabPill: React.FC<LiquidMobileTabPillProps> = ({
 
               {/* Texto con Apertura Líquida */}
               <span
-                className={`text-[12px] sm:text-[13px] font-extrabold tracking-tight relative z-10 whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden ${
+                className={`text-xs sm:text-sm font-black tracking-tight relative z-10 whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden ${
                   isActive
-                    ? 'max-w-[120px] opacity-100 ml-1.5'
+                    ? 'max-w-[140px] opacity-100 ml-1.5'
                     : 'max-w-0 opacity-0 ml-0'
                 }`}
               >
@@ -81,7 +81,7 @@ export const LiquidMobileTabPill: React.FC<LiquidMobileTabPillProps> = ({
               {/* Badge Contador Opcional */}
               {tab.badge !== undefined && (
                 <span
-                  className={`relative z-10 text-[10px] font-black px-1.5 py-0.2 rounded-full transition-all duration-300 ${
+                  className={`relative z-10 text-xs font-black px-2 py-0.5 min-w-[18px] text-center rounded-full transition-all duration-300 ${
                     isActive
                       ? 'bg-blue-100 text-blue-700 ml-1.5'
                       : 'bg-slate-300/80 text-slate-700 ml-1'

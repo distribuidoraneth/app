@@ -57,18 +57,18 @@ export default function LoginPage() {
         {/* Login Card */}
         <div className="w-full bg-white rounded-3xl p-7 sm:p-8 shadow-2xl shadow-black/70 text-slate-900 space-y-5 border border-slate-100">
           <div className="text-center space-y-1">
-            <h1 className="text-2xl font-black tracking-tight text-slate-900">
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
               Iniciar Sesión
             </h1>
-            <p className="text-xs text-slate-500 font-medium leading-relaxed">
+            <p className="text-sm text-slate-500 font-medium leading-relaxed">
               Acceso exclusivo al sistema operativo de distribución y ventas
             </p>
           </div>
 
           {error && (
-            <div className="p-3.5 bg-red-50 border border-red-200 rounded-2xl text-xs text-red-700 flex items-center space-x-2 animate-in fade-in duration-150">
+            <div className="p-3.5 bg-red-50 border border-red-200 rounded-2xl text-sm text-red-700 flex items-center space-x-2 animate-in fade-in duration-150">
               <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
-              <span className="font-semibold text-xs">{error}</span>
+              <span className="font-semibold text-sm">{error}</span>
             </div>
           )}
 
@@ -102,20 +102,20 @@ export default function LoginPage() {
                   />
                 </svg>
               )}
-              <span className="text-sm font-bold text-slate-800 tracking-tight">
+              <span className="text-base font-bold text-slate-800 tracking-tight">
                 {isGoogleLoading ? 'Conectando con Google...' : 'Continuar con Google'}
               </span>
             </button>
 
-            <div className="flex items-center justify-center space-x-1.5 text-[11px] text-slate-400 font-medium">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+            <div className="flex items-center justify-center space-x-1.5 text-xs text-slate-400 font-medium">
+              <ShieldCheck className="w-4 h-4 text-emerald-600" />
               <span>Autenticación oficial y segura</span>
             </div>
           </div>
         </div>
 
         {/* Integrated Footer */}
-        <p className="text-[11px] text-slate-500 font-medium text-center">
+        <p className="text-xs text-slate-500 font-medium text-center">
           Aneth Distribuciones &copy; {new Date().getFullYear()}
         </p>
       </div>
