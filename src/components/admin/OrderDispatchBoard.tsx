@@ -29,7 +29,6 @@ import {
   Search,
   Calendar,
   X,
-  RotateCw,
   Loader2,
   CheckCircle2,
 } from 'lucide-react';
@@ -167,80 +166,91 @@ export function OrderDispatchBoard() {
           </button>
         </div>
 
-        {/* Fila 2: Selector Rápido de Fechas + Calendario + Conteo */}
-        <div className="flex items-center justify-between gap-1.5 pt-1.5 border-t border-slate-100">
-          <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto no-scrollbar py-0.5 flex-1 min-w-0">
+        {/* Fila 2: Filtros de Fecha (Hoy, Ayer, Esta Semana, Selector de Fecha) */}
+        <div className="flex items-center gap-1 sm:gap-1.5 pt-1.5 border-t border-slate-100 overflow-x-auto no-scrollbar">
+          <button
+            type="button"
+            onClick={() => handleSelectPreset('today')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer shrink-0 ${
+              selectedDatePreset === 'today' && !searchQuery
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+            }`}
+          >
+            Hoy
+          </button>
+          <button
+            type="button"
+            onClick={() => handleSelectPreset('yesterday')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${
+              selectedDatePreset === 'yesterday' && !searchQuery
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+            }`}
+          >
+            Ayer
+          </button>
+          <button
+            type="button"
+            onClick={() => handleSelectPreset('week')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${
+              selectedDatePreset === 'week' && !searchQuery
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+            }`}
+          >
+            Esta Semana
+          </button>
+
+          {/* Separador vertical */}
+          <div className="h-4 w-px bg-slate-200 shrink-0 mx-0.5" />
+
+          {/* Selector de Fecha Nativo con Botón Visual Apple */}
+          <div className="relative inline-flex items-center shrink-0">
+            <div
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition-all cursor-pointer ${
+                selectedDatePreset === 'custom' && customDate
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+              }`}
+            >
+              <Calendar className="w-3.5 h-3.5 shrink-0" />
+              <span className="font-mono">
+                {customDate
+                  ? (() => {
+                      const parts = customDate.split('-');
+                      return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : customDate;
+                    })()
+                  : 'Fecha'}
+              </span>
+            </div>
+
+            <input
+              type="date"
+              value={customDate}
+              onChange={(e) => {
+                setCustomDate(e.target.value);
+                if (e.target.value) {
+                  setSelectedDatePreset('custom');
+                  setSearchQuery('');
+                  loadOrders({ datePreset: 'custom', customDate: e.target.value });
+                }
+              }}
+              className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+            />
+          </div>
+
+          {/* Botón para limpiar fecha personalizada si está activa */}
+          {selectedDatePreset === 'custom' && customDate && (
             <button
               type="button"
               onClick={() => handleSelectPreset('today')}
-              className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
-                selectedDatePreset === 'today' && !searchQuery
-                  ? 'bg-blue-600 text-white shadow-xs'
-                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-              }`}
+              className="p-1 text-slate-400 hover:text-slate-600 rounded-full cursor-pointer shrink-0"
+              title="Quitar fecha"
             >
-              Hoy
+              <X className="w-3.5 h-3.5" />
             </button>
-            <button
-              type="button"
-              onClick={() => handleSelectPreset('yesterday')}
-              className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                selectedDatePreset === 'yesterday' && !searchQuery
-                  ? 'bg-blue-600 text-white shadow-xs'
-                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-              }`}
-            >
-              Ayer
-            </button>
-            <button
-              type="button"
-              onClick={() => handleSelectPreset('week')}
-              className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                selectedDatePreset === 'week' && !searchQuery
-                  ? 'bg-blue-600 text-white shadow-xs'
-                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-              }`}
-            >
-              Esta Semana
-            </button>
-
-            {/* Selector de Fecha Específica */}
-            <div className="flex items-center space-x-1 pl-1 border-l border-slate-200 shrink-0">
-              <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-              <input
-                type="date"
-                value={customDate}
-                onChange={(e) => {
-                  setCustomDate(e.target.value);
-                  if (e.target.value) {
-                    setSelectedDatePreset('custom');
-                    setSearchQuery('');
-                    loadOrders({ datePreset: 'custom', customDate: e.target.value });
-                  }
-                }}
-                className={`py-1 px-1.5 sm:px-2 text-xs font-bold rounded-lg border transition-colors cursor-pointer w-[120px] sm:w-auto ${
-                  selectedDatePreset === 'custom'
-                    ? 'bg-blue-50 border-blue-400 text-blue-800'
-                    : 'bg-slate-50 border-slate-200 text-slate-600'
-                }`}
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-1.5 sm:space-x-2 text-xs text-slate-500 font-medium shrink-0 pl-1">
-            <span className="whitespace-nowrap">
-              {filteredOrders.length} <span className="hidden sm:inline">pedido{filteredOrders.length !== 1 ? 's' : ''}</span>
-            </span>
-            <button
-              type="button"
-              onClick={() => loadOrders({ datePreset: selectedDatePreset, customDate, searchQuery })}
-              disabled={isOrdersLoading}
-              className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
-              title="Refrescar datos"
-            >
-              <RotateCw className={`w-3.5 h-3.5 ${isOrdersLoading ? 'animate-spin text-blue-600' : ''}`} />
-            </button>
-          </div>
+          )}
         </div>
       </div>
 
