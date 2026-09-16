@@ -282,7 +282,7 @@ export function ClientRegistrationView({ clientIdToEdit }: ClientRegistrationVie
       </div>
 
       {/* Header Card de la Pantalla */}
-      <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 p-4 sm:p-6 shadow-xs flex items-center justify-between gap-4">
+      <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 p-4 sm:p-5 shadow-xs flex items-center justify-between gap-4">
         <div className="flex items-center space-x-3 sm:space-x-4">
           <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-bold shadow-xs shrink-0">
             {clientToEdit ? (
@@ -293,31 +293,23 @@ export function ClientRegistrationView({ clientIdToEdit }: ClientRegistrationVie
           </div>
           <div>
             <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900">
-              {clientToEdit ? 'Modificar Local Comercial' : 'Registro de Local Comercial'}
+              {clientToEdit ? 'Modificar Local' : 'Registro de Local'}
             </h1>
-            <p className="text-xs sm:text-sm text-slate-500 font-medium">
-              Verificación oficial SRI / Registro Civil con algoritmo antifraude y geolocalización.
-            </p>
           </div>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
-        {/* SECCIÓN 1: Identificación y Verificación Oficial con Algoritmo */}
-        <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 p-4 sm:p-6 shadow-xs space-y-3.5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
-            <div>
-              <h2 className="text-sm sm:text-base font-black text-slate-900 flex items-center space-x-2">
-                <ShieldCheck className="w-4.5 h-4.5 text-blue-600" />
-                <span>1. Identificación Oficial (SRI & Registro Civil)</span>
-              </h2>
-              <p className="text-xs text-slate-500 font-medium mt-0.5">
-                Valida la estructura y dígito verificador antes de consultar la API para ahorrar créditos.
-              </p>
-            </div>
+        {/* SECCIÓN 1: Identificación */}
+        <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 p-4 sm:p-5 shadow-xs space-y-3.5">
+          <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
+            <h2 className="text-sm sm:text-base font-black text-slate-900 flex items-center space-x-2">
+              <ShieldCheck className="w-4.5 h-4.5 text-blue-600" />
+              <span>Identificación</span>
+            </h2>
 
             {/* Selector Cédula / RUC */}
-            <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 self-start sm:self-auto">
+            <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
               <button
                 type="button"
                 onClick={() => {
@@ -330,7 +322,7 @@ export function ClientRegistrationView({ clientIdToEdit }: ClientRegistrationVie
                   isCedula ? 'bg-white text-blue-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                Cédula (10)
+                Cédula
               </button>
               <button
                 type="button"
@@ -344,7 +336,7 @@ export function ClientRegistrationView({ clientIdToEdit }: ClientRegistrationVie
                   !isCedula ? 'bg-white text-blue-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                RUC (13)
+                RUC
               </button>
             </div>
           </div>
@@ -365,7 +357,7 @@ export function ClientRegistrationView({ clientIdToEdit }: ClientRegistrationVie
                       if (taxValidation.isValid) handleLookup();
                     }
                   }}
-                  placeholder={isCedula ? 'Ingresa los 10 dígitos de la Cédula' : 'Ingresa los 13 dígitos del RUC'}
+                  placeholder={isCedula ? 'Cédula' : 'RUC'}
                   className={`w-full h-11 px-3.5 bg-slate-50 hover:bg-slate-100/60 focus:bg-white rounded-xl border text-sm font-mono font-bold transition-all focus:outline-hidden ${
                     isOfficialDataLocked
                       ? 'bg-slate-100 border-slate-200 text-slate-500 cursor-not-allowed'
@@ -453,20 +445,20 @@ export function ClientRegistrationView({ clientIdToEdit }: ClientRegistrationVie
           </div>
         </div>
 
-        {/* SECCIÓN 2: Datos Comerciales y Contacto */}
-        <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 p-4 sm:p-6 shadow-xs space-y-4">
+        {/* SECCIÓN 2: Datos Comerciales */}
+        <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 p-4 sm:p-5 shadow-xs space-y-4">
           <div className="border-b border-slate-100 pb-3">
             <h2 className="text-sm sm:text-base font-black text-slate-900 flex items-center space-x-2">
               <AppleStorefrontIcon size={18} alt="Comercio" />
-              <span>2. Datos Comerciales del Local</span>
+              <span>Datos Comerciales</span>
             </h2>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
-            {/* Nombre Completo / Razón Social */}
+            {/* Razón Social */}
             <div>
               <label className="text-xs font-black text-slate-700 uppercase tracking-wider mb-1 block">
-                Razón Social / Nombre Completo *
+                Razón Social *
               </label>
               <input
                 type="text"
@@ -478,10 +470,10 @@ export function ClientRegistrationView({ clientIdToEdit }: ClientRegistrationVie
               />
             </div>
 
-            {/* Nombre Comercial */}
+            {/* Nombre del Local */}
             <div>
               <label className="text-xs font-black text-slate-700 uppercase tracking-wider mb-1 block">
-                Nombre del Local / Negocio
+                Nombre del Local
               </label>
               <input
                 type="text"
@@ -492,10 +484,10 @@ export function ClientRegistrationView({ clientIdToEdit }: ClientRegistrationVie
               />
             </div>
 
-            {/* WhatsApp */}
+            {/* Celular */}
             <div>
               <label className="text-xs font-black text-slate-700 uppercase tracking-wider mb-1 block">
-                Celular WhatsApp (Ecuador)
+                Celular
               </label>
               <div className="relative">
                 <input
@@ -521,10 +513,10 @@ export function ClientRegistrationView({ clientIdToEdit }: ClientRegistrationVie
               {phoneError && <p className="text-xs text-rose-600 font-bold mt-1">{phoneError}</p>}
             </div>
 
-            {/* Cumpleaños / Aniversario */}
+            {/* Fecha de Cumpleaños */}
             <div>
               <label className="text-xs font-black text-slate-700 uppercase tracking-wider mb-1 block">
-                Fecha de Cumpleaños / Aniversario
+                Cumpleaños
               </label>
               <input
                 type="date"
@@ -537,7 +529,7 @@ export function ClientRegistrationView({ clientIdToEdit }: ClientRegistrationVie
             {/* Correo Electrónico */}
             <div className="sm:col-span-2">
               <label className="text-xs font-black text-slate-700 uppercase tracking-wider mb-1 block">
-                Correo Electrónico (Para Facturas Electrónicas SRI)
+                Correo Electrónico
               </label>
               <input
                 type="email"
@@ -550,18 +542,13 @@ export function ClientRegistrationView({ clientIdToEdit }: ClientRegistrationVie
           </div>
         </div>
 
-        {/* SECCIÓN 3: Ubicación y Coordenadas GPS */}
-        <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 p-4 sm:p-6 shadow-xs space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
-            <div>
-              <h2 className="text-sm sm:text-base font-black text-slate-900 flex items-center space-x-2">
-                <AppleMapPinIcon size={18} alt="Ubicación" />
-                <span>3. Ubicación & Georreferenciación GPS</span>
-              </h2>
-              <p className="text-xs text-slate-500 font-medium mt-0.5">
-                Dirección exacta para la ruta de despacho de los camiones repartidores.
-              </p>
-            </div>
+        {/* SECCIÓN 3: Ubicación */}
+        <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 p-4 sm:p-5 shadow-xs space-y-4">
+          <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
+            <h2 className="text-sm sm:text-base font-black text-slate-900 flex items-center space-x-2">
+              <AppleMapPinIcon size={18} alt="Ubicación" />
+              <span>Ubicación</span>
+            </h2>
 
             <button
               type="button"
@@ -570,20 +557,20 @@ export function ClientRegistrationView({ clientIdToEdit }: ClientRegistrationVie
               className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-800 font-bold rounded-xl border border-slate-200 text-xs transition-all flex items-center space-x-1.5 self-start sm:self-auto cursor-pointer"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isCalibratingGps ? 'animate-spin text-blue-600' : ''}`} />
-              <span>{isCalibratingGps ? 'Obteniendo GPS...' : 'Fijar GPS en mi posición'}</span>
+              <span>{isCalibratingGps ? 'Obteniendo GPS...' : 'Fijar GPS'}</span>
             </button>
           </div>
 
           <div className="space-y-3">
             <div>
               <label className="text-xs font-black text-slate-700 uppercase tracking-wider mb-1 block">
-                Dirección y Referencias del Local
+                Dirección y Referencia
               </label>
               <textarea
                 rows={2}
                 value={addressReference}
                 onChange={(e) => setAddressReference(e.target.value)}
-                placeholder="Ej. Av. Cevallos y Montalvo (frente a la farmacia, tienda con letrero azul)"
+                placeholder="Ej. Av. Cevallos y Montalvo (frente a la farmacia, letrero azul)"
                 className="w-full px-3.5 py-2.5 bg-slate-50 hover:bg-slate-100/60 focus:bg-white rounded-xl border border-slate-200 text-sm font-medium text-slate-900 focus:outline-hidden focus:border-blue-500 transition-colors"
               />
             </div>
@@ -595,7 +582,7 @@ export function ClientRegistrationView({ clientIdToEdit }: ClientRegistrationVie
                 <span>Lat: {coords.lat.toFixed(5)}, Lng: {coords.lng.toFixed(5)}</span>
                 {gpsAccuracy && (
                   <span className="text-emerald-700 font-sans font-bold bg-emerald-100/70 px-2 py-0.5 rounded-md text-2xs">
-                    Precisión: ±{gpsAccuracy}m
+                    ±{gpsAccuracy}m
                   </span>
                 )}
               </div>
@@ -606,19 +593,19 @@ export function ClientRegistrationView({ clientIdToEdit }: ClientRegistrationVie
                 rel="noopener noreferrer"
                 className="text-blue-600 hover:text-blue-800 font-bold flex items-center space-x-1"
               >
-                <span>Ver en Google Maps</span>
+                <span>Ver mapa</span>
                 <ExternalLink className="w-3.5 h-3.5" />
               </a>
             </div>
           </div>
         </div>
 
-        {/* SECCIÓN 4: Condiciones Comerciales y Precios */}
-        <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 p-4 sm:p-6 shadow-xs space-y-4">
+        {/* SECCIÓN 4: Condiciones Comerciales */}
+        <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 p-4 sm:p-5 shadow-xs space-y-4">
           <div className="border-b border-slate-100 pb-3">
             <h2 className="text-sm sm:text-base font-black text-slate-900 flex items-center space-x-2">
               <DollarSign className="w-4.5 h-4.5 text-blue-600" />
-              <span>4. Condiciones Comerciales y Crédito</span>
+              <span>Condiciones Comerciales</span>
             </h2>
           </div>
 
@@ -644,10 +631,10 @@ export function ClientRegistrationView({ clientIdToEdit }: ClientRegistrationVie
               </div>
             </div>
 
-            {/* Tarifa de Precios */}
+            {/* Tarifa */}
             <div>
               <label className="text-xs font-black text-slate-700 uppercase tracking-wider mb-1 block">
-                Tarifa Asignada
+                Tarifa
               </label>
               <div className="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
                 {(['normal', 'distribuidor', 'especial'] as ClientTier[]).map((t) => (
@@ -668,7 +655,7 @@ export function ClientRegistrationView({ clientIdToEdit }: ClientRegistrationVie
             {/* Cupo de Crédito */}
             <div>
               <label className="text-xs font-black text-slate-700 uppercase tracking-wider mb-1 block">
-                Cupo Crédito ($ USD)
+                Cupo Crédito ($)
               </label>
               <input
                 type="number"
