@@ -50,6 +50,7 @@ import {
   AppleCalendarClockIcon,
   AppleTruckBoxIcon,
   AppleReceiptIcon,
+  AppleSquareStackIcon,
 } from '@/components/ui/AppleIcons';
 
 export function AdminDashboard() {
@@ -143,7 +144,7 @@ export function AdminDashboard() {
     {
       id: 'catalog',
       label: 'Inventario',
-      icon: <Layers className="w-4 h-4" />,
+      icon: <AppleSquareStackIcon className="w-4 h-4" />,
     },
   ];
 
@@ -172,7 +173,7 @@ export function AdminDashboard() {
     {
       id: 'catalog',
       label: 'Stock',
-      icon: <Layers className="w-5 h-5" />,
+      icon: <AppleSquareStackIcon className="w-5 h-5" />,
     },
   ];
 
