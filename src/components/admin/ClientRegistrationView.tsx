@@ -468,7 +468,9 @@ export function ClientRegistrationView({ clientIdToEdit }: ClientRegistrationVie
               </label>
               <div className="relative">
                 <input
-                  type="text"
+                  type="tel"
+                  inputMode="numeric"
+                  maxLength={12}
                   value={whatsappNumber}
                   onChange={(e) => {
                     const formatted = formatEcuadorianPhone(e.target.value);
