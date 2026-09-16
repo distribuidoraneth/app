@@ -7,10 +7,10 @@ import { Client } from '@/types';
 import { ClientRegistrationModal } from './ClientRegistrationModal';
 import { QRCodeModal } from './QRCodeModal';
 import { cleanAddress } from '@/lib/utils/formatters';
-import { AppleMapPinIcon } from '@/components/ui/AppleIcons';
+import { AppleMapPinIcon, AppleQrCodeIcon } from '@/components/ui/AppleIcons';
 import {
   Plus,
-  QrCode,
+  Pencil,
   Phone,
   ArrowRight,
   ExternalLink,
@@ -22,6 +22,7 @@ import {
 export function ClientsManager() {
   const { clients } = useDistribution();
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState<boolean>(false);
+  const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [selectedQRClient, setSelectedQRClient] = useState<Client | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
@@ -42,13 +43,9 @@ export function ClientsManager() {
       <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 p-4 sm:p-5 shadow-xs space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h2 className="text-xl sm:text-2xl font-black tracking-tight text-blue-600 flex items-center space-x-2">
-              <Users className="w-6 h-6 text-blue-600" />
-              <span>Directorio de Clientes</span>
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-500 font-medium">
-              Comercios, tiendas asociadas, saldos de crédito y credenciales QR de pedido.
-            </p>
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-blue-600">
+              Clientes
+            </h1>
           </div>
 
           <button
@@ -122,16 +119,28 @@ export function ClientsManager() {
                     <h3 className="font-extrabold text-base sm:text-lg text-slate-900 mt-1">
                       {client.businessName || client.fullName}
                     </h3>
-                    <p className="text-xs sm:text-sm text-slate-500">{client.fullName}</p>
+                    {client.businessName && client.businessName.trim().toLowerCase() !== client.fullName.trim().toLowerCase() && (
+                      <p className="text-xs sm:text-sm text-slate-500">{client.fullName}</p>
+                    )}
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedQRClient(client)}
-                    className="p-2.5 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-600 rounded-xl transition-colors cursor-pointer"
-                    title="Ver Código QR"
-                  >
-                    <QrCode className="w-5 h-5" />
-                  </button>
+                  <div className="flex items-center space-x-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setEditingClient(client)}
+                      className="p-2.5 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-600 rounded-xl transition-colors cursor-pointer"
+                      title="Modificar / Editar Cliente"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedQRClient(client)}
+                      className="p-2.5 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-600 rounded-xl transition-colors cursor-pointer flex items-center justify-center"
+                      title="Ver Código QR"
+                    >
+                      <AppleQrCodeIcon size={18} />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="text-xs sm:text-sm text-slate-600 space-y-1 pt-1">
@@ -140,8 +149,11 @@ export function ClientsManager() {
                     <span className="font-mono">{client.whatsappNumber}</span>
                   </p>
                   {client.taxId && (
-                    <p className="text-xs text-slate-500 font-mono">
-                      RUC/CI: {client.taxId} ({client.taxIdType === '04' ? 'RUC' : 'Cédula'})
+                    <p className="text-xs text-slate-600 font-mono">
+                      <span className="font-bold text-slate-700">
+                        {client.taxId.trim().length === 13 || client.taxIdType === '04' ? 'RUC:' : 'Cédula:'}
+                      </span>{' '}
+                      {client.taxId}
                     </p>
                   )}
                   {cleanAddress(client.addressReference) && (
@@ -192,6 +204,14 @@ export function ClientsManager() {
               <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
                 <button
                   type="button"
+                  onClick={() => setEditingClient(client)}
+                  className="text-xs sm:text-sm font-extrabold text-slate-600 hover:text-blue-600 flex items-center space-x-1 cursor-pointer"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                  <span>Editar</span>
+                </button>
+                <button
+                  type="button"
                   onClick={() => setSelectedQRClient(client)}
                   className="text-xs sm:text-sm font-extrabold text-blue-600 hover:text-blue-700 flex items-center space-x-1 cursor-pointer"
                 >
@@ -213,8 +233,12 @@ export function ClientsManager() {
 
       {/* Modals */}
       <ClientRegistrationModal
-        isOpen={isRegisterModalOpen}
-        onClose={() => setIsRegisterModalOpen(false)}
+        isOpen={isRegisterModalOpen || !!editingClient}
+        clientToEdit={editingClient}
+        onClose={() => {
+          setIsRegisterModalOpen(false);
+          setEditingClient(null);
+        }}
         onClientCreated={(client) => {
           setSelectedQRClient(client);
         }}
