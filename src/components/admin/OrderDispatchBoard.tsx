@@ -166,12 +166,12 @@ export function OrderDispatchBoard() {
           </button>
         </div>
 
-        {/* Fila 2: Filtros de Fecha (Hoy, Ayer, Esta Semana, Selector de Fecha) */}
-        <div className="flex items-center gap-1 sm:gap-1.5 pt-1.5 border-t border-slate-100 overflow-x-auto no-scrollbar">
+        {/* Fila 2: Filtros de Fecha Equilibrados al 100% de Ancho (4 Columnas) */}
+        <div className="grid grid-cols-4 gap-1.5 sm:gap-2 w-full pt-2 border-t border-slate-100">
           <button
             type="button"
             onClick={() => handleSelectPreset('today')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer shrink-0 ${
+            className={`w-full py-2 px-1 rounded-xl text-xs font-black transition-all cursor-pointer text-center flex items-center justify-center ${
               selectedDatePreset === 'today' && !searchQuery
                 ? 'bg-blue-600 text-white shadow-xs'
                 : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
@@ -182,7 +182,7 @@ export function OrderDispatchBoard() {
           <button
             type="button"
             onClick={() => handleSelectPreset('yesterday')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${
+            className={`w-full py-2 px-1 rounded-xl text-xs font-bold transition-all cursor-pointer text-center flex items-center justify-center ${
               selectedDatePreset === 'yesterday' && !searchQuery
                 ? 'bg-blue-600 text-white shadow-xs'
                 : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
@@ -193,33 +193,37 @@ export function OrderDispatchBoard() {
           <button
             type="button"
             onClick={() => handleSelectPreset('week')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${
+            className={`w-full py-2 px-1 rounded-xl text-xs font-bold transition-all cursor-pointer text-center flex items-center justify-center ${
               selectedDatePreset === 'week' && !searchQuery
                 ? 'bg-blue-600 text-white shadow-xs'
                 : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
             }`}
           >
-            Esta Semana
+            <span className="hidden sm:inline">Esta&nbsp;</span>Semana
           </button>
 
-          {/* Separador vertical */}
-          <div className="h-4 w-px bg-slate-200 shrink-0 mx-0.5" />
-
-          {/* Selector de Fecha Nativo con Botón Visual Apple */}
-          <div className="relative inline-flex items-center shrink-0">
+          {/* Selector de Fecha Nativo Equilibrado */}
+          <div className="relative w-full">
             <div
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition-all cursor-pointer ${
+              className={`w-full py-2 px-1 rounded-xl text-xs font-bold flex items-center justify-center space-x-1 sm:space-x-1.5 transition-all cursor-pointer text-center ${
                 selectedDatePreset === 'custom' && customDate
                   ? 'bg-blue-600 text-white shadow-xs'
                   : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
               }`}
             >
               <Calendar className="w-3.5 h-3.5 shrink-0" />
-              <span className="font-mono">
+              <span className="font-mono text-[11px] sm:text-xs truncate">
                 {customDate
                   ? (() => {
                       const parts = customDate.split('-');
-                      return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : customDate;
+                      return parts.length === 3 ? (
+                        <>
+                          {parts[2]}/{parts[1]}
+                          <span className="hidden sm:inline">/{parts[0]}</span>
+                        </>
+                      ) : (
+                        customDate
+                      );
                     })()
                   : 'Fecha'}
               </span>
@@ -239,18 +243,6 @@ export function OrderDispatchBoard() {
               className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
             />
           </div>
-
-          {/* Botón para limpiar fecha personalizada si está activa */}
-          {selectedDatePreset === 'custom' && customDate && (
-            <button
-              type="button"
-              onClick={() => handleSelectPreset('today')}
-              className="p-1 text-slate-400 hover:text-slate-600 rounded-full cursor-pointer shrink-0"
-              title="Quitar fecha"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
         </div>
       </div>
 
