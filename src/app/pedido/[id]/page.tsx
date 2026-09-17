@@ -2,7 +2,7 @@
 
 import React, { use, useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useDistribution } from '@/context/DistributionContext';
+import { useDistribution, STORAGE_KEY } from '@/context/DistributionContext';
 import {
   formatCurrency,
   formatOrderNumber,
@@ -14,6 +14,7 @@ import {
 } from '@/lib/utils/formatters';
 import { InvoiceModal } from '@/components/invoice/InvoiceModal';
 import { ThermalReceiptModal } from '@/components/receipt/ThermalReceiptModal';
+import { Order } from '@/types';
 import {
   AppleMapPinIcon,
   AppleWhatsAppIcon,
@@ -49,8 +50,8 @@ export default function OrderDetailPage({
 
   const rawId = useMemo(() => decodeURIComponent(resolvedParams.id), [resolvedParams.id]);
 
-  // Buscar pedido en orders de context
-  const order = useMemo(() => {
+  // 1. Buscar en contexto
+  const orderFromContext = useMemo(() => {
     return orders.find(
       (o) =>
         o.id === rawId ||
@@ -59,26 +60,57 @@ export default function OrderDetailPage({
     );
   }, [orders, rawId]);
 
+  // 2. Caché local inmediata (evita cualquier pantalla de carga o error al recargar)
+  const [localOrder] = useState<Order | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed.orders)) {
+          return (
+            parsed.orders.find(
+              (o: Order) =>
+                o.id === rawId ||
+                o.orderNumber === rawId ||
+                formatOrderNumber(o.orderNumber) === formatOrderNumber(rawId)
+            ) || null
+          );
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return null;
+  });
+
+  const [dbOrder, setDbOrder] = useState<Order | null>(null);
+
+  const order = orderFromContext || localOrder || dbOrder;
   const [isCheckingOrder, setIsCheckingOrder] = useState(!order);
 
   useEffect(() => {
     let isMounted = true;
     if (order) {
       setIsCheckingOrder(false);
-      return;
     }
 
-    setIsCheckingOrder(true);
-    ensureOrderLoaded(rawId).finally(() => {
-      if (isMounted) {
-        setIsCheckingOrder(false);
-      }
-    });
+    ensureOrderLoaded(rawId)
+      .then((res) => {
+        if (isMounted && res) {
+          setDbOrder(res);
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setIsCheckingOrder(false);
+        }
+      });
 
     return () => {
       isMounted = false;
     };
-  }, [rawId, order, ensureOrderLoaded]);
+  }, [rawId, ensureOrderLoaded]);
 
   const client = useMemo(() => {
     if (!order) return null;
@@ -237,15 +269,6 @@ export default function OrderDetailPage({
                   >
                     <ApplePhoneIcon size={16} className="text-blue-700" />
                   </a>
-                  <button
-                    type="button"
-                    onClick={handleShareWhatsApp}
-                    className="w-8 h-8 rounded-xl bg-emerald-50 hover:bg-emerald-100 active:scale-95 text-emerald-700 flex items-center justify-center border border-emerald-200/60 transition-all cursor-pointer shadow-2xs"
-                    title="Enviar WhatsApp"
-                    aria-label="WhatsApp"
-                  >
-                    <AppleWhatsAppIcon size={16} />
-                  </button>
                 </div>
               </div>
             )}

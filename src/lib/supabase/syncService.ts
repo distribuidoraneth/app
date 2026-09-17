@@ -311,13 +311,14 @@ export async function getOrderByIdFromDb(idOrNumber: string): Promise<Order | nu
     if (isValidUuid(clean)) {
       query = query.or(`id.eq.${clean},order_number.eq.${clean}`);
     } else {
+      // IMPORTANTE: Si clean no es UUID, JAMÁS incluir id.eq.${clean} porque Postgres fallará con error 22P02
       const numPart = clean.replace(/[^0-9]/g, '');
       if (numPart) {
         query = query.or(
-          `order_number.eq.${clean},order_number.ilike.%${clean}%,order_number.ilike.%${numPart}%,id.eq.${clean}`
+          `order_number.eq.${clean},order_number.ilike.%${clean}%,order_number.ilike.%${numPart}%`
         );
       } else {
-        query = query.or(`order_number.eq.${clean},order_number.ilike.%${clean}%,id.eq.${clean}`);
+        query = query.or(`order_number.eq.${clean},order_number.ilike.%${clean}%`);
       }
     }
 
@@ -344,7 +345,7 @@ export async function updateClientDebtInDb(clientId: string, newDebt: number): P
   }
 }
 
-export async function saveOrderToDb(order: Order): Promise<{ success: boolean; error?: string }> {
+export async function saveOrderToDb(order: Order): Promise<{ success: boolean; data?: any; error?: string }> {
   try {
     const orderRecord: any = {
       order_number: order.orderNumber,
@@ -371,6 +372,10 @@ export async function saveOrderToDb(order: Order): Promise<{ success: boolean; e
       promised_collection_date: order.promisedCollectionDate || null,
       promised_collection_time: order.promisedCollectionTime || null,
     };
+
+    if (isValidUuid(order.id)) {
+      orderRecord.id = order.id;
+    }
 
     let { data: insertedOrder, error: orderErr } = await supabase
       .from('orders')
@@ -425,7 +430,7 @@ export async function saveOrderToDb(order: Order): Promise<{ success: boolean; e
       }
     }
 
-    return { success: true };
+    return { success: true, data: insertedOrder };
   } catch (err: any) {
     return { success: false, error: err?.message };
   }

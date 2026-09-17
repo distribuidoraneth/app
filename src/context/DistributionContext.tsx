@@ -90,7 +90,7 @@ interface DistributionContextType {
 
 const DistributionContext = createContext<DistributionContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'distribuidora_aneth_oficial_v12';
+export const STORAGE_KEY = 'distribuidora_aneth_oficial_v12';
 
 export function DistributionProvider({ children }: { children: React.ReactNode }) {
   const [clients, setClients] = useState<Client[]>([]);
@@ -112,7 +112,11 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
       setOrdersFilter(opts);
       const dbOrders = await getOrdersFromDb(opts);
       if (dbOrders !== null) {
-        setOrders(dbOrders);
+        setOrders((prev) => {
+          const dbOrderIds = new Set(dbOrders.map((o) => o.id));
+          const extraOrders = prev.filter((o) => !dbOrderIds.has(o.id));
+          return [...dbOrders, ...extraOrders];
+        });
       }
     } catch (err) {
       console.warn('Error al cargar pedidos:', err);
@@ -140,7 +144,11 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
         );
       }
       if (dbOrders !== null) {
-        setOrders(dbOrders);
+        setOrders((prev) => {
+          const dbOrderIds = new Set(dbOrders.map((o) => o.id));
+          const extraOrders = prev.filter((o) => !dbOrderIds.has(o.id));
+          return [...dbOrders, ...extraOrders];
+        });
       }
     } catch (err) {
       console.warn('Error al sincronizar datos desde Supabase:', err);
@@ -387,8 +395,19 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
       ? (promisedCollectionDate ? `[Cobro saldo: ${promisedCollectionDate} ${promisedCollectionTime || ''}] ${notes}` : notes)
       : (promisedCollectionDate ? `Cobro saldo programado: ${promisedCollectionDate} (${promisedCollectionTime || 'En ruta'})` : undefined);
 
+function generateUuid(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
     const newOrder: Order = {
-      id: `ord-${Date.now()}`,
+      id: generateUuid(),
       orderNumber: orderNum,
       clientId: client?.id || 'guest',
       clientName: client?.fullName || 'Cliente Mostrador',
@@ -658,6 +677,7 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
     const clean = decodeURIComponent(idOrNumber).trim();
     if (!clean) return null;
 
+    // 1. En memoria
     const existing = orders.find(
       (o) =>
         o.id === clean ||
@@ -666,6 +686,37 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
     );
     if (existing) return existing;
 
+    // 2. En caché localStorage (inmediato, sin latencia)
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed.orders)) {
+          const localMatch = parsed.orders.find(
+            (o: any) =>
+              o.id === clean ||
+              o.orderNumber === clean ||
+              formatOrderNumber(o.orderNumber) === formatOrderNumber(clean)
+          );
+          if (localMatch) {
+            setOrders((prev) => (prev.some((o) => o.id === localMatch.id) ? prev : [localMatch, ...prev]));
+            // Consulta en segundo plano para refrescar con datos del servidor
+            getOrderByIdFromDb(localMatch.orderNumber || localMatch.id).then((fresh) => {
+              if (fresh) {
+                setOrders((prev) =>
+                  prev.map((o) => (o.id === fresh.id || o.orderNumber === fresh.orderNumber ? fresh : o))
+                );
+              }
+            }).catch(() => {});
+            return localMatch;
+          }
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    // 3. En base de datos Supabase
     const dbOrder = await getOrderByIdFromDb(clean);
     if (dbOrder) {
       setOrders((prev) => (prev.some((o) => o.id === dbOrder.id) ? prev : [dbOrder, ...prev]));
