@@ -20,6 +20,7 @@ import {
   AlertCircle,
   RefreshCw,
   DollarSign,
+  ExternalLink,
 } from 'lucide-react';
 import {
   formatEcuadorianPhone,
@@ -639,16 +640,29 @@ export function ClientRegistrationView({ clientIdToEdit }: ClientRegistrationVie
               ) : null}
             </div>
 
-            {/* Botón Refrescar GPS limpio y accesible */}
-            <button
-              type="button"
-              onClick={calibrateGps}
-              disabled={isCalibratingGps || isGeocoding}
-              className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200/80 active:scale-95 disabled:opacity-50 text-slate-700 font-bold text-xs rounded-xl border border-slate-200 transition-all cursor-pointer self-start sm:self-auto"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${isCalibratingGps || isGeocoding ? 'animate-spin text-blue-600' : ''}`} />
-              <span>{isCalibratingGps ? 'Calibrando...' : 'Refrescar GPS'}</span>
-            </button>
+            {/* Acciones: Ver en Google Maps y Refrescar GPS */}
+            <div className="flex items-center space-x-2 self-start sm:self-auto">
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${coords.lat},${coords.lng}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Abrir ubicación en Google Maps"
+                className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200/80 active:scale-95 text-blue-600 hover:text-blue-700 font-bold text-xs rounded-xl border border-slate-200 transition-all cursor-pointer"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                <span>Ver en Maps</span>
+              </a>
+
+              <button
+                type="button"
+                onClick={calibrateGps}
+                disabled={isCalibratingGps || isGeocoding}
+                className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200/80 active:scale-95 disabled:opacity-50 text-slate-700 font-bold text-xs rounded-xl border border-slate-200 transition-all cursor-pointer"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isCalibratingGps || isGeocoding ? 'animate-spin text-blue-600' : ''}`} />
+                <span>{isCalibratingGps ? 'Calibrando...' : 'Refrescar GPS'}</span>
+              </button>
+            </div>
           </div>
 
           <div className="space-y-2">
