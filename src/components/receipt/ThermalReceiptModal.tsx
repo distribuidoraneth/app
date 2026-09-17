@@ -93,7 +93,7 @@ export function ThermalReceiptModal({
 
   return (
     <div className="fixed inset-0 z-[10000] flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-xs overflow-y-auto print:p-0 print:bg-white print:fixed print:inset-0">
-      {/* Estilos optimizados para 58mm (2.283 in) en impresoras térmicas tipo Munbyn IMP001 */}
+      {/* Estilos ultra-optimizados para RawBT y cabezal térmico Munbyn 58mm (48mm imprimible / 384 dots) */}
       <style>{`
         @media print {
           @page {
@@ -101,10 +101,9 @@ export function ThermalReceiptModal({
             margin: 0mm;
           }
           html, body {
-            width: 58mm !important;
-            max-width: 58mm !important;
-            min-width: 58mm !important;
-            margin: 0 !important;
+            width: 48mm !important;
+            max-width: 48mm !important;
+            margin: 0 auto !important;
             padding: 0 !important;
             background: #ffffff !important;
             color: #000000 !important;
@@ -117,24 +116,51 @@ export function ThermalReceiptModal({
           #thermal-printable-receipt,
           #thermal-printable-receipt * {
             visibility: visible !important;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+            color: #000000 !important;
+            -webkit-text-stroke: 0 !important;
+            text-shadow: none !important;
+            letter-spacing: 0 !important;
+            box-sizing: border-box !important;
           }
           #thermal-printable-receipt {
             position: absolute !important;
             left: 0 !important;
             top: 0 !important;
-            width: 58mm !important;
-            max-width: 58mm !important;
-            min-width: 58mm !important;
-            padding: 1.5mm 2mm 8mm 2mm !important;
-            margin: 0 !important;
+            width: 48mm !important;
+            max-width: 48mm !important;
+            min-width: 48mm !important;
+            padding: 0.5mm 0.5mm 6mm 0.5mm !important;
+            margin: 0 auto !important;
             background: #ffffff !important;
             color: #000000 !important;
-            font-family: 'Courier New', Courier, monospace !important;
-            font-size: 11px !important;
-            line-height: 1.22 !important;
+            font-size: 10px !important;
+            line-height: 1.25 !important;
             box-shadow: none !important;
             border: none !important;
             border-radius: 0 !important;
+          }
+          /* Control estricto de pesos tipográficos para RawBT (evita saturación y sangrado térmico) */
+          #thermal-printable-receipt,
+          #thermal-printable-receipt p,
+          #thermal-printable-receipt span,
+          #thermal-printable-receipt div {
+            font-weight: 400 !important;
+          }
+          #thermal-printable-receipt .font-semibold,
+          #thermal-printable-receipt .font-bold {
+            font-weight: 600 !important;
+          }
+          #thermal-printable-receipt .font-extrabold,
+          #thermal-printable-receipt .font-black {
+            font-weight: 700 !important;
+          }
+          #thermal-printable-receipt .font-mono {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+            font-weight: 600 !important;
+          }
+          #thermal-printable-receipt * {
+            border-color: #000000 !important;
           }
           .no-thermal-print {
             display: none !important;
@@ -142,7 +168,7 @@ export function ThermalReceiptModal({
         }
       `}</style>
 
-      <div className="relative w-full max-w-[340px] bg-slate-100 rounded-2xl shadow-2xl overflow-hidden border border-slate-300 my-auto flex flex-col max-h-[92vh] print:border-none print:shadow-none print:m-0 print:w-[58mm] print:max-w-[58mm] print:max-h-none print:rounded-none print:bg-white print:overflow-visible">
+      <div className="relative w-full max-w-[340px] bg-slate-100 rounded-2xl shadow-2xl overflow-hidden border border-slate-300 my-auto flex flex-col max-h-[92vh] print:border-none print:shadow-none print:m-0 print:w-[48mm] print:max-w-[48mm] print:max-h-none print:rounded-none print:bg-white print:overflow-visible">
         {/* Barra superior de control */}
         <div className="bg-white border-b border-slate-200 px-4 py-2.5 flex items-center justify-between no-thermal-print shrink-0 shadow-xs">
           <div>
@@ -150,7 +176,7 @@ export function ThermalReceiptModal({
               Recibo Térmico (58mm)
             </span>
             <span className="text-[10px] text-slate-500 font-medium">
-              Munbyn IMP001
+              Munbyn • RawBT Optimizado
             </span>
           </div>
 
@@ -179,7 +205,7 @@ export function ThermalReceiptModal({
           <div
             id="thermal-printable-receipt"
             ref={receiptRef}
-            className="w-[280px] print:w-[58mm] bg-white text-black p-3.5 pb-6 shadow-md border border-slate-200 rounded-xs font-mono text-[11px] leading-[1.22] tracking-tight select-all print:shadow-none print:border-none print:p-0 print:pb-0"
+            className="w-[280px] print:w-[48mm] bg-white text-black p-3.5 pb-6 shadow-md border border-slate-200 rounded-xs font-sans text-[11px] leading-[1.25] tracking-normal select-all print:shadow-none print:border-none print:p-0 print:pb-0"
           >
             {/* LOGOTIPO OFICIAL DISTRIBUIDORA ANETH */}
             <div className="text-center pt-1 pb-1">
@@ -187,26 +213,24 @@ export function ThermalReceiptModal({
               <p className="font-bold text-[10px] uppercase tracking-tight text-slate-800">
                 {DEFAULT_TAX_PROFILE.razonSocial}
               </p>
-              <p className="font-bold text-[11px]">
+              <p className="font-semibold text-[10.5px]">
                 RUC: {DEFAULT_TAX_PROFILE.ruc}
               </p>
-              <p className="font-extrabold text-[13px] tracking-tighter leading-none pt-1">
-                ================================
-              </p>
+              <div className="border-b-2 border-black my-1.5" />
             </div>
 
             {/* COMPROBANTE Y FECHA */}
-            <div className="space-y-0.5 text-[10.5px] pt-1">
-              <div className="flex justify-between font-bold">
+            <div className="space-y-0.5 text-[10px] pt-0.5">
+              <div className="flex justify-between font-semibold">
                 <span>COMPROBANTE:</span>
-                <span className="font-black">{order.orderNumber}</span>
+                <span className="font-bold">{order.orderNumber}</span>
               </div>
-              <div className="flex justify-between font-bold">
+              <div className="flex justify-between font-semibold">
                 <span>FECHA:</span>
                 <span>{formattedDate}</span>
               </div>
               {invoice?.invoiceNumber && (
-                <div className="flex justify-between font-bold">
+                <div className="flex justify-between font-semibold">
                   <span>FACTURA SRI:</span>
                   <span>{invoice.invoiceNumber}</span>
                 </div>
@@ -215,37 +239,33 @@ export function ThermalReceiptModal({
 
             {/* CÓDIGO DE BARRAS Y CLAVE DE ACCESO */}
             <div className="pt-2 pb-1 border-t border-dashed border-black mt-1 text-center space-y-1">
-              <BarcodeSVG value={claveAcceso} height={34} showText={false} />
+              <BarcodeSVG value={claveAcceso} height={32} showText={false} />
               <div>
                 <p className="text-[8.5px] font-bold uppercase leading-none">CLAVE DE ACCESO SRI:</p>
-                <p className="text-[8px] font-mono tracking-tighter break-all select-all leading-tight pt-0.5">
+                <p className="text-[8px] font-mono tracking-tight break-all select-all leading-tight pt-0.5">
                   {claveAcceso}
                 </p>
               </div>
             </div>
 
             {/* LÍNEA DIVISORIA */}
-            <p className="text-center font-bold tracking-tighter my-0.5">
-              --------------------------------
-            </p>
+            <div className="border-b border-dashed border-black my-1.5" />
 
             {/* DATOS DEL CLIENTE */}
             <div className="space-y-0.5 text-[10px]">
-              <p className="font-black uppercase">CLIENTE: {clientName}</p>
-              <p><span className="font-bold">C.I./RUC:</span> {clientTaxId}</p>
-              {clientPhone && <p><span className="font-bold">TELÉFONO:</span> {clientPhone}</p>}
+              <p className="font-bold uppercase">CLIENTE: {clientName}</p>
+              <p><span className="font-semibold">C.I./RUC:</span> {clientTaxId}</p>
+              {clientPhone && <p><span className="font-semibold">TELÉFONO:</span> {clientPhone}</p>}
               {clientAddress && (
-                <p className="leading-tight"><span className="font-bold">DIR:</span> {clientAddress}</p>
+                <p className="leading-tight"><span className="font-semibold">DIR:</span> {clientAddress}</p>
               )}
             </div>
 
             {/* LÍNEA DIVISORIA */}
-            <p className="text-center font-bold tracking-tighter my-0.5">
-              --------------------------------
-            </p>
+            <div className="border-b border-dashed border-black my-1.5" />
 
             {/* TABLA DE PRODUCTOS */}
-            <div className="flex justify-between font-black text-[10px] border-b border-black pb-0.5 mb-1">
+            <div className="flex justify-between font-bold text-[10px] border-b border-black pb-0.5 mb-1">
               <span className="w-10">CANT</span>
               <span className="flex-1 text-left px-1">DETALLE</span>
               <span className="w-10 text-right">P.U</span>
@@ -274,16 +294,16 @@ export function ThermalReceiptModal({
                 const unitPrice = it.quantityJavas > 0 ? it.pricePerJava : it.pricePerUnit;
 
                 return (
-                  <div key={idx} className="pb-0.5 border-b border-dashed border-slate-200">
+                  <div key={idx} className="pb-0.5 border-b border-dashed border-slate-300">
                     <div className="flex justify-between items-start">
-                      <span className="w-10 font-bold">{qtyLabel}</span>
-                      <span className="flex-1 text-left px-1 font-bold leading-tight">
+                      <span className="w-10 font-semibold">{qtyLabel}</span>
+                      <span className="flex-1 text-left px-1 font-semibold leading-tight">
                         {formatItemTitle(it)}
                       </span>
-                      <span className="w-10 text-right font-mono">
+                      <span className="w-10 text-right font-mono text-[9.5px]">
                         ${unitPrice.toFixed(2)}
                       </span>
-                      <span className="w-11 text-right font-black font-mono">
+                      <span className="w-11 text-right font-bold font-mono text-[9.5px]">
                         ${it.subtotal.toFixed(2)}
                       </span>
                     </div>
@@ -296,34 +316,32 @@ export function ThermalReceiptModal({
             </div>
 
             {/* LÍNEA DIVISORIA */}
-            <p className="text-center font-bold tracking-tighter my-0.5">
-              --------------------------------
-            </p>
+            <div className="border-b border-dashed border-black my-1.5" />
 
             {/* TOTALES */}
             <div className="space-y-0.5 text-[10.5px]">
-              <div className="flex justify-between font-black text-[13px] border-b border-black pb-0.5 mb-1">
+              <div className="flex justify-between font-bold text-[12px] border-b border-black pb-0.5 mb-1">
                 <span>TOTAL A PAGAR:</span>
-                <span className="font-mono font-black">
+                <span className="font-mono font-bold">
                   {formatCurrency(order.totalAmount)}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="font-bold">FORMA DE PAGO:</span>
-                <span className="font-black">{paymentMethodLabel}</span>
+                <span className="font-semibold">FORMA DE PAGO:</span>
+                <span className="font-bold">{paymentMethodLabel}</span>
               </div>
               <div className="flex justify-between">
                 <span>COBRADO HOY:</span>
-                <span className="font-mono font-bold">${order.amountPaid.toFixed(2)}</span>
+                <span className="font-mono font-semibold">${order.amountPaid.toFixed(2)}</span>
               </div>
 
               {hasDebt ? (
-                <div className="flex justify-between font-black text-[12px] bg-black text-white px-1 py-0.5 my-1">
+                <div className="flex justify-between font-bold text-[11.5px] border-2 border-black px-1.5 py-1 my-1">
                   <span>SALDO EN DEUDA:</span>
-                  <span className="font-mono">${order.debtBalance.toFixed(2)}</span>
+                  <span className="font-mono font-bold">${order.debtBalance.toFixed(2)}</span>
                 </div>
               ) : (
-                <div className="flex justify-between font-bold text-[10.5px] pt-0.5">
+                <div className="flex justify-between font-semibold text-[10px] pt-0.5">
                   <span>ESTADO:</span>
                   <span>TOTALMENTE CANCELADO</span>
                 </div>
@@ -333,18 +351,18 @@ export function ThermalReceiptModal({
             {/* COMPROMISO DIRECTO DE PAGO Y FIRMA (CUANDO HAY SALDO PENDIENTE) */}
             {hasDebt && (
               <div className="mt-2 pt-1 border-t border-black space-y-1">
-                <p className="font-black text-center text-[10.5px] uppercase">
+                <p className="font-bold text-center text-[10px] uppercase">
                   COMPROMISO DE PAGO (CRÉDITO)
                 </p>
                 <div className="text-[10px] space-y-0.5">
                   <div className="flex justify-between">
-                    <span className="font-bold">Saldo por cobrar:</span>
-                    <span className="font-black">${order.debtBalance.toFixed(2)}</span>
+                    <span className="font-semibold">Saldo por cobrar:</span>
+                    <span className="font-bold">${order.debtBalance.toFixed(2)}</span>
                   </div>
                   {(order.promisedCollectionDate || order.promisedCollectionTime) && (
                     <div className="flex justify-between">
-                      <span className="font-bold">Fecha de cobro:</span>
-                      <span className="font-bold">
+                      <span className="font-semibold">Fecha de cobro:</span>
+                      <span className="font-semibold">
                         {order.promisedCollectionDate} {order.promisedCollectionTime ? `(${order.promisedCollectionTime})` : ''}
                       </span>
                     </div>
@@ -352,15 +370,15 @@ export function ThermalReceiptModal({
                 </div>
 
                 {/* ESPACIO PARA FIRMA DE CONFORMIDAD */}
-                <div className="pt-7 text-center space-y-0.5">
+                <div className="pt-6 text-center space-y-0.5">
                   <div className="border-b border-black w-44 mx-auto" />
-                  <p className="font-black text-[9.5px] uppercase">
+                  <p className="font-bold text-[9px] uppercase">
                     FIRMA DEL CLIENTE
                   </p>
-                  <p className="text-[9px] truncate">
+                  <p className="text-[8.5px] truncate">
                     Nombre: {clientName}
                   </p>
-                  <p className="text-[9px]">
+                  <p className="text-[8.5px]">
                     C.I./RUC: {clientTaxId}
                   </p>
                 </div>
@@ -372,28 +390,26 @@ export function ThermalReceiptModal({
               <div className="flex justify-center py-1">
                 <PoplQRCodeSVG
                   value={digitalInvoiceUrl}
-                  size={120}
+                  size={110}
                   color="#000000"
                   bgColor="#ffffff"
                 />
               </div>
-              <p className="font-black text-[9.5px] uppercase leading-tight">
+              <p className="font-bold text-[9px] uppercase leading-tight">
                 Factura Digital SRI
               </p>
               <p className="text-[8px] text-slate-700 leading-tight">
                 Escanee el código QR para ver y descargar su comprobante
               </p>
-              <p className="text-[7.5px] font-mono break-all text-slate-600">
+              <p className="text-[7px] font-mono break-all text-slate-600">
                 {digitalInvoiceUrl}
               </p>
             </div>
 
             {/* PIE DE TICKET */}
-            <div className="mt-2 pt-1 border-t border-black text-center space-y-0.5 text-[9.5px]">
-              <p className="font-black uppercase">¡GRACIAS POR SU PREFERENCIA!</p>
-              <p className="font-extrabold text-[12px] tracking-tighter leading-none pt-0.5">
-                ================================
-              </p>
+            <div className="mt-2 pt-1 border-t border-black text-center space-y-0.5 text-[9px]">
+              <p className="font-bold uppercase">¡GRACIAS POR SU PREFERENCIA!</p>
+              <div className="border-b-2 border-black my-1.5" />
             </div>
           </div>
         </div>
