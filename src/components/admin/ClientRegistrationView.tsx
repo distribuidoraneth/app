@@ -720,10 +720,10 @@ export function ClientRegistrationView({ clientIdToEdit }: ClientRegistrationVie
         </div>
 
         {/* Botonera de Acción Final */}
-        <div className="flex items-center justify-end space-x-3 pt-2">
+        <div className="grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-3 sm:space-x-3 pt-2">
           <Link
             href="/admin/clientes"
-            className="px-5 py-2.5 bg-white hover:bg-slate-100 active:scale-95 text-slate-700 font-bold rounded-xl border border-slate-200 text-sm transition-all shadow-2xs"
+            className="w-full sm:w-auto px-5 py-2.5 bg-white hover:bg-slate-100 active:scale-95 text-slate-700 font-bold rounded-xl border border-slate-200 text-sm transition-all shadow-2xs text-center flex items-center justify-center"
           >
             Cancelar
           </Link>
@@ -731,10 +731,10 @@ export function ClientRegistrationView({ clientIdToEdit }: ClientRegistrationVie
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 disabled:opacity-50 text-white font-black text-sm rounded-xl shadow-xs transition-all flex items-center space-x-2 cursor-pointer"
+            className="w-full sm:w-auto px-6 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 disabled:opacity-50 text-white font-black text-sm rounded-xl shadow-xs transition-all flex items-center justify-center space-x-2 cursor-pointer text-center"
           >
             {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-            <span>{clientToEdit ? 'Guardar Cambios' : 'Registrar y Generar QR'}</span>
+            <span>{clientToEdit ? 'Guardar Cambios' : 'Registrar'}</span>
           </button>
         </div>
       </form>
