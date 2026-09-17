@@ -91,6 +91,9 @@ export function ThermalReceiptModal({
       ? 'TRANSFERENCIA'
       : 'CRÉDITO';
 
+  const subtotal15 = Number((order.totalAmount / 1.15).toFixed(2));
+  const tax15 = Number((order.totalAmount - subtotal15).toFixed(2));
+
   return (
     <div className="fixed inset-0 z-[10000] flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-xs overflow-y-auto print:p-0 print:bg-white print:fixed print:inset-0">
       {/* Estilos ultra-optimizados para RawBT y cabezal térmico Munbyn 58mm (48mm imprimible / 384 dots) */}
@@ -320,7 +323,15 @@ export function ThermalReceiptModal({
 
             {/* TOTALES */}
             <div className="space-y-0.5 text-[10.5px]">
-              <div className="flex justify-between font-bold text-[12px] border-b border-black pb-0.5 mb-1">
+              <div className="flex justify-between text-[10px]">
+                <span>SUBTOTAL (BASE 15%):</span>
+                <span className="font-mono font-semibold">${subtotal15.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-[10px]">
+                <span>IVA 15%:</span>
+                <span className="font-mono font-semibold">${tax15.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between font-bold text-[12px] border-b border-black pb-0.5 mb-1 pt-0.5">
                 <span>TOTAL A PAGAR:</span>
                 <span className="font-mono font-bold">
                   {formatCurrency(order.totalAmount)}

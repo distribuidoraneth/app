@@ -195,6 +195,8 @@ export default function OrderDetailPage({
 
   const isDelivered = order.status === 'delivered';
   const isPending = order.status === 'pending';
+  const subtotal15 = Number((order.totalAmount / 1.15).toFixed(2));
+  const totalIva15 = Number((order.totalAmount - subtotal15).toFixed(2));
 
   return (
     <div className="min-h-screen bg-[#f8fafc] pb-24 text-slate-900">
@@ -341,10 +343,22 @@ export default function OrderDetailPage({
             ))}
           </div>
 
-          {/* Subtotal & Total */}
-          <div className="border-t border-slate-200/80 pt-3 space-y-2">
-            <div className="flex justify-between items-center text-base font-black">
-              <span className="text-slate-800">Total a pagar:</span>
+          {/* Desglose Tributario SRI Ecuador (IVA 15% incluido) */}
+          <div className="border-t border-slate-200/80 pt-3 space-y-1.5 text-xs sm:text-sm">
+            <div className="flex justify-between items-center text-slate-600">
+              <span>Subtotal (Base 15%):</span>
+              <span className="font-mono font-bold text-slate-800">
+                {formatCurrency(subtotal15)}
+              </span>
+            </div>
+            <div className="flex justify-between items-center text-slate-600">
+              <span>IVA (15%):</span>
+              <span className="font-mono font-bold text-slate-800">
+                {formatCurrency(totalIva15)}
+              </span>
+            </div>
+            <div className="flex justify-between items-center text-base font-black border-t border-slate-200/80 pt-2 text-slate-900">
+              <span>Total a pagar:</span>
               <span className="font-mono text-slate-900 text-lg">
                 {formatCurrency(order.totalAmount)}
               </span>

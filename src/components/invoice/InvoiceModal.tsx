@@ -116,6 +116,13 @@ export function InvoiceModal({ invoice, isOpen, onClose }: InvoiceModalProps) {
     document.body.removeChild(link);
   };
 
+  const subtotal15 = invoice.subtotal15 && invoice.subtotal15 < invoice.total
+    ? invoice.subtotal15
+    : Number((invoice.total / 1.15).toFixed(2));
+  const tax15 = invoice.tax && invoice.tax > 0
+    ? invoice.tax
+    : Number((invoice.total - subtotal15).toFixed(2));
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs overflow-y-auto print:p-0 print:bg-white">
       <div className="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-200 my-8 print:border-none print:shadow-none print:m-0 print:rounded-none">
@@ -313,17 +320,17 @@ export function InvoiceModal({ invoice, isOpen, onClose }: InvoiceModalProps) {
 
             <div className="w-full sm:w-64 space-y-1.5 text-xs">
               <div className="flex justify-between text-slate-600">
-                <span>Subtotal 15%:</span>
-                <span className="font-mono font-bold text-slate-800">{formatCurrency(invoice.subtotal)}</span>
+                <span>Subtotal (Base 15%):</span>
+                <span className="font-mono font-bold text-slate-800">{formatCurrency(subtotal15)}</span>
               </div>
               <div className="flex justify-between text-slate-600">
                 <span>IVA 15%:</span>
-                <span className="font-mono font-bold text-slate-800">{formatCurrency(Number((invoice.subtotal * 0.15).toFixed(2)))}</span>
+                <span className="font-mono font-bold text-slate-800">{formatCurrency(tax15)}</span>
               </div>
               <div className="flex justify-between text-base font-black text-slate-900 border-t border-slate-200 pt-2">
                 <span>Total a Pagar:</span>
                 <span className="font-mono text-xl text-blue-700">
-                  {formatCurrency(Number((invoice.subtotal * 1.15).toFixed(2)))}
+                  {formatCurrency(invoice.total)}
                 </span>
               </div>
             </div>

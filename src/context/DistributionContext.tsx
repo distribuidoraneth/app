@@ -620,6 +620,8 @@ function generateUuid(): string {
     const existing = invoices.find((inv) => inv.orderId === orderId);
     if (existing) return existing;
 
+    const subtotal15 = Number((order.totalAmount / 1.15).toFixed(2));
+    const tax15 = Number((order.totalAmount - subtotal15).toFixed(2));
     const invoiceNum = `001-001-${String(invoices.length + 100).padStart(9, '0')}`;
     const newInvoice: Invoice = {
       id: `fac-${Date.now()}`,
@@ -633,10 +635,10 @@ function generateUuid(): string {
       items: order.items,
       totalJavas: order.totalJavas,
       totalUnits: order.totalUnits || 0,
-      subtotal: order.totalAmount,
-      subtotal15: order.totalAmount,
+      subtotal: subtotal15,
+      subtotal15: subtotal15,
       subtotal0: 0,
-      tax: 0,
+      tax: tax15,
       total: order.totalAmount,
       issuedAt: new Date().toISOString(),
       status: order.paymentStatus === 'paid' ? 'pagada' : 'emitida',
