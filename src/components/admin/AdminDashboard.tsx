@@ -286,7 +286,9 @@ export function AdminDashboard() {
                 <span className="text-xs sm:text-[13px] font-bold text-slate-400 uppercase tracking-wider">
                   Ventas
                 </span>
-                <AppleGaugeDollarIcon className="w-4.5 h-4.5 text-emerald-600" />
+                <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100/70 shadow-2xs">
+                  <AppleGaugeDollarIcon className="w-5 h-5 sm:w-5.5 sm:h-5.5" />
+                </div>
               </div>
               <div className="mt-1 text-xl sm:text-2xl font-black font-mono tracking-tight text-slate-900">
                 {formatCurrency(totalSales)}
@@ -298,7 +300,9 @@ export function AdminDashboard() {
                 <span className="text-xs sm:text-[13px] font-bold text-slate-400 uppercase tracking-wider">
                   Por Despachar
                 </span>
-                <AppleShippingBoxIcon className="w-4.5 h-4.5 text-amber-500" />
+                <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100/70 shadow-2xs">
+                  <AppleShippingBoxIcon className="w-5 h-5 sm:w-5.5 sm:h-5.5" />
+                </div>
               </div>
               <div className="mt-1 text-xl sm:text-2xl font-black font-mono tracking-tight text-slate-900">
                 {pendingOrders.length}
@@ -310,7 +314,9 @@ export function AdminDashboard() {
                 <span className="text-xs sm:text-[13px] font-bold text-slate-400 uppercase tracking-wider">
                   Clientes
                 </span>
-                <ApplePersonsIcon className="w-4.5 h-4.5 text-blue-500" />
+                <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100/70 shadow-2xs">
+                  <ApplePersonsIcon className="w-5 h-5 sm:w-5.5 sm:h-5.5" />
+                </div>
               </div>
               <div className="mt-1 text-xl sm:text-2xl font-black font-mono tracking-tight text-slate-900">
                 {clients.length}
@@ -322,7 +328,9 @@ export function AdminDashboard() {
                 <span className="text-xs sm:text-[13px] font-bold text-slate-400 uppercase tracking-wider">
                   Por Cobrar
                 </span>
-                <AppleCreditCardIcon className="w-4.5 h-4.5 text-rose-500" />
+                <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-100/70 shadow-2xs">
+                  <AppleCreditCardIcon className="w-5 h-5 sm:w-5.5 sm:h-5.5" />
+                </div>
               </div>
               <div className="mt-1 text-xl sm:text-2xl font-black font-mono tracking-tight text-slate-900">
                 {formatCurrency(totalDebt)}

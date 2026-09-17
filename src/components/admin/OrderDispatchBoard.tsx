@@ -17,7 +17,7 @@ import {
 import { Order, Invoice } from '@/types';
 import { InvoiceModal } from '@/components/invoice/InvoiceModal';
 import { ThermalReceiptModal } from '@/components/receipt/ThermalReceiptModal';
-import { AppleMapPinIcon, AppleWhatsAppIcon, AppleCheckmarkSealIcon, AppleShippingBoxIcon } from '@/components/ui/AppleIcons';
+import { AppleMapPinIcon, AppleWhatsAppIcon, AppleCheckmarkSealIcon, AppleShippingBoxIcon, AppleCalendarIcon } from '@/components/ui/AppleIcons';
 import {
   Clock,
   XCircle,
@@ -27,7 +27,6 @@ import {
   Check,
   Printer,
   Search,
-  Calendar,
   X,
   Loader2,
   CheckCircle2,
@@ -211,7 +210,7 @@ export function OrderDispatchBoard() {
                   : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
               }`}
             >
-              {!customDate && <Calendar className="w-3.5 h-3.5 shrink-0" />}
+              {!customDate && <AppleCalendarIcon className="w-3.5 h-3.5 shrink-0" />}
               <span className={`font-mono text-center tracking-tight ${customDate ? 'text-[11px] sm:text-xs font-bold' : 'text-xs font-bold'}`}>
                 {customDate
                   ? (() => {
