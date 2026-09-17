@@ -56,21 +56,21 @@ export function AdminHeader() {
           </Link>
         </div>
 
-        <div className="flex items-center space-x-2 sm:space-x-2.5">
+        <div className="flex items-center space-x-1.5 sm:space-x-2">
           <Link
             href="/pedido?type=autoventa"
-            className="px-3.5 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl text-xs sm:text-sm font-black shadow-xs flex items-center space-x-2 transition-all"
+            className="px-3 sm:px-3.5 py-1.5 sm:py-2 min-w-[106px] sm:min-w-[124px] justify-center bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl text-sm sm:text-base font-black shadow-xs flex items-center space-x-1.5 sm:space-x-2 transition-all cursor-pointer"
           >
-            <AppleTruckBoxIcon className="w-4 h-4 brightness-0 invert" />
-            <span>Autoventa</span>
+            <AppleTruckBoxIcon className="w-5 h-5 shrink-0" />
+            <span className="leading-none">Autoventa</span>
           </Link>
 
           <Link
             href="/pedido?type=preventa"
-            className="px-3.5 sm:px-4 py-2 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-800 rounded-xl text-xs sm:text-sm font-black border border-slate-200/80 flex items-center space-x-2 transition-colors"
+            className="px-3 sm:px-3.5 py-1.5 sm:py-2 min-w-[106px] sm:min-w-[124px] justify-center bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-sm sm:text-base font-black shadow-xs flex items-center space-x-1.5 sm:space-x-2 transition-all cursor-pointer"
           >
-            <AppleCalendarClockIcon className="w-4 h-4 text-slate-600" />
-            <span>Preventa</span>
+            <AppleCalendarClockIcon className="w-5 h-5 shrink-0" />
+            <span className="leading-none">Preventa</span>
           </Link>
 
           {/* Google User Profile Chip with Dropdown for Logout */}
