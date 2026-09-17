@@ -45,7 +45,7 @@ export const LiquidMobileTabPill: React.FC<LiquidMobileTabPillProps> = ({
               role="tab"
               aria-selected={isActive}
               onClick={() => onChange(tab.id)}
-              className={`relative z-10 flex items-center py-2 px-3 sm:px-3.5 rounded-full transition-colors duration-200 shrink-0 outline-none select-none cursor-pointer ${
+              className={`relative z-10 flex items-center py-2 sm:py-2.5 px-3 sm:px-4 rounded-full transition-colors duration-200 shrink-0 outline-none select-none cursor-pointer ${
                 isActive
                   ? 'text-blue-700 font-extrabold'
                   : 'text-slate-600 hover:text-slate-900 font-medium'
@@ -60,19 +60,19 @@ export const LiquidMobileTabPill: React.FC<LiquidMobileTabPillProps> = ({
                 />
               )}
 
-              {/* Ícono */}
+              {/* Ícono bien definido */}
               {tab.icon && (
-                <span className="text-[18px] sm:text-[20px] shrink-0 relative z-10 flex items-center justify-center">
+                <span className="shrink-0 relative z-10 flex items-center justify-center">
                   {tab.icon}
                 </span>
               )}
 
-              {/* Texto con Apertura Líquida */}
+              {/* Texto: En Web siempre visible, en Móvil sólo visible cuando está activo/seleccionado */}
               <span
-                className={`text-xs sm:text-sm font-black tracking-tight relative z-10 whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden ${
+                className={`text-xs sm:text-[13px] font-black tracking-tight relative z-10 whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden ${
                   isActive
-                    ? 'max-w-[140px] opacity-100 ml-1.5'
-                    : 'max-w-0 opacity-0 ml-0'
+                    ? 'max-w-[140px] opacity-100 ml-1.5 sm:max-w-none sm:opacity-100 sm:ml-2'
+                    : 'max-w-0 opacity-0 ml-0 sm:max-w-none sm:opacity-100 sm:ml-2'
                 }`}
               >
                 {tab.label}

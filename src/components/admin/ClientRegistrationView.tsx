@@ -9,6 +9,7 @@ import {
   ApplePersonBadgePlusIcon,
   ApplePersonTextRectangleIcon,
   AppleMapPinIcon,
+  AppleLocationMagnifyingGlassIcon,
   AppleWhatsAppIcon,
   AppleStorefrontIcon,
   ApplePencilIcon,
@@ -18,9 +19,7 @@ import {
   Search,
   Loader2,
   AlertCircle,
-  RefreshCw,
-  DollarSign,
-  ExternalLink,
+  Tag,
 } from 'lucide-react';
 import {
   formatEcuadorianPhone,
@@ -52,7 +51,6 @@ export function ClientRegistrationView({ clientIdToEdit }: ClientRegistrationVie
   const [taxIdType, setTaxIdType] = useState<'04' | '05'>('05');
   const [email, setEmail] = useState<string>('');
   const [clientTier, setClientTier] = useState<ClientTier>('normal');
-  const [creditLimit, setCreditLimit] = useState<number>(0);
   const [addressReference, setAddressReference] = useState<string>('');
   const [coords, setCoords] = useState<{ lat: number; lng: number }>({
     lat: -1.24908,
@@ -91,7 +89,6 @@ export function ClientRegistrationView({ clientIdToEdit }: ClientRegistrationVie
       setTaxIdType((clientToEdit.taxIdType as '04' | '05') || (clientToEdit.taxId?.length === 13 ? '04' : '05'));
       setEmail(clientToEdit.email || '');
       setClientTier((clientToEdit.clientTier as ClientTier) || 'normal');
-      setCreditLimit(clientToEdit.creditLimit || 0);
       setAddressReference(clientToEdit.addressReference || '');
       if (clientToEdit.latitude && clientToEdit.longitude) {
         setCoords({ lat: clientToEdit.latitude, lng: clientToEdit.longitude });
@@ -310,7 +307,7 @@ export function ClientRegistrationView({ clientIdToEdit }: ClientRegistrationVie
         taxIdType: (taxId.trim() ? taxIdType : '07') as '04' | '05' | '06' | '07',
         email: email.trim() || undefined,
         clientTier,
-        creditLimit: Number(creditLimit) || 0,
+        creditLimit: clientToEdit?.creditLimit ?? 0,
         birthDate: birthDate || undefined,
       };
 
@@ -640,26 +637,18 @@ export function ClientRegistrationView({ clientIdToEdit }: ClientRegistrationVie
               ) : null}
             </div>
 
-            {/* Acciones: Ver en Google Maps y Refrescar GPS */}
-            <div className="flex items-center space-x-2 self-start sm:self-auto">
-              <a
-                href={`https://www.google.com/maps/search/?api=1&query=${coords.lat},${coords.lng}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                title="Abrir ubicación en Google Maps"
-                className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200/80 active:scale-95 text-blue-600 hover:text-blue-700 font-bold text-xs rounded-xl border border-slate-200 transition-all cursor-pointer"
-              >
-                <ExternalLink className="w-3.5 h-3.5" />
-                <span>Ver en Maps</span>
-              </a>
-
+            {/* Acción: Refrescar GPS */}
+            <div className="flex items-center self-start sm:self-auto">
               <button
                 type="button"
                 onClick={calibrateGps}
                 disabled={isCalibratingGps || isGeocoding}
-                className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200/80 active:scale-95 disabled:opacity-50 text-slate-700 font-bold text-xs rounded-xl border border-slate-200 transition-all cursor-pointer"
+                className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200/80 active:scale-95 disabled:opacity-50 text-slate-700 hover:text-slate-900 font-bold text-xs rounded-xl border border-slate-200 transition-all cursor-pointer"
               >
-                <RefreshCw className={`w-3.5 h-3.5 ${isCalibratingGps || isGeocoding ? 'animate-spin text-blue-600' : ''}`} />
+                <AppleLocationMagnifyingGlassIcon
+                  size={14}
+                  className={isCalibratingGps || isGeocoding ? 'animate-pulse text-blue-600' : 'text-slate-600'}
+                />
                 <span>{isCalibratingGps ? 'Calibrando...' : 'Refrescar GPS'}</span>
               </button>
             </div>
@@ -680,12 +669,12 @@ export function ClientRegistrationView({ clientIdToEdit }: ClientRegistrationVie
         <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 p-4 sm:p-5 shadow-xs space-y-4">
           <div className="border-b border-slate-100 pb-3">
             <h2 className="text-sm sm:text-base font-black text-slate-900 flex items-center space-x-2">
-              <DollarSign className="w-4.5 h-4.5 text-blue-600" />
+              <Tag className="w-4.5 h-4.5 text-blue-600" />
               <span>Condiciones Comerciales</span>
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 sm:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
             {/* Tipo de Cliente */}
             <div>
               <label className="text-xs font-black text-slate-700 uppercase tracking-wider mb-1 block">
@@ -726,21 +715,6 @@ export function ClientRegistrationView({ clientIdToEdit }: ClientRegistrationVie
                   </button>
                 ))}
               </div>
-            </div>
-
-            {/* Cupo de Crédito */}
-            <div>
-              <label className="text-xs font-black text-slate-700 uppercase tracking-wider mb-1 block">
-                Cupo Crédito ($)
-              </label>
-              <input
-                type="number"
-                min="0"
-                step="5"
-                value={creditLimit}
-                onChange={(e) => setCreditLimit(parseFloat(e.target.value) || 0)}
-                className="w-full h-11 px-3.5 bg-slate-50 hover:bg-slate-100/60 focus:bg-white rounded-xl border border-slate-200 text-sm font-mono font-bold text-slate-900 focus:outline-hidden focus:border-blue-500 transition-colors"
-              />
             </div>
           </div>
         </div>

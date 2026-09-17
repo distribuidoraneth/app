@@ -117,27 +117,27 @@ export default function AdminLayout({
     {
       id: 'pedidos',
       label: 'Despachos',
-      icon: <AppleTruckBoxIcon className="w-4 h-4" />,
+      icon: <AppleTruckBoxIcon className="w-5 h-5 sm:w-5.5 sm:h-5.5" />,
     },
     {
       id: 'clientes',
       label: 'Clientes',
-      icon: <ApplePersonsIcon className="w-4 h-4" />,
+      icon: <ApplePersonsIcon className="w-5 h-5 sm:w-5.5 sm:h-5.5" />,
     },
     {
       id: 'deudas',
       label: 'Deudas',
-      icon: <AppleCreditCardIcon className="w-4 h-4" />,
+      icon: <AppleCreditCardIcon className="w-5 h-5 sm:w-5.5 sm:h-5.5" />,
     },
     {
       id: 'facturas',
       label: 'Facturación',
-      icon: <AppleReceiptIcon className="w-4 h-4" />,
+      icon: <AppleReceiptIcon className="w-5 h-5 sm:w-5.5 sm:h-5.5" />,
     },
     {
       id: 'inventario',
       label: 'Inventario',
-      icon: <AppleSquareStackIcon className="w-4 h-4" />,
+      icon: <AppleSquareStackIcon className="w-5 h-5 sm:w-5.5 sm:h-5.5" />,
     },
   ];
 

@@ -131,27 +131,27 @@ export function AdminDashboard() {
     {
       id: 'dispatch',
       label: 'Despachos',
-      icon: <AppleTruckBoxIcon className="w-4 h-4" />,
+      icon: <AppleTruckBoxIcon className="w-5 h-5 sm:w-5.5 sm:h-5.5" />,
     },
     {
       id: 'clients',
       label: 'Clientes',
-      icon: <ApplePersonsIcon className="w-4 h-4" />,
+      icon: <ApplePersonsIcon className="w-5 h-5 sm:w-5.5 sm:h-5.5" />,
     },
     {
       id: 'debts',
       label: 'Deudas',
-      icon: <AppleCreditCardIcon className="w-4 h-4" />,
+      icon: <AppleCreditCardIcon className="w-5 h-5 sm:w-5.5 sm:h-5.5" />,
     },
     {
       id: 'invoices',
       label: 'Facturación',
-      icon: <AppleReceiptIcon className="w-4 h-4" />,
+      icon: <AppleReceiptIcon className="w-5 h-5 sm:w-5.5 sm:h-5.5" />,
     },
     {
       id: 'catalog',
       label: 'Inventario',
-      icon: <AppleSquareStackIcon className="w-4 h-4" />,
+      icon: <AppleSquareStackIcon className="w-5 h-5 sm:w-5.5 sm:h-5.5" />,
     },
   ];
 
@@ -280,59 +280,51 @@ export function AdminDashboard() {
       <div className="max-w-7xl mx-auto px-3 sm:px-6 py-3.5 sm:py-5 space-y-4 sm:space-y-5">
         {/* Apple Minimalist KPI Metrics (Shown strictly on dispatch/pedidos tab) */}
         {activeTab === 'dispatch' && (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
-            <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between hover:border-slate-300 transition-colors">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between hover:border-slate-300 transition-colors">
               <div className="flex items-center justify-between">
                 <span className="text-xs sm:text-[13px] font-bold text-slate-400 uppercase tracking-wider">
                   Ventas
                 </span>
-                <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100/70 shadow-2xs">
-                  <AppleGaugeDollarIcon className="w-5 h-5 sm:w-5.5 sm:h-5.5" />
-                </div>
+                <AppleGaugeDollarIcon className="w-6.5 h-6.5 sm:w-7.5 sm:h-7.5 text-emerald-600 shrink-0" />
               </div>
-              <div className="mt-1 text-xl sm:text-2xl font-black font-mono tracking-tight text-slate-900">
+              <div className="mt-2 text-xl sm:text-2xl font-black font-mono tracking-tight text-slate-900">
                 {formatCurrency(totalSales)}
               </div>
             </div>
 
-            <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between hover:border-slate-300 transition-colors">
+            <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between hover:border-slate-300 transition-colors">
               <div className="flex items-center justify-between">
                 <span className="text-xs sm:text-[13px] font-bold text-slate-400 uppercase tracking-wider">
                   Por Despachar
                 </span>
-                <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100/70 shadow-2xs">
-                  <AppleShippingBoxIcon className="w-5 h-5 sm:w-5.5 sm:h-5.5" />
-                </div>
+                <AppleShippingBoxIcon className="w-6.5 h-6.5 sm:w-7.5 sm:h-7.5 text-amber-500 shrink-0" />
               </div>
-              <div className="mt-1 text-xl sm:text-2xl font-black font-mono tracking-tight text-slate-900">
+              <div className="mt-2 text-xl sm:text-2xl font-black font-mono tracking-tight text-slate-900">
                 {pendingOrders.length}
               </div>
             </div>
 
-            <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between hover:border-slate-300 transition-colors">
+            <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between hover:border-slate-300 transition-colors">
               <div className="flex items-center justify-between">
                 <span className="text-xs sm:text-[13px] font-bold text-slate-400 uppercase tracking-wider">
                   Clientes
                 </span>
-                <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100/70 shadow-2xs">
-                  <ApplePersonsIcon className="w-5 h-5 sm:w-5.5 sm:h-5.5" />
-                </div>
+                <ApplePersonsIcon className="w-6.5 h-6.5 sm:w-7.5 sm:h-7.5 text-blue-500 shrink-0" />
               </div>
-              <div className="mt-1 text-xl sm:text-2xl font-black font-mono tracking-tight text-slate-900">
+              <div className="mt-2 text-xl sm:text-2xl font-black font-mono tracking-tight text-slate-900">
                 {clients.length}
               </div>
             </div>
 
-            <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between hover:border-slate-300 transition-colors">
+            <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between hover:border-slate-300 transition-colors">
               <div className="flex items-center justify-between">
                 <span className="text-xs sm:text-[13px] font-bold text-slate-400 uppercase tracking-wider">
                   Por Cobrar
                 </span>
-                <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-100/70 shadow-2xs">
-                  <AppleCreditCardIcon className="w-5 h-5 sm:w-5.5 sm:h-5.5" />
-                </div>
+                <AppleCreditCardIcon className="w-6.5 h-6.5 sm:w-7.5 sm:h-7.5 text-rose-500 shrink-0" />
               </div>
-              <div className="mt-1 text-xl sm:text-2xl font-black font-mono tracking-tight text-slate-900">
+              <div className="mt-2 text-xl sm:text-2xl font-black font-mono tracking-tight text-slate-900">
                 {formatCurrency(totalDebt)}
               </div>
             </div>
