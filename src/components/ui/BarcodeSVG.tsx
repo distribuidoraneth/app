@@ -88,6 +88,7 @@ export const BarcodeSVG: React.FC<BarcodeSVGProps> = ({
         viewBox={`0 0 ${totalWidth} ${height}`}
         className="w-full h-auto max-w-[240px]"
         preserveAspectRatio="none"
+        shapeRendering="crispEdges"
       >
         <rect width={totalWidth} height={height} fill="#ffffff" />
         {bars.map((b, i) => (

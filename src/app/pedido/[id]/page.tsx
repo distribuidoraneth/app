@@ -14,15 +14,18 @@ import {
 } from '@/lib/utils/formatters';
 import { InvoiceModal } from '@/components/invoice/InvoiceModal';
 import { ThermalReceiptModal } from '@/components/receipt/ThermalReceiptModal';
-import { AppleMapPinIcon, AppleWhatsAppIcon, AppleCheckmarkSealIcon } from '@/components/ui/AppleIcons';
+import {
+  AppleMapPinIcon,
+  AppleWhatsAppIcon,
+  AppleCheckmarkSealIcon,
+  AppleReceiptIcon,
+  ApplePrinterIcon,
+  ApplePhoneIcon,
+} from '@/components/ui/AppleIcons';
 import {
   ArrowLeft,
-  Phone,
-  Printer,
-  FileText,
   Clock,
   AlertCircle,
-  CheckCircle2,
 } from 'lucide-react';
 
 export default function OrderDetailPage({
@@ -85,11 +88,22 @@ export default function OrderDetailPage({
     );
   }
 
-  const handleOpenGps = () => {
+  const mapsUrl = useMemo(() => {
     const lat = order.latitude || client?.latitude;
     const lng = order.longitude || client?.longitude;
     if (lat && lng) {
-      window.open(getGoogleMapsNavigationUrl(lat, lng), '_blank');
+      return getGoogleMapsNavigationUrl(lat, lng);
+    }
+    const address = cleanAddress(order.addressReference || client?.addressReference);
+    if (address) {
+      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+    }
+    return null;
+  }, [order, client]);
+
+  const handleOpenGps = () => {
+    if (mapsUrl) {
+      window.open(mapsUrl, '_blank');
     }
   };
 
@@ -160,20 +174,10 @@ export default function OrderDetailPage({
       <main className="max-w-3xl mx-auto px-4 py-4 space-y-4">
         {/* Card 1: Destino y Cliente */}
         <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-xs space-y-3">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+          <div className="border-b border-slate-100 pb-2.5">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
               Cliente y Ubicación
             </span>
-            {(order.latitude || client?.latitude) && (
-              <button
-                type="button"
-                onClick={handleOpenGps}
-                className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-xl text-xs sm:text-sm font-bold transition-colors cursor-pointer"
-              >
-                <AppleMapPinIcon size={16} alt="GPS" />
-                <span>Navegar GPS</span>
-              </button>
-            )}
           </div>
 
           <div>
@@ -185,20 +189,60 @@ export default function OrderDetailPage({
             )}
           </div>
 
-          <div className="space-y-2 pt-1 text-sm text-slate-600">
+          <div className="space-y-2.5 pt-1 text-sm text-slate-600">
             {order.whatsappNumber && (
-              <div className="flex items-center space-x-2">
-                <Phone className="w-4 h-4 text-slate-400 shrink-0" />
-                <span className="font-mono text-slate-800 font-medium">{order.whatsappNumber}</span>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center space-x-2 min-w-0">
+                  <ApplePhoneIcon size={16} className="text-slate-400 shrink-0" alt="Teléfono" />
+                  <span className="font-mono text-slate-800 font-medium">{order.whatsappNumber}</span>
+                </div>
+                <div className="flex items-center space-x-1.5 shrink-0">
+                  <a
+                    href={`tel:${order.whatsappNumber.replace(/[^0-9+]/g, '')}`}
+                    className="w-8 h-8 rounded-xl bg-blue-50 hover:bg-blue-100 active:scale-95 text-blue-700 flex items-center justify-center border border-blue-200/60 transition-all cursor-pointer shadow-2xs"
+                    title="Llamar"
+                    aria-label="Llamar"
+                  >
+                    <ApplePhoneIcon size={16} className="text-blue-700" />
+                  </a>
+                  <button
+                    type="button"
+                    onClick={handleShareWhatsApp}
+                    className="w-8 h-8 rounded-xl bg-emerald-50 hover:bg-emerald-100 active:scale-95 text-emerald-700 flex items-center justify-center border border-emerald-200/60 transition-all cursor-pointer shadow-2xs"
+                    title="Enviar WhatsApp"
+                    aria-label="WhatsApp"
+                  >
+                    <AppleWhatsAppIcon size={16} />
+                  </button>
+                </div>
               </div>
             )}
             {cleanAddress(order.addressReference || client?.addressReference) && (
-              <div className="flex items-start space-x-2">
-                <AppleMapPinIcon size={16} className="opacity-60 shrink-0 mt-0.5" alt="Ubicación" />
-                <span className="text-slate-600 leading-relaxed">
-                  {cleanAddress(order.addressReference || client?.addressReference)}
-                </span>
-              </div>
+              mapsUrl ? (
+                <a
+                  href={mapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-start space-x-2 text-slate-600 hover:text-blue-600 group transition-colors cursor-pointer"
+                  title="Abrir ubicación en Google Maps"
+                >
+                  <AppleMapPinIcon
+                    size={16}
+                    className="opacity-60 group-hover:opacity-100 group-hover:text-blue-600 shrink-0 mt-0.5 transition-all"
+                    alt="Ubicación"
+                  />
+                  <span className="leading-relaxed group-hover:underline">
+                    {cleanAddress(order.addressReference || client?.addressReference)}
+                  </span>
+                </a>
+              ) : (
+                <div className="flex items-start space-x-2">
+                  <AppleMapPinIcon size={16} className="opacity-60 shrink-0 mt-0.5" alt="Ubicación" />
+                  <span className="text-slate-600 leading-relaxed">
+                    {cleanAddress(order.addressReference || client?.addressReference)}
+                  </span>
+                </div>
+              )
             )}
           </div>
         </div>
@@ -298,14 +342,14 @@ export default function OrderDetailPage({
               <span>WhatsApp</span>
             </button>
 
-            {/* Ticket Térmico */}
+            {/* Imprimir */}
             <button
               type="button"
               onClick={() => setIsThermalModalOpen(true)}
-              className="py-3 px-3 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center space-x-1.5 border border-slate-200 transition-colors cursor-pointer"
+              className="py-3 px-3 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center space-x-2 border border-slate-200 transition-colors cursor-pointer"
             >
-              <Printer className="w-4 h-4 text-slate-600" />
-              <span>Ticket 58mm</span>
+              <ApplePrinterIcon size={18} className="text-slate-700" />
+              <span>Imprimir</span>
             </button>
 
             {/* Factura */}
@@ -313,19 +357,19 @@ export default function OrderDetailPage({
               <button
                 type="button"
                 onClick={() => setSelectedInvoice(invoice)}
-                className="col-span-2 py-3 px-3 bg-blue-50 hover:bg-blue-100 text-blue-800 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center space-x-1.5 border border-blue-200/60 transition-colors cursor-pointer"
+                className="col-span-2 py-3 px-3 bg-blue-50 hover:bg-blue-100 text-blue-800 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center space-x-2 border border-blue-200/60 transition-colors cursor-pointer"
               >
-                <FileText className="w-4 h-4 text-blue-600" />
-                <span>Ver Factura #{invoice.invoiceNumber}</span>
+                <AppleReceiptIcon size={18} className="text-blue-700" />
+                <span>Factura #{invoice.invoiceNumber}</span>
               </button>
             ) : (
               <button
                 type="button"
                 onClick={handleGenerateInvoice}
-                className="col-span-2 py-3 px-3 bg-blue-600 hover:bg-blue-700 active:scale-98 text-white rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center space-x-1.5 shadow-xs transition-all cursor-pointer"
+                className="col-span-2 py-3 px-3 bg-blue-600 hover:bg-blue-700 active:scale-98 text-white rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center space-x-2 shadow-xs transition-all cursor-pointer"
               >
-                <FileText className="w-4 h-4" />
-                <span>Emitir Factura Electrónica</span>
+                <AppleReceiptIcon size={18} className="text-white" />
+                <span>Factura</span>
               </button>
             )}
           </div>

@@ -19,6 +19,7 @@ interface AppleIconProps extends React.ImgHTMLAttributes<HTMLImageElement> {
     | 'storefront'
     | 'calendar'
     | 'location.magnifyingglass'
+    | 'printer'
     | 'tag';
   size?: number | string;
   className?: string;
@@ -287,6 +288,10 @@ export const AppleLocationMagnifyingGlassIcon: React.FC<{
 
 export const AppleWhatsAppIcon: React.FC<Omit<AppleIconProps, 'name'>> = (props) => (
   <AppleIcon name="whatsapp" {...props} />
+);
+
+export const ApplePrinterIcon: React.FC<Omit<AppleIconProps, 'name'>> = (props) => (
+  <AppleIcon name="printer" {...props} />
 );
 
 export const AppleTagIcon: React.FC<{

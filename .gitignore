@@ -40,3 +40,4 @@ yarn-error.log*
 *.swo
 .vercel
 graphify-out/
+*.tsbuildinfo
