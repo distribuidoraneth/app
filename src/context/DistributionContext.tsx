@@ -18,6 +18,7 @@ import {
   INITIAL_ORDERS,
   INITIAL_INVOICES,
 } from '@/lib/mockData';
+import { formatOrderNumber } from '@/lib/utils/formatters';
 import {
   saveOrderToDb,
   saveClientToDb,
@@ -25,6 +26,7 @@ import {
   getClientsFromDb,
   getProductsFromDb,
   getOrdersFromDb,
+  getOrderByIdFromDb,
   updateClientDebtInDb,
   GetOrdersOptions,
 } from '@/lib/supabase/syncService';
@@ -83,6 +85,7 @@ interface DistributionContextType {
   generateInvoice: (orderId: string) => Invoice | null;
   updateStock: (optionId: string, newStock: number) => void;
   refreshData: () => Promise<void>;
+  ensureOrderLoaded: (idOrNumber: string) => Promise<Order | null>;
 }
 
 const DistributionContext = createContext<DistributionContextType | undefined>(undefined);
@@ -651,6 +654,26 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
     );
   };
 
+  const ensureOrderLoaded = async (idOrNumber: string): Promise<Order | null> => {
+    const clean = decodeURIComponent(idOrNumber).trim();
+    if (!clean) return null;
+
+    const existing = orders.find(
+      (o) =>
+        o.id === clean ||
+        o.orderNumber === clean ||
+        formatOrderNumber(o.orderNumber) === formatOrderNumber(clean)
+    );
+    if (existing) return existing;
+
+    const dbOrder = await getOrderByIdFromDb(clean);
+    if (dbOrder) {
+      setOrders((prev) => (prev.some((o) => o.id === dbOrder.id) ? prev : [dbOrder, ...prev]));
+      return dbOrder;
+    }
+    return null;
+  };
+
   return (
     <DistributionContext.Provider
       value={{
@@ -685,6 +708,7 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
         generateInvoice,
         updateStock,
         refreshData,
+        ensureOrderLoaded,
       }}
     >
       {children}

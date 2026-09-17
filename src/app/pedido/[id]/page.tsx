@@ -1,6 +1,6 @@
 'use client';
 
-import React, { use, useState, useMemo } from 'react';
+import React, { use, useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDistribution } from '@/context/DistributionContext';
 import {
@@ -41,21 +41,44 @@ export default function OrderDetailPage({
     invoices,
     generateInvoice,
     updateOrderStatus,
+    ensureOrderLoaded,
   } = useDistribution();
 
   const [selectedInvoice, setSelectedInvoice] = useState<any | null>(null);
   const [isThermalModalOpen, setIsThermalModalOpen] = useState(false);
 
-  // Find order by ID or orderNumber
+  const rawId = useMemo(() => decodeURIComponent(resolvedParams.id), [resolvedParams.id]);
+
+  // Buscar pedido en orders de context
   const order = useMemo(() => {
-    const rawId = decodeURIComponent(resolvedParams.id);
     return orders.find(
       (o) =>
         o.id === rawId ||
         o.orderNumber === rawId ||
         formatOrderNumber(o.orderNumber) === formatOrderNumber(rawId)
     );
-  }, [orders, resolvedParams.id]);
+  }, [orders, rawId]);
+
+  const [isCheckingOrder, setIsCheckingOrder] = useState(!order);
+
+  useEffect(() => {
+    let isMounted = true;
+    if (order) {
+      setIsCheckingOrder(false);
+      return;
+    }
+
+    setIsCheckingOrder(true);
+    ensureOrderLoaded(rawId).finally(() => {
+      if (isMounted) {
+        setIsCheckingOrder(false);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [rawId, order, ensureOrderLoaded]);
 
   const client = useMemo(() => {
     if (!order) return null;
@@ -66,6 +89,15 @@ export default function OrderDetailPage({
     if (!order) return null;
     return invoices.find((inv) => inv.orderId === order.id) || null;
   }, [invoices, order]);
+
+  if (isCheckingOrder && !order) {
+    return (
+      <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center p-4 text-center">
+        <div className="w-10 h-10 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mb-3" />
+        <p className="text-xs font-bold text-slate-500">Cargando datos del pedido...</p>
+      </div>
+    );
+  }
 
   if (!order) {
     return (

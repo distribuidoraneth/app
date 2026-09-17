@@ -245,54 +245,92 @@ export async function getOrdersFromDb(options?: GetOrdersOptions): Promise<Order
       return null;
     }
 
-    return (data || []).map((o: any) => ({
-      id: o.id,
-      orderNumber: o.order_number,
-      clientId: o.client_id || 'guest',
-      clientName: o.client_name,
-      businessName: o.business_name,
-      whatsappNumber: o.whatsapp_number,
-      latitude: Number(o.latitude),
-      longitude: Number(o.longitude),
-      addressReference: cleanAddress(o.address_reference),
-      items: (o.order_items || []).map((it: any) => ({
-        id: it.id,
-        productOptionId: it.product_option_id,
-        brand: it.brand || 'Fructi',
-        beverageType: it.beverage_type,
-        container: it.container,
-        size: it.size,
-        flavorType: it.flavor_type,
-        selectedFlavor: it.selected_flavor,
-        surtidoDetails: it.surtido_details,
-        quantityJavas: Number(it.quantity_javas || 0),
-        quantityUnits: Number(it.quantity_units || 0),
-        unitsPerJava: Number(it.units_per_java || 12),
-        pricePerJava: Number(it.price_per_java || 0),
-        pricePerUnit: Number(it.price_per_unit || 0),
-        totalBottles: Number(it.total_bottles || 0),
-        subtotal: Number(it.subtotal || 0),
-      })),
-      totalJavas: Number(o.total_javas || 0),
-      totalUnits: Number(o.total_units || 0),
-      totalBottles: Number(o.total_bottles || 0),
-      totalAmount: Number(o.total_amount || 0),
-      status: o.status,
-      saleType: o.sale_type,
-      scheduledDeliveryDate: o.scheduled_delivery_date,
-      scheduledTimeSlot: o.scheduled_time_slot,
-      promisedCollectionDate: o.promised_collection_date,
-      promisedCollectionTime: o.promised_collection_time,
-      paymentStatus: o.payment_status,
-      paymentMethod: o.payment_method,
-      amountPaid: Number(o.amount_paid || 0),
-      debtBalance: Number(o.debt_balance || 0),
-      notes: o.notes,
-      createdAt: o.created_at,
-      deliveredAt: o.delivered_at,
-    }));
+    return (data || []).map(mapDbOrder);
   } catch (err) {
     console.warn('Excepción al consultar pedidos en Supabase:', err);
+    return null;
+  }
+}
+
+function mapDbOrder(o: any): Order {
+  return {
+    id: o.id,
+    orderNumber: o.order_number,
+    clientId: o.client_id || 'guest',
+    clientName: o.client_name,
+    businessName: o.business_name,
+    whatsappNumber: o.whatsapp_number,
+    latitude: Number(o.latitude),
+    longitude: Number(o.longitude),
+    addressReference: cleanAddress(o.address_reference),
+    items: (o.order_items || []).map((it: any) => ({
+      id: it.id,
+      productOptionId: it.product_option_id,
+      brand: it.brand || 'Fructi',
+      beverageType: it.beverage_type,
+      container: it.container,
+      size: it.size,
+      flavorType: it.flavor_type,
+      selectedFlavor: it.selected_flavor,
+      surtidoDetails: it.surtido_details,
+      quantityJavas: Number(it.quantity_javas || 0),
+      quantityUnits: Number(it.quantity_units || 0),
+      unitsPerJava: Number(it.units_per_java || 12),
+      pricePerJava: Number(it.price_per_java || 0),
+      pricePerUnit: Number(it.price_per_unit || 0),
+      totalBottles: Number(it.total_bottles || 0),
+      subtotal: Number(it.subtotal || 0),
+    })),
+    totalJavas: Number(o.total_javas || 0),
+    totalUnits: Number(o.total_units || 0),
+    totalBottles: Number(o.total_bottles || 0),
+    totalAmount: Number(o.total_amount || 0),
+    status: o.status,
+    saleType: o.sale_type,
+    scheduledDeliveryDate: o.scheduled_delivery_date,
+    scheduledTimeSlot: o.scheduled_time_slot,
+    promisedCollectionDate: o.promised_collection_date,
+    promisedCollectionTime: o.promised_collection_time,
+    paymentStatus: o.payment_status,
+    paymentMethod: o.payment_method,
+    amountPaid: Number(o.amount_paid || 0),
+    debtBalance: Number(o.debt_balance || 0),
+    notes: o.notes,
+    createdAt: o.created_at,
+    deliveredAt: o.delivered_at,
+  };
+}
+
+export async function getOrderByIdFromDb(idOrNumber: string): Promise<Order | null> {
+  try {
+    const clean = decodeURIComponent(idOrNumber).trim();
+    if (!clean) return null;
+
+    let query = supabase.from('orders').select('*, order_items(*)');
+
+    if (isValidUuid(clean)) {
+      query = query.or(`id.eq.${clean},order_number.eq.${clean}`);
+    } else {
+      const numPart = clean.replace(/[^0-9]/g, '');
+      if (numPart) {
+        query = query.or(
+          `order_number.eq.${clean},order_number.ilike.%${clean}%,order_number.ilike.%${numPart}%,id.eq.${clean}`
+        );
+      } else {
+        query = query.or(`order_number.eq.${clean},order_number.ilike.%${clean}%,id.eq.${clean}`);
+      }
+    }
+
+    const { data, error } = await query.limit(1).maybeSingle();
+    if (error) {
+      console.warn('Advertencia al consultar pedido por ID en Supabase:', error.message);
+      return null;
+    }
+
+    if (!data) return null;
+    return mapDbOrder(data);
+  } catch (err) {
+    console.warn('Excepción al buscar pedido en Supabase:', err);
     return null;
   }
 }
