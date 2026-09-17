@@ -16,6 +16,7 @@ import {
   RotateCcw,
   Sparkles,
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface BeverageOrderPasarelaProps {
   onGoToCheckout?: () => void;
@@ -389,24 +390,40 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
   if (availableOptionsForType.length === 0) {
     return (
       <div className="max-w-3xl mx-auto space-y-4">
-        <div className="flex items-center space-x-2 bg-slate-200/80 p-1.5 rounded-2xl border border-slate-200/60 shadow-inner">
-          {availableTypes.map((type) => {
-            const isSelected = selectedType === type;
-            return (
-              <button
-                key={type}
-                type="button"
-                onClick={() => handleTypeChange(type)}
-                className={`flex-1 py-3 px-4 rounded-xl font-black text-base sm:text-lg transition-all active:scale-95 ${
-                  isSelected
-                    ? 'bg-white text-slate-950 shadow-sm ring-1 ring-slate-300'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                {type}
-              </button>
-            );
-          })}
+        {/* Liquid Material Filter Pill (Contenida, tamaño normal) */}
+        <div className="w-full">
+          <div
+            role="tablist"
+            className="w-full grid p-1.5 bg-slate-200/80 border border-white/90 backdrop-blur-2xl rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.06)]"
+            style={{ gridTemplateColumns: `repeat(${availableTypes.length}, minmax(0, 1fr))` }}
+          >
+            {availableTypes.map((type) => {
+              const isActive = selectedType === type;
+              return (
+                <button
+                  key={type}
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  onClick={() => handleTypeChange(type)}
+                  className={`relative z-10 flex items-center justify-center py-2 px-2 sm:px-4 rounded-full transition-colors duration-200 outline-none select-none cursor-pointer text-center text-xs sm:text-[13px] font-black ${
+                    isActive
+                      ? 'text-slate-900'
+                      : 'text-slate-500 hover:text-slate-800 font-bold'
+                  }`}
+                >
+                  {isActive && (
+                    <motion.div
+                      layoutId="beverage-type-pill-empty"
+                      className="absolute inset-0 bg-white shadow-[0_3px_12px_rgba(0,0,0,0.1)] border border-slate-200/80 rounded-full -z-10"
+                      transition={{ type: 'spring', stiffness: 450, damping: 32 }}
+                    />
+                  )}
+                  <span>{type}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
         <div className="p-8 bg-white rounded-3xl border border-dashed border-slate-300 text-center space-y-2">
           <p className="text-sm font-bold text-slate-700">No hay productos registrados en {selectedType}</p>
@@ -417,25 +434,40 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
 
   return (
     <div className="max-w-3xl mx-auto space-y-4">
-      {/* Category Pills Header */}
-      <div className="flex items-center space-x-2 bg-slate-200/80 p-1.5 rounded-2xl border border-slate-200/60 shadow-inner">
-        {availableTypes.map((type) => {
-          const isSelected = selectedType === type;
-          return (
-            <button
-              key={type}
-              type="button"
-              onClick={() => handleTypeChange(type)}
-              className={`flex-1 py-3 px-4 rounded-xl font-black text-base sm:text-lg transition-all active:scale-95 ${
-                isSelected
-                  ? 'bg-white text-slate-950 shadow-sm ring-1 ring-slate-300'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              {type}
-            </button>
-          );
-        })}
+      {/* Liquid Material Filter Pill (Contenida, tamaño normal, exactamente como la del menú) */}
+      <div className="w-full">
+        <div
+          role="tablist"
+          className="w-full grid p-1.5 bg-slate-200/80 border border-white/90 backdrop-blur-2xl rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.06)]"
+          style={{ gridTemplateColumns: `repeat(${availableTypes.length}, minmax(0, 1fr))` }}
+        >
+          {availableTypes.map((type) => {
+            const isActive = selectedType === type;
+            return (
+              <button
+                key={type}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => handleTypeChange(type)}
+                className={`relative z-10 flex items-center justify-center py-2 px-2 sm:px-4 rounded-full transition-colors duration-200 outline-none select-none cursor-pointer text-center text-xs sm:text-[13px] font-black ${
+                  isActive
+                    ? 'text-slate-900'
+                    : 'text-slate-500 hover:text-slate-800 font-bold'
+                }`}
+              >
+                {isActive && (
+                  <motion.div
+                    layoutId="beverage-type-pill"
+                    className="absolute inset-0 bg-white shadow-[0_3px_12px_rgba(0,0,0,0.1)] border border-slate-200/80 rounded-full -z-10"
+                    transition={{ type: 'spring', stiffness: 450, damping: 32 }}
+                  />
+                )}
+                <span>{type}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Main Order Card - Compact Speed-Order Container */}

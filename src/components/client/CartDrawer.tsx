@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useDistribution } from '@/context/DistributionContext';
 import { formatCurrency, formatItemTitle } from '@/lib/utils/formatters';
-import { SaleTypeBadgeSelector } from '@/components/order/SaleTypeBadgeSelector';
 import confetti from 'canvas-confetti';
 import Link from 'next/link';
 import {
@@ -39,9 +38,16 @@ interface CartDrawerProps {
   onClose: () => void;
   clientId?: string;
   onOrderSuccess?: (orderId: string) => void;
+  saleType?: SaleType;
 }
 
-export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDrawerProps) {
+export function CartDrawer({
+  isOpen,
+  onClose,
+  clientId,
+  onOrderSuccess,
+  saleType: propSaleType = 'autoventa',
+}: CartDrawerProps) {
   const {
     cart,
     removeFromCart,
@@ -61,7 +67,13 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
   const activeClient = clients.find((c) => c.id === (clientId || selectedClientId)) || clients[0];
   const nextOrderNumber = `ORD-${String(orders.length + 101).padStart(5, '0')}`;
 
-  const [saleType, setSaleType] = useState<SaleType>('autoventa');
+  const [saleType, setSaleType] = useState<SaleType>(propSaleType);
+
+  useEffect(() => {
+    if (propSaleType) {
+      setSaleType(propSaleType);
+    }
+  }, [propSaleType]);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
   const [amountPaidInput, setAmountPaidInput] = useState<string>('');
   const [scheduledDate, setScheduledDate] = useState<string>(
@@ -305,9 +317,22 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
                   {createdOrderSummary ? 'Comprobante' : 'Pedido'}
                 </h2>
                 {!createdOrderSummary && (
-                  <span className="font-mono text-xs font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
-                    #{nextOrderNumber}
-                  </span>
+                  <div className="flex items-center space-x-1.5">
+                    <span className="font-mono text-xs font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
+                      #{nextOrderNumber}
+                    </span>
+                    {saleType === 'preventa' ? (
+                      <span className="text-[10px] font-black text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-full flex items-center">
+                        <Calendar className="w-3 h-3 text-emerald-600 mr-1" />
+                        Preventa
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-black text-blue-800 bg-blue-50 border border-blue-200/80 px-2 py-0.5 rounded-full flex items-center">
+                        <Zap className="w-3 h-3 text-blue-600 fill-blue-600 mr-1" />
+                        Autoventa
+                      </span>
+                    )}
+                  </div>
                 )}
               </div>
               <p className="text-xs text-slate-600 font-medium flex items-center gap-1.5 mt-0.5">
@@ -460,14 +485,6 @@ export function CartDrawer({ isOpen, onClose, clientId, onOrderSuccess }: CartDr
             </div>
           ) : (
             <div className="space-y-4">
-              {/* SALE TYPE SELECTOR */}
-              <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-2xs space-y-2">
-                <label className="text-xs font-black text-slate-700 uppercase tracking-wider block">
-                  Modalidad de Venta
-                </label>
-                <SaleTypeBadgeSelector value={saleType} onChange={setSaleType} />
-              </div>
-
               {/* Preventa Schedule Picker */}
               {saleType === 'preventa' && (
                 <div className="p-4 bg-emerald-50/70 border border-emerald-200 rounded-2xl space-y-3 animate-in fade-in duration-150">

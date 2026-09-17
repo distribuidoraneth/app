@@ -6,7 +6,7 @@ import { useDistribution } from '@/context/DistributionContext';
 import { ClientRegistrationModal } from '@/components/admin/ClientRegistrationModal';
 import { sortClientsByProximity, GeoCoordinates, ClientWithDistance } from '@/lib/utils/geo';
 import { cleanAddress } from '@/lib/utils/formatters';
-import { AppleMapPinIcon } from '@/components/ui/AppleIcons';
+import { AppleMapPinIcon, AppleStorefrontIcon } from '@/components/ui/AppleIcons';
 import {
   Search,
   Plus,
@@ -89,7 +89,7 @@ export function ClientProximitySelectorModal({
           <div className="p-4 sm:p-5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
             <div className="flex items-center space-x-2.5">
               <div className="w-9 h-9 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center">
-                <Store className="w-5 h-5" />
+                <AppleStorefrontIcon size={18} className="text-blue-600" alt="Tienda" />
               </div>
               <div>
                 <h3 className="font-black text-sm sm:text-base text-slate-900 leading-tight">
@@ -188,7 +188,7 @@ export function ClientProximitySelectorModal({
           <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-2 bg-[#f8fafc]">
             {sortedClients.length === 0 ? (
               <div className="text-center py-12 space-y-3">
-                <Store className="w-10 h-10 text-slate-300 mx-auto" />
+                <AppleStorefrontIcon size={40} className="text-slate-300 mx-auto" alt="Tienda" />
                 <p className="text-xs text-slate-500 font-bold">No se encontraron clientes con esa búsqueda.</p>
                 <button
                   type="button"
