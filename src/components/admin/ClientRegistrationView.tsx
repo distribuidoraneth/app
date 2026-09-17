@@ -13,13 +13,13 @@ import {
   AppleWhatsAppIcon,
   AppleStorefrontIcon,
   ApplePencilIcon,
+  AppleTagIcon,
 } from '@/components/ui/AppleIcons';
 import {
   ArrowLeft,
   Search,
   Loader2,
   AlertCircle,
-  Tag,
 } from 'lucide-react';
 import {
   formatEcuadorianPhone,
@@ -669,7 +669,7 @@ export function ClientRegistrationView({ clientIdToEdit }: ClientRegistrationVie
         <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 p-4 sm:p-5 shadow-xs space-y-4">
           <div className="border-b border-slate-100 pb-3">
             <h2 className="text-sm sm:text-base font-black text-slate-900 flex items-center space-x-2">
-              <Tag className="w-4.5 h-4.5 text-blue-600" />
+              <AppleTagIcon size={18} className="text-blue-600" />
               <span>Condiciones Comerciales</span>
             </h2>
           </div>
