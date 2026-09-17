@@ -58,14 +58,15 @@ export const AppleGaugeDollarIcon: React.FC<{
   className?: string;
   color?: string;
   alt?: string;
-}> = ({ size, className = '', color = 'currentColor', alt = 'Ventas' }) => {
+  style?: React.CSSProperties;
+}> = ({ size = 26, className = '', color = 'currentColor', alt = 'Ventas', style }) => {
   const pixelSize = typeof size === 'number' ? `${size}px` : size;
   return (
     <svg
       viewBox="0 0 23.5098 19.5814"
       fill={color}
       className={`inline-block shrink-0 select-none ${className}`}
-      style={pixelSize ? { width: pixelSize, height: pixelSize } : undefined}
+      style={{ width: pixelSize, height: pixelSize, ...style }}
       aria-label={alt}
       role="img"
     >
@@ -82,14 +83,15 @@ export const AppleShippingBoxIcon: React.FC<{
   className?: string;
   color?: string;
   alt?: string;
-}> = ({ size, className = '', color = 'currentColor', alt = 'Por Despachar' }) => {
+  style?: React.CSSProperties;
+}> = ({ size = 26, className = '', color = 'currentColor', alt = 'Por Despachar', style }) => {
   const pixelSize = typeof size === 'number' ? `${size}px` : size;
   return (
     <svg
       viewBox="0 0 19.7194 21.4918"
       fill={color}
       className={`inline-block shrink-0 select-none ${className}`}
-      style={pixelSize ? { width: pixelSize, height: pixelSize } : undefined}
+      style={{ width: pixelSize, height: pixelSize, ...style }}
       aria-label={alt}
       role="img"
     >
@@ -103,14 +105,15 @@ export const ApplePersonsIcon: React.FC<{
   className?: string;
   color?: string;
   alt?: string;
-}> = ({ size, className = '', color = 'currentColor', alt = 'Clientes' }) => {
+  style?: React.CSSProperties;
+}> = ({ size = 26, className = '', color = 'currentColor', alt = 'Clientes', style }) => {
   const pixelSize = typeof size === 'number' ? `${size}px` : size;
   return (
     <svg
       viewBox="0 0 29.84 20.7411"
       fill={color}
       className={`inline-block shrink-0 select-none ${className}`}
-      style={pixelSize ? { width: pixelSize, height: pixelSize } : undefined}
+      style={{ width: pixelSize, height: pixelSize, ...style }}
       aria-label={alt}
       role="img"
     >
@@ -125,14 +128,15 @@ export const AppleCreditCardIcon: React.FC<{
   className?: string;
   color?: string;
   alt?: string;
-}> = ({ size, className = '', color = 'currentColor', alt = 'Por Cobrar' }) => {
+  style?: React.CSSProperties;
+}> = ({ size = 26, className = '', color = 'currentColor', alt = 'Por Cobrar', style }) => {
   const pixelSize = typeof size === 'number' ? `${size}px` : size;
   return (
     <svg
       viewBox="0 0 22.9422 16.69"
       fill={color}
       className={`inline-block shrink-0 select-none ${className}`}
-      style={pixelSize ? { width: pixelSize, height: pixelSize } : undefined}
+      style={{ width: pixelSize, height: pixelSize, ...style }}
       aria-label={alt}
       role="img"
     >
@@ -146,14 +150,15 @@ export const AppleCalendarIcon: React.FC<{
   className?: string;
   color?: string;
   alt?: string;
-}> = ({ size, className = '', color = 'currentColor', alt = 'Fecha' }) => {
+  style?: React.CSSProperties;
+}> = ({ size = 15, className = '', color = 'currentColor', alt = 'Fecha', style }) => {
   const pixelSize = typeof size === 'number' ? `${size}px` : size;
   return (
     <svg
       viewBox="0 0 19.4607 17.999"
       fill={color}
       className={`inline-block shrink-0 select-none ${className}`}
-      style={pixelSize ? { width: pixelSize, height: pixelSize } : undefined}
+      style={{ width: pixelSize, height: pixelSize, ...style }}
       aria-label={alt}
       role="img"
     >

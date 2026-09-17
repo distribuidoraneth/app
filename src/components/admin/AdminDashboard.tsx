@@ -286,7 +286,7 @@ export function AdminDashboard() {
                 <span className="text-xs sm:text-[13px] font-bold text-slate-400 uppercase tracking-wider">
                   Ventas
                 </span>
-                <AppleGaugeDollarIcon className="w-6.5 h-6.5 sm:w-7.5 sm:h-7.5 text-emerald-600 shrink-0" />
+                <AppleGaugeDollarIcon size={26} className="text-emerald-600 shrink-0" />
               </div>
               <div className="mt-2 text-xl sm:text-2xl font-black font-mono tracking-tight text-slate-900">
                 {formatCurrency(totalSales)}
@@ -298,7 +298,7 @@ export function AdminDashboard() {
                 <span className="text-xs sm:text-[13px] font-bold text-slate-400 uppercase tracking-wider">
                   Por Despachar
                 </span>
-                <AppleShippingBoxIcon className="w-6.5 h-6.5 sm:w-7.5 sm:h-7.5 text-amber-500 shrink-0" />
+                <AppleShippingBoxIcon size={26} className="text-amber-500 shrink-0" />
               </div>
               <div className="mt-2 text-xl sm:text-2xl font-black font-mono tracking-tight text-slate-900">
                 {pendingOrders.length}
@@ -310,7 +310,7 @@ export function AdminDashboard() {
                 <span className="text-xs sm:text-[13px] font-bold text-slate-400 uppercase tracking-wider">
                   Clientes
                 </span>
-                <ApplePersonsIcon className="w-6.5 h-6.5 sm:w-7.5 sm:h-7.5 text-blue-500 shrink-0" />
+                <ApplePersonsIcon size={26} className="text-blue-500 shrink-0" />
               </div>
               <div className="mt-2 text-xl sm:text-2xl font-black font-mono tracking-tight text-slate-900">
                 {clients.length}
@@ -322,7 +322,7 @@ export function AdminDashboard() {
                 <span className="text-xs sm:text-[13px] font-bold text-slate-400 uppercase tracking-wider">
                   Por Cobrar
                 </span>
-                <AppleCreditCardIcon className="w-6.5 h-6.5 sm:w-7.5 sm:h-7.5 text-rose-500 shrink-0" />
+                <AppleCreditCardIcon size={26} className="text-rose-500 shrink-0" />
               </div>
               <div className="mt-2 text-xl sm:text-2xl font-black font-mono tracking-tight text-slate-900">
                 {formatCurrency(totalDebt)}
