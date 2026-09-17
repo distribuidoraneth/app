@@ -103,16 +103,31 @@ export async function saveClientToDb(client: Client): Promise<{ success: boolean
   }
 }
 
-export async function deleteClientFromDb(clientId: string): Promise<{ success: boolean; error?: string }> {
+export async function deleteClientFromDb(
+  clientId: string,
+  qrToken?: string
+): Promise<{ success: boolean; error?: string }> {
   try {
-    const { error } = await supabase.from('clients').delete().eq('id', clientId);
-    if (error) {
-      console.warn('Advertencia al eliminar cliente en Supabase:', error.message);
-      return { success: false, error: error.message };
+    const res = await fetch('/api/clients/delete', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ clientId, qrToken }),
+    });
+
+    const json = await res.json().catch(() => null);
+
+    if (!res.ok || !json?.success) {
+      const errorMsg = json?.error || `Error ${res.status} al eliminar cliente`;
+      console.warn('Error al eliminar cliente vía API:', errorMsg);
+      return { success: false, error: errorMsg };
     }
+
     return { success: true };
   } catch (err: any) {
-    return { success: false, error: err.message };
+    console.warn('Excepción al eliminar cliente:', err);
+    return { success: false, error: err?.message || 'Error al conectar con el servidor' };
   }
 }
 

@@ -313,13 +313,18 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
 
   // Delete Client
   const deleteClient = async (clientId: string): Promise<boolean> => {
-    setClients((prev) => prev.filter((c) => c.id !== clientId));
-    if (selectedClientId === clientId) {
-      setSelectedClientId('');
-    }
     try {
-      const res = await deleteClientFromDb(clientId);
-      return res.success;
+      const target = clients.find((c) => c.id === clientId);
+      const res = await deleteClientFromDb(clientId, target?.qrToken);
+      if (res.success) {
+        setClients((prev) => prev.filter((c) => c.id !== clientId));
+        if (selectedClientId === clientId) {
+          setSelectedClientId('');
+        }
+        return true;
+      }
+      console.error('No se pudo eliminar el cliente en Supabase:', res.error);
+      return false;
     } catch (err) {
       console.warn('Error deleting client from Supabase:', err);
       return false;

@@ -31,6 +31,8 @@ export function ClientsManager() {
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState<boolean>(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [selectedQRClient, setSelectedQRClient] = useState<Client | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
@@ -279,24 +281,48 @@ export function ClientsManager() {
               <p className="text-xs sm:text-sm text-slate-500">
                 Se eliminará <strong className="text-slate-800">{clientToDelete.businessName || clientToDelete.fullName}</strong>. Esta acción no se puede deshacer.
               </p>
+              {deleteError && (
+                <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 font-medium">
+                  {deleteError}
+                </div>
+              )}
             </div>
             <div className="flex items-center space-x-2.5 pt-2">
               <button
                 type="button"
-                onClick={() => setClientToDelete(null)}
-                className="flex-1 py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs sm:text-sm transition-colors cursor-pointer"
+                disabled={isDeleting}
+                onClick={() => {
+                  setClientToDelete(null);
+                  setDeleteError(null);
+                }}
+                className="flex-1 py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs sm:text-sm transition-colors cursor-pointer disabled:opacity-50"
               >
                 Cancelar
               </button>
               <button
                 type="button"
+                disabled={isDeleting}
                 onClick={async () => {
-                  await deleteClient(clientToDelete.id);
-                  setClientToDelete(null);
+                  setIsDeleting(true);
+                  setDeleteError(null);
+                  const ok = await deleteClient(clientToDelete.id);
+                  setIsDeleting(false);
+                  if (ok) {
+                    setClientToDelete(null);
+                  } else {
+                    setDeleteError('No se pudo eliminar de la base de datos. Intente nuevamente.');
+                  }
                 }}
-                className="flex-1 py-2.5 px-4 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold rounded-xl text-xs sm:text-sm transition-all cursor-pointer shadow-xs"
+                className="flex-1 py-2.5 px-4 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold rounded-xl text-xs sm:text-sm transition-all cursor-pointer shadow-xs disabled:opacity-50 flex items-center justify-center gap-1.5"
               >
-                Eliminar
+                {isDeleting ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Eliminando...</span>
+                  </>
+                ) : (
+                  <span>Eliminar</span>
+                )}
               </button>
             </div>
           </div>

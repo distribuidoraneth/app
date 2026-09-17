@@ -10,34 +10,73 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Coordenadas requeridas' }, { status: 400 });
     }
 
-    const apiKey = process.env.GOOGLE_MAPS_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
-    const res = await fetch(
-      `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}&language=es`
-    );
-    const data = await res.json();
+    const DEFAULT_GOOGLE_KEY = 'AIzaSyBxdOiBsT-hmDUzpwhLg8BSmjvgCof0uI0';
+    const apiKey =
+      process.env.GOOGLE_MAPS_API_KEY ||
+      process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ||
+      DEFAULT_GOOGLE_KEY;
 
-    if (data.status === 'OK' && data.results && data.results.length > 0) {
-      // Find the best street or route level address
-      const bestResult =
-        data.results.find((r: any) =>
-          r.types.includes('street_address') || r.types.includes('route') || r.types.includes('premise')
-        ) || data.results[0];
+    let address = '';
+    let placeId = '';
 
-      let address = bestResult.formatted_address || '';
-      // Remove Google plus code prefix if present (e.g. "PFR8+3JF, ")
-      address = address.replace(/^[A-Z0-9\+]+,\s*/, '');
+    // 1. Intento primario con Google Maps Geocoding API
+    try {
+      const res = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}&language=es`
+      );
+      const data = await res.json();
 
-      return NextResponse.json({
-        success: true,
-        address,
-        placeId: bestResult.place_id,
-        raw: bestResult,
-      });
+      if (data.status === 'OK' && data.results && data.results.length > 0) {
+        const bestResult =
+          data.results.find((r: any) =>
+            r.types.includes('street_address') || r.types.includes('route') || r.types.includes('premise')
+          ) || data.results[0];
+
+        address = bestResult.formatted_address || '';
+        address = address.replace(/^[A-Z0-9\+]+,\s*/, ''); // Limpiar Plus Codes
+        placeId = bestResult.place_id || '';
+
+        return NextResponse.json({
+          success: true,
+          address,
+          placeId,
+          source: 'google',
+        });
+      }
+    } catch (gErr) {
+      console.warn('Aviso: Error en consulta Google Maps Geocoding:', gErr);
+    }
+
+    // 2. Fallback secundario con OpenStreetMap (Nominatim) si Google Maps falla o no tiene cobertura
+    try {
+      const nomRes = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+        { headers: { 'User-Agent': 'DistribuidoraAnethApp/1.0' } }
+      );
+      const nomData = await nomRes.json();
+      if (nomData && (nomData.display_name || nomData.address)) {
+        const a = nomData.address || {};
+        const road = a.road || a.pedestrian || a.footway || a.suburb || '';
+        const houseNum = a.house_number || '';
+        const neighborhood = a.neighbourhood || a.suburb || a.city_district || '';
+        const city = a.city || a.town || a.county || '';
+
+        const parts = [road, houseNum, neighborhood, city].filter(Boolean);
+        const resolvedAddress = parts.length > 0 ? parts.join(', ') : nomData.display_name;
+
+        return NextResponse.json({
+          success: true,
+          address: resolvedAddress,
+          source: 'osm',
+        });
+      }
+    } catch (osmErr) {
+      console.warn('Aviso: Error en fallback Nominatim:', osmErr);
     }
 
     return NextResponse.json({
       success: false,
-      error: data.error_message || 'No se pudo obtener la dirección de Google Maps.',
+      error: 'No se pudo obtener la dirección por coordenadas geográficas.',
     });
   } catch (error: any) {
     return NextResponse.json(
