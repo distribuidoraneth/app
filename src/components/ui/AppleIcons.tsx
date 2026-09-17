@@ -135,14 +135,14 @@ export const ApplePersonBadgePlusIcon: React.FC<{
   className?: string;
   color?: string;
   alt?: string;
-}> = ({ size = 24, className = '', color = 'currentColor', alt = 'Registrar' }) => {
+}> = ({ size, className = '', color = 'currentColor', alt = 'Registrar' }) => {
   const pixelSize = typeof size === 'number' ? `${size}px` : size;
   return (
     <svg
-      viewBox="0 0 29.254 27.227"
+      viewBox="6.1 4.56 21.82 21.34"
       fill={color}
       className={`inline-block shrink-0 select-none ${className}`}
-      style={{ width: pixelSize, height: pixelSize }}
+      style={pixelSize ? { width: pixelSize, height: pixelSize } : undefined}
       aria-label={alt}
       role="img"
     >

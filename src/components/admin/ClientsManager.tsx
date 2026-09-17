@@ -60,10 +60,10 @@ export function ClientsManager() {
 
           <Link
             href="/admin/clientes/nuevo"
-            className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl text-xs sm:text-sm font-black shadow-xs flex items-center space-x-2 transition-all self-start sm:self-auto"
+            className="px-3.5 sm:px-4 py-2 sm:py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl sm:rounded-2xl text-sm sm:text-base font-black shadow-md shadow-blue-600/25 hover:shadow-lg hover:shadow-blue-600/35 flex items-center space-x-2 transition-all self-start sm:self-auto cursor-pointer"
           >
-            <ApplePersonBadgePlusIcon size={18} className="brightness-0 invert" alt="Nuevo Local" />
-            <span>Nuevo Local</span>
+            <ApplePersonBadgePlusIcon className="w-5 h-5 sm:w-[22px] sm:h-[22px] shrink-0" alt="Nuevo Local" />
+            <span className="leading-none">Nuevo Local</span>
           </Link>
         </div>
 
