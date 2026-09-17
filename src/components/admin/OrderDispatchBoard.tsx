@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useDistribution } from '@/context/DistributionContext';
@@ -55,6 +55,18 @@ export function OrderDispatchBoard() {
     ordersFilter?.datePreset || 'today'
   );
   const [customDate, setCustomDate] = useState<string>('');
+  const dateInputRef = useRef<HTMLInputElement>(null);
+
+  const openDatePicker = () => {
+    if (dateInputRef.current) {
+      if (typeof dateInputRef.current.showPicker === 'function') {
+        dateInputRef.current.showPicker();
+      } else {
+        dateInputRef.current.focus();
+        dateInputRef.current.click();
+      }
+    }
+  };
 
   const handleSelectPreset = (preset: 'today' | 'yesterday' | 'week' | 'all') => {
     setSelectedDatePreset(preset);
@@ -203,15 +215,17 @@ export function OrderDispatchBoard() {
 
           {/* Selector de Fecha Nativo Equilibrado */}
           <div className="relative w-full">
-            <div
+            <button
+              type="button"
+              onClick={openDatePicker}
               className={`w-full py-2 px-1 rounded-xl text-xs font-bold flex items-center justify-center space-x-1 sm:space-x-1.5 transition-all cursor-pointer text-center ${
                 selectedDatePreset === 'custom' && customDate
                   ? 'bg-blue-600 text-white shadow-xs'
                   : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
               }`}
             >
-              {!customDate && <AppleCalendarIcon className="w-3.5 h-3.5 shrink-0" />}
-              <span className={`font-mono text-center tracking-tight ${customDate ? 'text-[11px] sm:text-xs font-bold' : 'text-xs font-bold'}`}>
+              {!customDate && <AppleCalendarIcon size={14} className="shrink-0 pointer-events-none" />}
+              <span className={`font-mono text-center tracking-tight pointer-events-none ${customDate ? 'text-[11px] sm:text-xs font-bold' : 'text-xs font-bold'}`}>
                 {customDate
                   ? (() => {
                       const parts = customDate.split('-');
@@ -219,9 +233,10 @@ export function OrderDispatchBoard() {
                     })()
                   : 'Fecha'}
               </span>
-            </div>
+            </button>
 
             <input
+              ref={dateInputRef}
               type="date"
               value={customDate}
               onChange={(e) => {
@@ -232,7 +247,9 @@ export function OrderDispatchBoard() {
                   loadOrders({ datePreset: 'custom', customDate: e.target.value });
                 }
               }}
-              className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+              className="sr-only"
+              tabIndex={-1}
+              aria-hidden="true"
             />
           </div>
         </div>
