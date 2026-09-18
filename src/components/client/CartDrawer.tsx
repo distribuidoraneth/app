@@ -980,13 +980,10 @@ export function CartDrawer({
       >
         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
           <div className="flex items-center space-x-2.5">
-            <div className="w-9 h-9 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600">
+            <div className="w-9 h-9 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
               <AppleCalendarClockIcon size={20} />
             </div>
-            <div>
-              <h3 className="text-sm font-black text-slate-900">Fecha y Hora de Cobro</h3>
-              <p className="text-xs text-slate-500 font-medium">Horario de trabajo: 8:00 AM a 5:00 PM</p>
-            </div>
+            <h3 className="text-base font-black text-slate-900">Fecha y Hora de Cobro</h3>
           </div>
           <button
             type="button"
@@ -999,51 +996,35 @@ export function CartDrawer({
 
         {/* Selector de Fecha */}
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <label className="text-xs font-black text-slate-700 block">Día acordado:</label>
-            {tempDate && (
-              <span className="text-xs font-bold text-blue-600">
-                {formatHumanDate(tempDate)}
-              </span>
-            )}
-          </div>
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
+            Fecha acordada
+          </label>
 
+          {/* Toda la tarjeta abre el calendario nativo directamente */}
           <div 
             onClick={handleOpenDatePicker}
-            className="relative flex items-center justify-between bg-slate-50 hover:bg-slate-100/80 border border-slate-200 rounded-xl px-3.5 py-2.5 cursor-pointer transition-colors"
+            className="relative flex items-center bg-slate-50 hover:bg-slate-100 active:bg-slate-100/80 border border-slate-200 hover:border-blue-400 rounded-2xl px-4 py-3 cursor-pointer transition-all shadow-2xs group"
           >
-            <div className="flex items-center space-x-2.5 flex-1 min-w-0">
-              <AppleCalendarIcon size={18} className="text-blue-600 shrink-0" />
-              <input
-                ref={dateInputRef}
-                type="date"
-                min={todayIso}
-                value={tempDate}
-                onChange={(e) => setTempDate(e.target.value)}
-                onClick={(e) => {
-                  try {
-                    if (typeof (e.currentTarget as any).showPicker === 'function') {
-                      (e.currentTarget as any).showPicker();
-                    }
-                  } catch {}
-                }}
-                className="w-full text-sm font-bold text-slate-900 bg-transparent focus:outline-hidden cursor-pointer py-0.5"
-              />
-            </div>
-            <button
-              type="button"
+            <AppleCalendarIcon size={18} className="text-blue-600 mr-3 shrink-0 group-hover:scale-105 transition-transform" />
+            <input
+              ref={dateInputRef}
+              type="date"
+              min={todayIso}
+              value={tempDate}
+              onChange={(e) => setTempDate(e.target.value)}
               onClick={(e) => {
-                e.stopPropagation();
-                handleOpenDatePicker();
+                try {
+                  if (typeof (e.currentTarget as any).showPicker === 'function') {
+                    (e.currentTarget as any).showPicker();
+                  }
+                } catch {}
               }}
-              className="text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-lg shrink-0 transition-colors cursor-pointer"
-            >
-              Calendario
-            </button>
+              className="w-full text-sm sm:text-base font-bold text-slate-900 bg-transparent focus:outline-hidden cursor-pointer"
+            />
           </div>
 
           {/* Opciones rápidas de fecha: Mañana, En 3 días, En 8 días distribuidos en la fila */}
-          <div className="grid grid-cols-3 gap-2 pt-0.5">
+          <div className="grid grid-cols-3 gap-2 pt-1">
             {[
               { label: 'Mañana', val: tomorrowIso },
               { label: 'En 3 días', val: in3DaysIso },
@@ -1053,7 +1034,7 @@ export function CartDrawer({
                 key={shortcut.label}
                 type="button"
                 onClick={() => setTempDate(shortcut.val)}
-                className={`text-xs sm:text-sm py-2 px-1 rounded-xl font-bold border transition-all cursor-pointer text-center truncate ${
+                className={`py-2.5 px-1 rounded-xl text-xs sm:text-sm font-bold border transition-all cursor-pointer text-center truncate ${
                   tempDate === shortcut.val
                     ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
                     : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
@@ -1065,16 +1046,11 @@ export function CartDrawer({
           </div>
         </div>
 
-        {/* Selector de Hora - Zonas de 2 horas */}
+        {/* Selector de Hora - Zonas de 2 horas sin redundancias */}
         <div className="space-y-2 pt-1">
-          <div className="flex items-center justify-between">
-            <label className="text-xs font-black text-slate-700 block">
-              Horario preferido (zonas de 2h):
-            </label>
-            <span className="text-xs font-bold text-blue-600">
-              {tempTime}
-            </span>
-          </div>
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
+            Horario preferido
+          </label>
 
           <div className="grid grid-cols-2 gap-2">
             {WORK_TIME_SLOTS.map((slot) => (
@@ -1082,7 +1058,7 @@ export function CartDrawer({
                 key={slot}
                 type="button"
                 onClick={() => setTempTime(slot)}
-                className={`py-2.5 px-3 text-xs sm:text-sm font-bold rounded-xl border transition-all text-center cursor-pointer ${
+                className={`py-3 px-2 text-xs sm:text-sm font-bold rounded-xl border transition-all text-center cursor-pointer ${
                   tempTime === slot
                     ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
                     : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
@@ -1094,19 +1070,12 @@ export function CartDrawer({
           </div>
         </div>
 
-        {/* Resumen & Botón Guardar */}
-        <div className="pt-2 space-y-2">
-          <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs flex items-center justify-between">
-            <span className="text-slate-500 font-medium">Cobro programado:</span>
-            <span className="font-bold text-slate-900">
-              {tempDate ? formatHumanDate(tempDate) : 'Fecha no elegida'} • {tempTime}
-            </span>
-          </div>
-
+        {/* Botón Principal Guardar con espacio generoso */}
+        <div className="pt-2">
           <button
             type="button"
             onClick={handleSaveCreditSchedule}
-            className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black shadow-xs transition-transform active:scale-98 cursor-pointer flex items-center justify-center space-x-1.5"
+            className="w-full py-3.5 px-4 bg-blue-600 hover:bg-blue-700 active:scale-98 text-white rounded-2xl text-sm font-bold shadow-md transition-all cursor-pointer flex items-center justify-center space-x-2"
           >
             <Check className="w-4 h-4 text-white" />
             <span>Guardar Programación</span>
