@@ -32,7 +32,39 @@ import {
 import { PaymentMethod, SaleType, Invoice, Order } from '@/types';
 import { ThermalReceiptModal } from '@/components/receipt/ThermalReceiptModal';
 import { AppleWhatsAppIcon, AppleTrashIcon } from '@/components/ui/AppleIcons';
-import { getFlavorVectorIcon } from '@/components/ui/FruitIcons';
+
+const FLAVOR_ASSET_URLS: Record<string, string> = {
+  'piña': '/flavors/pina.webp',
+  'pina': '/flavors/pina.webp',
+  'mora': '/flavors/mora.webp',
+  'mandarina': '/flavors/mandarina.webp',
+  'naranja': '/flavors/mandarina.webp',
+  'uva': '/flavors/uva.webp',
+  'tamarindo': '/flavors/tamarindo.webp',
+  'lima limón': '/flavors/lima-limon.webp',
+  'lima limon': '/flavors/lima-limon.webp',
+  'limón': '/flavors/lima-limon.webp',
+  'limon': '/flavors/lima-limon.webp',
+  'flor de jamaica': '/flavors/flor-de-jamaica.webp',
+  'jamaica': '/flavors/flor-de-jamaica.webp',
+};
+
+function renderFlavorThumbnail(flavorName: string, size = 18) {
+  const norm = flavorName.toLowerCase().trim();
+  const url = FLAVOR_ASSET_URLS[norm];
+  if (!url) return null;
+  return (
+    <img
+      src={url}
+      alt={flavorName}
+      width={size}
+      height={size}
+      className="object-contain inline-block shrink-0 select-none pointer-events-none drop-shadow-xs align-middle"
+      style={{ width: `${size}px`, height: `${size}px` }}
+      loading="eager"
+    />
+  );
+}
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -525,7 +557,7 @@ export function CartDrawer({
                           <div className="flex items-center space-x-2 flex-wrap gap-y-1">
                             <span className="font-black text-sm sm:text-base text-slate-900 inline-flex items-center gap-1.5">
                               <span>{formatItemTitle(item)}</span>
-                              {item.flavorType !== 'surtido' && item.selectedFlavor && getFlavorVectorIcon(item.selectedFlavor, 'w-4 h-4 shrink-0 inline-block align-middle')}
+                              {item.flavorType !== 'surtido' && item.selectedFlavor && renderFlavorThumbnail(item.selectedFlavor, 20)}
                             </span>
                             <span className="bg-slate-100 text-slate-600 border border-slate-200 text-xs font-bold px-2 py-0.5 rounded-md">
                               {item.unitsPerJava} und
@@ -543,7 +575,7 @@ export function CartDrawer({
                                     key={fl}
                                     className="bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md text-xs text-slate-800 font-bold inline-flex items-center gap-1"
                                   >
-                                    {getFlavorVectorIcon(fl, 'w-3.5 h-3.5 shrink-0')}
+                                    {renderFlavorThumbnail(fl, 16)}
                                     {qty}x {fl}
                                   </span>
                                 ))}
