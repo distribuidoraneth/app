@@ -31,7 +31,7 @@ import {
 } from 'lucide-react';
 import { PaymentMethod, SaleType, Invoice, Order } from '@/types';
 import { ThermalReceiptModal } from '@/components/receipt/ThermalReceiptModal';
-import { AppleWhatsAppIcon } from '@/components/ui/AppleIcons';
+import { AppleWhatsAppIcon, AppleTrashIcon } from '@/components/ui/AppleIcons';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -501,106 +501,101 @@ export function CartDrawer({
               {/* Cart Items List */}
               <div className="space-y-3">
                 <span className="text-xs sm:text-sm font-black text-slate-500 uppercase tracking-wider block">
-                  Productos en el Pedido • {cartTotalBottles} {cartTotalBottles === 1 ? 'botella' : 'botellas'}
+                  Detalle
                 </span>
 
-                {cart.map((item) => (
-                  <div
-                    key={item.id}
-                    className="p-3.5 bg-white rounded-2xl border border-slate-200/90 shadow-2xs space-y-2.5"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="space-y-1 min-w-0">
-                        <div className="flex items-center space-x-2 flex-wrap gap-y-1">
-                          <span className="font-black text-sm sm:text-base text-slate-900">
-                            {formatItemTitle(item)}
-                          </span>
-                          <span className="bg-slate-100 text-slate-600 border border-slate-200 text-xs font-bold px-2 py-0.5 rounded-md">
-                            {item.unitsPerJava} un/paca
-                          </span>
+                {cart.map((item) => {
+                  const totalUnits = (item.quantityJavas * item.unitsPerJava) + item.quantityUnits;
+                  const packs = Math.floor(totalUnits / item.unitsPerJava);
+                  const loose = totalUnits % item.unitsPerJava;
+                  const packLabel = item.container === 'Vidrio' 
+                    ? (packs === 1 ? 'Java' : 'Javas') 
+                    : (packs === 1 ? 'Pack' : 'Packs');
+                  const packSubtotal = packs * item.pricePerJava;
+                  const looseSubtotal = loose * item.pricePerUnit;
+
+                  return (
+                    <div
+                      key={item.id}
+                      className="p-3.5 bg-white rounded-2xl border border-slate-200/90 shadow-2xs space-y-2.5"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="space-y-1 min-w-0">
+                          <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+                            <span className="font-black text-sm sm:text-base text-slate-900">
+                              {formatItemTitle(item)}
+                            </span>
+                            <span className="bg-slate-100 text-slate-600 border border-slate-200 text-xs font-bold px-2 py-0.5 rounded-md">
+                              {item.unitsPerJava} und
+                            </span>
+                          </div>
+
+                          {item.flavorType === 'surtido' && item.surtidoDetails && (
+                            <div className="pt-0.5">
+                              <span className="text-xs font-bold text-slate-500 block mb-0.5">
+                                {item.container === 'Vidrio' ? 'Java Surtida:' : 'Pack Surtido:'}
+                              </span>
+                              <div className="flex flex-wrap gap-1">
+                                {Object.entries(item.surtidoDetails).map(([fl, qty]) => (
+                                  <span
+                                    key={fl}
+                                    className="bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md text-xs text-slate-800 font-bold"
+                                  >
+                                    {qty}x {fl}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
 
-                        {item.flavorType === 'surtido' && item.surtidoDetails && (
-                          <div className="pt-0.5">
-                            <span className="text-xs font-bold text-slate-500 block mb-0.5">
-                              {item.container === 'Vidrio' ? 'Java Surtida:' : 'Pack Surtido:'}
+                        <div className="text-right flex items-center space-x-2.5">
+                          <span className="text-base sm:text-lg font-mono font-black text-blue-700 block">
+                            {formatCurrency(item.subtotal)}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => removeFromCart(item.id)}
+                            className="text-slate-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+                            title="Eliminar producto"
+                          >
+                            <AppleTrashIcon size={16} />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Clear Breakdown: Packs and Loose units */}
+                      <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs sm:text-sm">
+                        <div className="flex items-center flex-wrap gap-x-2 gap-y-1 text-slate-600 font-medium">
+                          {packs > 0 && loose > 0 ? (
+                            <>
+                              <span className="font-bold text-slate-800">
+                                {packs} {packLabel} <span className="text-slate-500 font-normal">({formatCurrency(packSubtotal)})</span>
+                              </span>
+                              <span className="text-slate-400">+</span>
+                              <span className="font-bold text-slate-800">
+                                {loose} {loose === 1 ? 'Unidad' : 'Unidades'} <span className="text-slate-500 font-normal">({formatCurrency(looseSubtotal)})</span>
+                              </span>
+                            </>
+                          ) : packs > 0 ? (
+                            <span className="font-bold text-slate-800">
+                              {packs} {packLabel} <span className="text-slate-500 font-normal">• {formatCurrency(item.pricePerJava)} c/u</span>
                             </span>
-                            <div className="flex flex-wrap gap-1">
-                              {Object.entries(item.surtidoDetails).map(([fl, qty]) => (
-                                <span
-                                  key={fl}
-                                  className="bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md text-xs text-slate-800 font-bold"
-                                >
-                                  {qty}x {fl}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="text-right">
-                        <span className="text-base sm:text-lg font-mono font-black text-blue-700 block">
-                          {formatCurrency(item.subtotal)}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => removeFromCart(item.id)}
-                          className="text-slate-400 hover:text-red-600 p-1 transition-colors cursor-pointer"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                          ) : loose > 0 ? (
+                            <span className="font-bold text-slate-800">
+                              {loose} {loose === 1 ? 'Unidad suelta' : 'Unidades sueltas'} <span className="text-slate-500 font-normal">• {formatCurrency(item.pricePerUnit)} c/u</span>
+                            </span>
+                          ) : null}
+                        </div>
+                        <div className="text-right shrink-0">
+                          <span className="inline-flex items-center text-xs font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+                            Total: {totalUnits} und
+                          </span>
+                        </div>
                       </div>
                     </div>
-
-                    {/* Steppers */}
-                    <div className="flex items-center justify-between pt-2 border-t border-slate-100 gap-2">
-                      <div className="flex items-center space-x-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200">
-                        <span className="text-xs font-black text-slate-700 px-1">
-                          {item.container === 'Vidrio' ? 'Javas:' : 'Packs:'}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => updateCartQuantity(item.id, item.quantityJavas - 1, item.quantityUnits)}
-                          className="w-6 h-6 rounded-md bg-white hover:bg-slate-200 flex items-center justify-center text-slate-800 font-black shadow-2xs active:scale-95 cursor-pointer"
-                        >
-                          <Minus className="w-3 h-3" />
-                        </button>
-                        <span className="w-6 text-center text-sm font-black font-mono text-slate-900">
-                          {item.quantityJavas}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => updateCartQuantity(item.id, item.quantityJavas + 1, item.quantityUnits)}
-                          className="w-6 h-6 rounded-md bg-white hover:bg-slate-200 flex items-center justify-center text-slate-800 font-black shadow-2xs active:scale-95 cursor-pointer"
-                        >
-                          <Plus className="w-3 h-3" />
-                        </button>
-                      </div>
-
-                      <div className="flex items-center space-x-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200">
-                        <span className="text-xs font-black text-slate-700 px-1">Sueltas:</span>
-                        <button
-                          type="button"
-                          onClick={() => updateCartQuantity(item.id, item.quantityJavas, item.quantityUnits - 1)}
-                          className="w-6 h-6 rounded-md bg-white hover:bg-slate-200 flex items-center justify-center text-slate-800 font-black shadow-2xs active:scale-95 cursor-pointer"
-                        >
-                          <Minus className="w-3 h-3" />
-                        </button>
-                        <span className="w-6 text-center text-sm font-black font-mono text-slate-900">
-                          {item.quantityUnits}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => updateCartQuantity(item.id, item.quantityJavas, item.quantityUnits + 1)}
-                          className="w-6 h-6 rounded-md bg-white hover:bg-slate-200 flex items-center justify-center text-slate-800 font-black shadow-2xs active:scale-95 cursor-pointer"
-                        >
-                          <Plus className="w-3 h-3" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* PAYMENT & DEBT CONTROLS */}
