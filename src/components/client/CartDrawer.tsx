@@ -32,6 +32,7 @@ import {
 import { PaymentMethod, SaleType, Invoice, Order } from '@/types';
 import { ThermalReceiptModal } from '@/components/receipt/ThermalReceiptModal';
 import { AppleWhatsAppIcon, AppleTrashIcon } from '@/components/ui/AppleIcons';
+import { getFlavorVectorIcon } from '@/components/ui/FruitIcons';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -522,8 +523,9 @@ export function CartDrawer({
                       <div className="flex items-start justify-between gap-2">
                         <div className="space-y-1 min-w-0">
                           <div className="flex items-center space-x-2 flex-wrap gap-y-1">
-                            <span className="font-black text-sm sm:text-base text-slate-900">
-                              {formatItemTitle(item)}
+                            <span className="font-black text-sm sm:text-base text-slate-900 inline-flex items-center gap-1.5">
+                              <span>{formatItemTitle(item)}</span>
+                              {item.flavorType !== 'surtido' && item.selectedFlavor && getFlavorVectorIcon(item.selectedFlavor, 'w-4 h-4 shrink-0 inline-block align-middle')}
                             </span>
                             <span className="bg-slate-100 text-slate-600 border border-slate-200 text-xs font-bold px-2 py-0.5 rounded-md">
                               {item.unitsPerJava} und
@@ -539,8 +541,9 @@ export function CartDrawer({
                                 {Object.entries(item.surtidoDetails).map(([fl, qty]) => (
                                   <span
                                     key={fl}
-                                    className="bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md text-xs text-slate-800 font-bold"
+                                    className="bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md text-xs text-slate-800 font-bold inline-flex items-center gap-1"
                                   >
+                                    {getFlavorVectorIcon(fl, 'w-3.5 h-3.5 shrink-0')}
                                     {qty}x {fl}
                                   </span>
                                 ))}
