@@ -164,15 +164,17 @@ function StandaloneOrderContent() {
             <button
               type="button"
               onClick={() => setIsCartOpen(true)}
-              className="px-3.5 sm:px-4 py-2 bg-slate-950 hover:bg-slate-800 active:scale-95 text-white rounded-xl shadow-xs border border-slate-800/80 transition-all flex items-center gap-2 text-xs sm:text-sm font-black cursor-pointer select-none"
+              className="relative px-3.5 sm:px-4 py-2 bg-slate-950 hover:bg-slate-900 active:scale-95 text-white rounded-xl shadow-xs border border-slate-800/80 transition-all flex items-center gap-2 text-xs sm:text-sm font-black cursor-pointer select-none group"
             >
-              <AppleCartIcon size={18} className="text-white shrink-0" />
+              <div className="relative flex items-center justify-center">
+                <AppleCartIcon size={18} className="text-white shrink-0 group-hover:scale-105 transition-transform" />
+                {(cartTotalJavas > 0 || cartTotalUnits > 0) && (
+                  <span className="absolute -top-2 -right-2.5 min-w-[18px] h-[18px] px-1 bg-blue-600 text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-slate-950 shadow-xs tabular-nums animate-in zoom-in-75 duration-150">
+                    {cart.length}
+                  </span>
+                )}
+              </div>
               <span className="tracking-tight">Pedido</span>
-              {(cartTotalJavas > 0 || cartTotalUnits > 0) && (
-                <span className="px-2 py-0.5 bg-blue-600 text-white text-[11px] font-black rounded-full min-w-[20px] text-center leading-tight shadow-xs">
-                  {cart.length}
-                </span>
-              )}
             </button>
           </div>
         </div>
@@ -274,12 +276,9 @@ function StandaloneOrderContent() {
             onClick={() => setIsCartOpen(true)}
             className="w-full py-3.5 px-5 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-black text-sm shadow-2xl flex items-center justify-between active:scale-97 transition-transform duration-150 ease-out cursor-pointer"
           >
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2.5">
               <AppleCartIcon size={20} className="text-white shrink-0" />
-              <span>Ver Pedido</span>
-              <span className="px-2.5 py-0.5 bg-blue-500/40 text-white text-xs font-bold rounded-full">
-                {cartTotalBottles} {cartTotalBottles === 1 ? 'botella' : 'botellas'}
-              </span>
+              <span className="tracking-tight font-black">Ver Pedido</span>
             </div>
             <span className="font-mono text-base font-black">${cartTotalAmount.toFixed(2)}</span>
           </button>

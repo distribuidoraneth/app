@@ -29,7 +29,7 @@ export default function ClientExperiencePage({
   params: Promise<{ token: string }>;
 }) {
   const resolvedParams = use(params);
-  const { clients, orders, invoices, cancelOrder, cartTotalJavas, cartTotalAmount } =
+  const { clients, orders, invoices, cancelOrder, cart, cartTotalJavas, cartTotalAmount } =
     useDistribution();
 
   // Match client by QR token
@@ -82,19 +82,21 @@ export default function ClientExperiencePage({
               <MobileTestButton />
             </div>
 
-            {/* Botón Pedido - Acabado Limpio Blanco y Negro con insignia */}
+            {/* Botón Pedido - Acabado Limpio Blanco y Negro con insignia en el ícono */}
             <button
               type="button"
               onClick={() => setIsCartOpen(true)}
-              className="px-3.5 sm:px-4 py-2 bg-slate-950 hover:bg-slate-800 active:scale-95 text-white rounded-xl shadow-xs border border-slate-800/80 transition-all flex items-center gap-2 text-xs sm:text-sm font-black cursor-pointer select-none"
+              className="relative px-3.5 sm:px-4 py-2 bg-slate-950 hover:bg-slate-900 active:scale-95 text-white rounded-xl shadow-xs border border-slate-800/80 transition-all flex items-center gap-2 text-xs sm:text-sm font-black cursor-pointer select-none group"
             >
-              <AppleCartIcon size={18} className="text-white shrink-0" />
+              <div className="relative flex items-center justify-center">
+                <AppleCartIcon size={18} className="text-white shrink-0 group-hover:scale-105 transition-transform" />
+                {cartTotalJavas > 0 && (
+                  <span className="absolute -top-2 -right-2.5 min-w-[18px] h-[18px] px-1 bg-blue-600 text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-slate-950 shadow-xs tabular-nums animate-in zoom-in-75 duration-150">
+                    {cart.length}
+                  </span>
+                )}
+              </div>
               <span className="tracking-tight">Pedido</span>
-              {cartTotalJavas > 0 && (
-                <span className="px-2 py-0.5 rounded-full bg-blue-600 text-white text-[11px] font-mono font-black animate-in fade-in leading-tight shadow-xs">
-                  {cartTotalJavas}
-                </span>
-              )}
             </button>
           </div>
         </div>
