@@ -114,8 +114,11 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
       if (dbOrders !== null) {
         setOrders((prev) => {
           const dbOrderIds = new Set(dbOrders.map((o) => o.id));
-          const extraOrders = prev.filter((o) => !dbOrderIds.has(o.id));
-          return [...dbOrders, ...extraOrders];
+          // Solo preservar pedidos recién creados en los últimos 60 segundos (en vuelo / pendiente de sync)
+          const recentInFlight = prev.filter(
+            (o) => !dbOrderIds.has(o.id) && o.createdAt && Date.now() - new Date(o.createdAt).getTime() < 60000
+          );
+          return [...dbOrders, ...recentInFlight];
         });
       }
     } catch (err) {
@@ -146,8 +149,11 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
       if (dbOrders !== null) {
         setOrders((prev) => {
           const dbOrderIds = new Set(dbOrders.map((o) => o.id));
-          const extraOrders = prev.filter((o) => !dbOrderIds.has(o.id));
-          return [...dbOrders, ...extraOrders];
+          // Solo preservar pedidos recién creados en los últimos 60 segundos (en vuelo / pendiente de sync)
+          const recentInFlight = prev.filter(
+            (o) => !dbOrderIds.has(o.id) && o.createdAt && Date.now() - new Date(o.createdAt).getTime() < 60000
+          );
+          return [...dbOrders, ...recentInFlight];
         });
       }
     } catch (err) {
@@ -163,8 +169,22 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed.clients)) setClients(parsed.clients);
         if (Array.isArray(parsed.catalog) && parsed.catalog.length > 0) setCatalog(parsed.catalog);
-        if (Array.isArray(parsed.orders)) setOrders(parsed.orders);
         if (Array.isArray(parsed.invoices)) setInvoices(parsed.invoices);
+        if (Array.isArray(parsed.orders)) {
+          // En arranque inicial (filtro "today"), no hidratar pedidos ya entregados de días anteriores
+          const now = new Date();
+          const todayOrders = parsed.orders.filter((o: Order) => {
+            if (o.status === 'pending') return true;
+            if (!o.createdAt) return false;
+            const d = new Date(o.createdAt);
+            return (
+              d.getFullYear() === now.getFullYear() &&
+              d.getMonth() === now.getMonth() &&
+              d.getDate() === now.getDate()
+            );
+          });
+          setOrders(todayOrders);
+        }
         if (parsed.clients && parsed.clients.length > 0 && !selectedClientId) {
           setSelectedClientId(parsed.clients[0].id);
         }

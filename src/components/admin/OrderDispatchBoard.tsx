@@ -98,6 +98,57 @@ export function OrderDispatchBoard() {
       if (!matchBusiness && !matchClient && !matchNumber && !matchPhone) {
         return false;
       }
+      return true;
+    }
+
+    // 3. Filtro local por fecha (garantiza que al cambiar entre Hoy, Ayer, etc. la vista sea precisa e inmediata)
+    if (o.createdAt) {
+      const orderDate = new Date(o.createdAt);
+      const now = new Date();
+
+      if (selectedDatePreset === 'today') {
+        // En "Hoy": mostrar si fue creado hoy O si sigue pendiente de despacho
+        const isToday =
+          orderDate.getFullYear() === now.getFullYear() &&
+          orderDate.getMonth() === now.getMonth() &&
+          orderDate.getDate() === now.getDate();
+        if (!isToday && o.status !== 'pending') {
+          return false;
+        }
+      } else if (selectedDatePreset === 'yesterday') {
+        const yest = new Date(now);
+        yest.setDate(yest.getDate() - 1);
+        const isYesterday =
+          orderDate.getFullYear() === yest.getFullYear() &&
+          orderDate.getMonth() === yest.getMonth() &&
+          orderDate.getDate() === yest.getDate();
+        if (!isYesterday) {
+          return false;
+        }
+      } else if (selectedDatePreset === 'week') {
+        const weekAgo = new Date(now);
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        weekAgo.setHours(0, 0, 0, 0);
+        if (orderDate < weekAgo) {
+          return false;
+        }
+      } else if (selectedDatePreset === 'custom' && customDate) {
+        const parts = customDate.split('-');
+        if (parts.length === 3) {
+          const year = parseInt(parts[0], 10);
+          const month = parseInt(parts[1], 10) - 1;
+          const day = parseInt(parts[2], 10);
+          const isCustom =
+            orderDate.getFullYear() === year &&
+            orderDate.getMonth() === month &&
+            orderDate.getDate() === day;
+          if (!isCustom) {
+            return false;
+          }
+        }
+      }
+    } else if (selectedDatePreset === 'yesterday') {
+      return false;
     }
 
     return true;
