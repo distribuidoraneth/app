@@ -9,13 +9,13 @@ import {
 } from '@/types';
 import { formatCurrency } from '@/lib/utils/formatters';
 import confetti from 'canvas-confetti';
-import {
-  Plus,
-  Minus,
-  Sparkles,
-} from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { AppleWaterBottleIcon } from '@/components/ui/AppleIcons';
+import {
+  AppleWaterBottleIcon,
+  ApplePlusIcon,
+  AppleMinusIcon,
+} from '@/components/ui/AppleIcons';
 
 interface BeverageOrderPasarelaProps {
   onGoToCheckout?: () => void;
@@ -462,10 +462,83 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
             </div>
           )}
 
-          {/* PASO 3: CANTIDAD Y TOTAL */}
+          {/* PASO 3: CANTIDAD, TOTAL Y AGREGAR */}
           {currentOption && (
             <div className="pt-3.5 border-t border-slate-100 space-y-3 sm:space-y-3.5">
-              {/* 1. Total prominente en móvil y escritorio */}
+              {/* 1. Botones de Packs/Javas y Unidades en dos filas simétricas a la misma altura */}
+              <div className="space-y-2.5">
+                {/* Fila 1: Javas / Packs */}
+                <div className="flex items-center justify-between bg-white px-4 py-3 sm:py-3.5 rounded-2xl border border-slate-200 shadow-2xs">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-base sm:text-lg font-black text-slate-900">
+                      {currentOption?.container === 'Vidrio' ? 'Javas' : 'Packs'}
+                    </span>
+                    <span className="text-xs sm:text-sm font-semibold text-slate-400">
+                      ({currentOption?.unitsPerJava} un.)
+                    </span>
+                  </div>
+
+                  <div className="flex items-center space-x-3">
+                    <button
+                      type="button"
+                      disabled={javasCount <= 0}
+                      onClick={() => setJavasCount((c) => Math.max(0, c - 1))}
+                      className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-slate-100 text-slate-800 hover:bg-slate-200 active:scale-95 disabled:opacity-25 flex items-center justify-center transition-all cursor-pointer disabled:cursor-not-allowed select-none"
+                      aria-label="Restar java"
+                    >
+                      <AppleMinusIcon size={16} className="text-slate-800" />
+                    </button>
+                    <span className="w-8 sm:w-9 text-center font-mono font-black text-xl sm:text-2xl text-slate-900 select-none">
+                      {javasCount}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setJavasCount((c) => c + 1)}
+                      className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-blue-600 text-white hover:bg-blue-700 active:scale-95 flex items-center justify-center transition-all shadow-xs cursor-pointer select-none"
+                      aria-label="Sumar java"
+                    >
+                      <ApplePlusIcon size={16} className="text-white" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Fila 2: Unidades Sueltas */}
+                <div className="flex items-center justify-between bg-white px-4 py-3 sm:py-3.5 rounded-2xl border border-slate-200 shadow-2xs">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-base sm:text-lg font-black text-slate-900">
+                      Unidades
+                    </span>
+                    <span className="text-xs sm:text-sm font-semibold text-slate-400">
+                      (sueltas)
+                    </span>
+                  </div>
+
+                  <div className="flex items-center space-x-3">
+                    <button
+                      type="button"
+                      disabled={unitsCount <= 0}
+                      onClick={() => setUnitsCount((c) => Math.max(0, c - 1))}
+                      className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-slate-100 text-slate-800 hover:bg-slate-200 active:scale-95 disabled:opacity-25 flex items-center justify-center transition-all cursor-pointer disabled:cursor-not-allowed select-none"
+                      aria-label="Restar unidad"
+                    >
+                      <AppleMinusIcon size={16} className="text-slate-800" />
+                    </button>
+                    <span className="w-8 sm:w-9 text-center font-mono font-black text-xl sm:text-2xl text-slate-900 select-none">
+                      {unitsCount}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setUnitsCount((c) => c + 1)}
+                      className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-blue-600 text-white hover:bg-blue-700 active:scale-95 flex items-center justify-center transition-all shadow-xs cursor-pointer select-none"
+                      aria-label="Sumar unidad"
+                    >
+                      <ApplePlusIcon size={16} className="text-white" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. Total a Pagar (después de los botones de packs y unidades) */}
               <div className="flex items-center justify-between bg-slate-50/90 px-4 py-3 sm:px-5 sm:py-3.5 rounded-2xl border border-slate-200/90">
                 <div>
                   <span className="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider block">
@@ -491,96 +564,19 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
                 </div>
               </div>
 
-              {/* 2. Dos filas con botones grandes, intuitivos y a la misma altura */}
-              <div className="space-y-2.5">
-                {/* Fila 1: Javas / Packs */}
-                <div className="flex items-center justify-between bg-white px-4 py-3 sm:py-3.5 rounded-2xl border border-slate-200 shadow-2xs">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-base sm:text-lg font-black text-slate-900">
-                      {currentOption?.container === 'Vidrio' ? 'Javas' : 'Packs'}
-                    </span>
-                    <span className="text-xs sm:text-sm font-semibold text-slate-400">
-                      ({currentOption?.unitsPerJava} un.)
-                    </span>
-                  </div>
-
-                  <div className="flex items-center space-x-3">
-                    <button
-                      type="button"
-                      disabled={javasCount <= 0}
-                      onClick={() => setJavasCount((c) => Math.max(0, c - 1))}
-                      className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-slate-100 text-slate-800 hover:bg-slate-200 active:scale-95 disabled:opacity-25 flex items-center justify-center font-black transition-all cursor-pointer disabled:cursor-not-allowed select-none"
-                      aria-label="Restar java"
-                    >
-                      <Minus className="w-4 h-4 sm:w-5 sm:h-5" />
-                    </button>
-                    <span className="w-8 sm:w-9 text-center font-mono font-black text-xl sm:text-2xl text-slate-900 select-none">
-                      {javasCount}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setJavasCount((c) => c + 1)}
-                      className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-blue-600 text-white hover:bg-blue-700 active:scale-95 flex items-center justify-center font-black transition-all shadow-xs cursor-pointer select-none"
-                      aria-label="Sumar java"
-                    >
-                      <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Fila 2: Unidades Sueltas */}
-                <div className="flex items-center justify-between bg-white px-4 py-3 sm:py-3.5 rounded-2xl border border-slate-200 shadow-2xs">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-base sm:text-lg font-black text-slate-900">
-                      Unidades
-                    </span>
-                    <span className="text-xs sm:text-sm font-semibold text-slate-400">
-                      (sueltas)
-                    </span>
-                  </div>
-
-                  <div className="flex items-center space-x-3">
-                    <button
-                      type="button"
-                      disabled={unitsCount <= 0}
-                      onClick={() => setUnitsCount((c) => Math.max(0, c - 1))}
-                      className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-slate-100 text-slate-800 hover:bg-slate-200 active:scale-95 disabled:opacity-25 flex items-center justify-center font-black transition-all cursor-pointer disabled:cursor-not-allowed select-none"
-                      aria-label="Restar unidad"
-                    >
-                      <Minus className="w-4 h-4 sm:w-5 sm:h-5" />
-                    </button>
-                    <span className="w-8 sm:w-9 text-center font-mono font-black text-xl sm:text-2xl text-slate-900 select-none">
-                      {unitsCount}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setUnitsCount((c) => c + 1)}
-                      className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-blue-600 text-white hover:bg-blue-700 active:scale-95 flex items-center justify-center font-black transition-all shadow-xs cursor-pointer select-none"
-                      aria-label="Sumar unidad"
-                    >
-                      <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* 3. CTA: Agregar al Pedido */}
+              {/* 3. CTA: Botón directo "Agregar" */}
               <button
                 type="button"
                 disabled={!canAddToCart}
                 onClick={handleAddToCart}
-                className={`w-full py-3.5 sm:py-4 px-6 rounded-2xl font-black text-base sm:text-lg flex items-center justify-center space-x-2 transition-all ${
+                className={`w-full py-3.5 sm:py-4 px-6 rounded-2xl font-black text-base sm:text-lg flex items-center justify-center space-x-2 transition-all select-none ${
                   canAddToCart
                     ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md active:scale-[0.99] cursor-pointer'
                     : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-none'
                 }`}
               >
-                {canAddToCart && <Plus className="w-5 h-5" />}
-                <span>
-                  {canAddToCart
-                    ? `Agregar al Pedido • ${formatCurrency(currentTotalSubtotal)}`
-                    : 'Agregar al Pedido'}
-                </span>
+                {canAddToCart && <ApplePlusIcon size={18} className="text-white mr-1.5" />}
+                <span>Agregar</span>
               </button>
             </div>
           )}
