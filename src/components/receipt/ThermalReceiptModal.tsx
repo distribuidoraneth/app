@@ -82,6 +82,23 @@ export function ThermalReceiptModal({
     : `https://distribuidora-aneth.vercel.app/factura/${invoice?.id || order.invoiceId || order.orderNumber}`;
 
   const hasDebt = order.debtBalance > 0;
+
+  const formatPromisedDate = (dateStr?: string) => {
+    if (!dateStr) return '';
+    try {
+      const [y, m, d] = dateStr.split('-').map(Number);
+      const date = new Date(y, m - 1, d);
+      const formatted = date.toLocaleDateString('es-EC', {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short',
+      });
+      return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+    } catch {
+      return dateStr;
+    }
+  };
+
   const paymentMethodLabel =
     order.paymentMethod === 'cash'
       ? 'EFECTIVO'
@@ -374,7 +391,7 @@ export function ThermalReceiptModal({
                     <div className="flex justify-between">
                       <span className="font-semibold">Fecha de cobro:</span>
                       <span className="font-semibold">
-                        {order.promisedCollectionDate} {order.promisedCollectionTime ? `(${order.promisedCollectionTime})` : ''}
+                        {formatPromisedDate(order.promisedCollectionDate)} {order.promisedCollectionTime ? `(${order.promisedCollectionTime})` : ''}
                       </span>
                     </div>
                   )}

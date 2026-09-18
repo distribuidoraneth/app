@@ -122,13 +122,23 @@ export function CartDrawer({
     new Date(Date.now() + 86400000).toISOString().split('T')[0]
   );
   const [scheduledTimeSlot, setScheduledTimeSlot] = useState<string>('Mañana (8:00 - 12:00)');
-  const [promisedDate, setPromisedDate] = useState<string>(
-    new Date(Date.now() + 86400000).toISOString().split('T')[0]
-  );
-  const [promisedTime, setPromisedTime] = useState<string>('Mañana (8:00 - 11:00)');
-  const [isCustomTime, setIsCustomTime] = useState<boolean>(false);
-  const [customTimeInput, setCustomTimeInput] = useState<string>('');
-  const dateInputRef = React.useRef<HTMLInputElement>(null);
+  const [promisedDate, setPromisedDate] = useState<string>('');
+  const [promisedTime, setPromisedTime] = useState<string>('');
+  const [tempDate, setTempDate] = useState<string>('');
+  const [tempTime, setTempTime] = useState<string>('9:00 AM');
+
+  const WORK_HOURS = [
+    '8:00 AM',
+    '9:00 AM',
+    '10:00 AM',
+    '11:00 AM',
+    '12:00 PM',
+    '1:00 PM',
+    '2:00 PM',
+    '3:00 PM',
+    '4:00 PM',
+    '5:00 PM',
+  ];
 
   const todayIso = new Date().toISOString().split('T')[0];
   const tomorrowIso = new Date(Date.now() + 86400000).toISOString().split('T')[0];
@@ -161,7 +171,7 @@ export function CartDrawer({
   const nextMonIso = getNextMondayIso();
   const endMonthIso = getEndOfMonthIso();
 
-  const formatHumanDate = (dateStr: string) => {
+  const formatHumanDate = (dateStr?: string) => {
     if (!dateStr) return '';
     try {
       const [y, m, d] = dateStr.split('-').map(Number);
@@ -174,17 +184,15 @@ export function CartDrawer({
       const diffDays = Math.round((target.getTime() - today.getTime()) / 86400000);
 
       let badge = '';
-      if (diffDays === 0) badge = ' • Hoy';
-      else if (diffDays === 1) badge = ' • Mañana';
-      else if (diffDays === 2) badge = ' • Pasado mañana';
-      else if (diffDays > 2) badge = ` • En ${diffDays} días`;
-      else if (diffDays < 0) badge = ' • Fecha pasada';
+      if (diffDays === 0) badge = ' (Hoy)';
+      else if (diffDays === 1) badge = ' (Mañana)';
+      else if (diffDays === 2) badge = ' (Pasado mañana)';
+      else if (diffDays > 2) badge = ` (en ${diffDays} días)`;
 
       const formatted = date.toLocaleDateString('es-EC', {
-        weekday: 'long',
+        weekday: 'short',
         day: 'numeric',
-        month: 'long',
-        year: 'numeric',
+        month: 'short',
       });
       return `${formatted.charAt(0).toUpperCase() + formatted.slice(1)}${badge}`;
     } catch {
@@ -247,14 +255,27 @@ export function CartDrawer({
   const numericPaid = parseFloat(amountPaidInput) || 0;
   const debtBalance = Math.max(0, Number((cartTotalAmount - numericPaid).toFixed(2)));
 
+  const openCreditModal = () => {
+    setTempDate(promisedDate || tomorrowIso);
+    setTempTime(promisedTime || '9:00 AM');
+    setShowCreditModal(true);
+  };
+
+  const handleSaveCreditSchedule = () => {
+    setPromisedDate(tempDate || tomorrowIso);
+    setPromisedTime(tempTime || '9:00 AM');
+    setShowCreditModal(false);
+  };
+
   const handleConfirmOrder = () => {
     if (cart.length === 0 || !activeClient) return;
 
-    setIsSubmitting(true);
+    if (debtBalance > 0 && (!promisedDate || !promisedTime)) {
+      openCreditModal();
+      return;
+    }
 
-    const effectivePromisedTime = isCustomTime && customTimeInput.trim()
-      ? customTimeInput.trim()
-      : promisedTime;
+    setIsSubmitting(true);
 
     try {
       const order = createOrder({
@@ -265,7 +286,7 @@ export function CartDrawer({
         scheduledDeliveryDate: saleType === 'preventa' ? scheduledDate : undefined,
         scheduledTimeSlot: saleType === 'preventa' ? scheduledTimeSlot : undefined,
         promisedCollectionDate: debtBalance > 0 ? promisedDate : undefined,
-        promisedCollectionTime: debtBalance > 0 ? effectivePromisedTime : undefined,
+        promisedCollectionTime: debtBalance > 0 ? promisedTime : undefined,
         amountPaid: Math.min(cartTotalAmount, numericPaid),
         notes,
         customLocation: {
@@ -332,7 +353,7 @@ export function CartDrawer({
       `*Total:* $${createdOrderSummary.totalAmount.toFixed(2)}\n` +
       `*Valor Pagado:* $${createdOrderSummary.amountPaid.toFixed(2)}\n` +
       (createdOrderSummary.debtBalance > 0
-        ? `*Saldo Pendiente:* $${createdOrderSummary.debtBalance.toFixed(2)}\n*Fecha pactada de cobro:* ${createdOrderSummary.promisedCollectionDate || 'Por coordinar'} (${createdOrderSummary.promisedCollectionTime || 'En ruta'})\n`
+        ? `*Saldo Pendiente:* $${createdOrderSummary.debtBalance.toFixed(2)}\n*Fecha pactada de cobro:* ${formatHumanDate(createdOrderSummary.promisedCollectionDate) || 'Por coordinar'} (${createdOrderSummary.promisedCollectionTime || 'En ruta'})\n`
         : `*Estado:* Pagado Completo\n`) +
       (invoiceLink ? `\n*Factura Electrónica SRI:* ${invoiceLink}\n` : '') +
       `\n_Gracias por su preferencia - Aneth Distribuciones_`;
@@ -436,7 +457,7 @@ export function CartDrawer({
                       <div className="flex justify-between text-slate-600 font-medium">
                         <span>Cobro Programado:</span>
                         <span className="font-bold text-slate-800">
-                          {createdOrderSummary.promisedCollectionDate} • {createdOrderSummary.promisedCollectionTime}
+                          {formatHumanDate(createdOrderSummary.promisedCollectionDate)} • {createdOrderSummary.promisedCollectionTime}
                         </span>
                       </div>
                     )}
@@ -827,31 +848,41 @@ export function CartDrawer({
                   </div>
 
                   {debtBalance > 0 && (
-                    <div className="p-3.5 bg-amber-50/70 border border-amber-200 rounded-2xl flex items-center justify-between gap-3 animate-in fade-in duration-150">
-                      <div className="min-w-0 space-y-0.5">
-                        <div className="flex items-center space-x-1.5">
-                          <span className="text-xs font-black text-amber-900 uppercase tracking-wider">
-                            Saldo a Crédito:
+                    <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between gap-3 animate-in fade-in duration-150">
+                      <div className="min-w-0">
+                        <div className="flex items-baseline gap-1.5">
+                          <span className="text-xs font-semibold text-slate-500">
+                            Saldo a crédito:
                           </span>
-                          <span className="font-mono text-xs font-black text-amber-950 bg-amber-200/80 px-2 py-0.5 rounded-md">
+                          <span className="font-mono text-sm font-black text-slate-900">
                             {formatCurrency(debtBalance)}
                           </span>
                         </div>
-                        <p className="text-xs text-slate-600 font-medium truncate flex items-center gap-1.5 pt-0.5">
-                          <AppleCalendarClockIcon size={14} className="text-amber-700 shrink-0 inline-block" />
-                          <span>
-                            {formatHumanDate(promisedDate)} • {isCustomTime && customTimeInput.trim() ? customTimeInput : promisedTime}
-                          </span>
-                        </p>
+                        <div className="text-xs text-slate-500 font-medium flex items-center gap-1.5 mt-0.5">
+                          <AppleCalendarClockIcon size={13} className={promisedDate && promisedTime ? "text-blue-600 shrink-0" : "text-amber-500 shrink-0"} />
+                          {promisedDate && promisedTime ? (
+                            <span className="text-slate-700 font-medium truncate">
+                              {formatHumanDate(promisedDate)} • {promisedTime}
+                            </span>
+                          ) : (
+                            <span className="text-amber-600 font-medium truncate">
+                              Definir fecha y hora de cobro
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       <button
                         type="button"
-                        onClick={() => setShowCreditModal(true)}
-                        className="px-3 py-2 bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-xl text-xs font-black shrink-0 flex items-center space-x-1.5 shadow-2xs transition-all active:scale-95 cursor-pointer"
+                        onClick={openCreditModal}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-1.5 ${
+                          promisedDate && promisedTime
+                            ? 'text-blue-600 hover:bg-blue-50 border border-slate-200'
+                            : 'bg-blue-600 hover:bg-blue-700 text-white shadow-xs'
+                        }`}
                       >
-                        <ApplePencilIcon size={13} className="text-amber-800 shrink-0" />
-                        <span>Cambiar Fecha</span>
+                        <AppleCalendarClockIcon size={13} />
+                        <span>{promisedDate && promisedTime ? 'Cambiar' : 'Definir'}</span>
                       </button>
                     </div>
                   )}
@@ -894,7 +925,7 @@ export function CartDrawer({
                         ? 'text-blue-700'
                         : numericPaid > 0
                         ? 'text-emerald-700'
-                        : 'text-amber-700'
+                        : 'text-slate-900'
                     }`}
                   >
                     {debtBalance === 0
@@ -903,8 +934,8 @@ export function CartDrawer({
                   </span>
 
                   {debtBalance > 0 && (
-                    <span className="text-xs font-black text-amber-800 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-md">
-                      + {formatCurrency(debtBalance)} a Cartera
+                    <span className="text-xs font-semibold text-slate-500">
+                      (+{formatCurrency(debtBalance)} a crédito)
                     </span>
                   )}
                 </div>
@@ -923,17 +954,23 @@ export function CartDrawer({
             <button
               type="button"
               disabled={isSubmitting || cart.length === 0}
-              onClick={handleConfirmOrder}
+              onClick={
+                debtBalance > 0 && (!promisedDate || !promisedTime)
+                  ? openCreditModal
+                  : handleConfirmOrder
+              }
               className={`w-full py-4 px-5 active:scale-97 text-white font-black rounded-2xl text-base sm:text-lg shadow-md flex items-center justify-center space-x-2 transition-transform duration-150 ease-out disabled:opacity-50 cursor-pointer ${
-                debtBalance > 0 && numericPaid === 0
-                  ? 'bg-amber-600 hover:bg-amber-700'
+                debtBalance > 0 && (!promisedDate || !promisedTime)
+                  ? 'bg-blue-600 hover:bg-blue-700'
                   : saleType === 'autoventa'
                   ? 'bg-blue-600 hover:bg-blue-700'
                   : 'bg-emerald-600 hover:bg-emerald-700'
               }`}
             >
               <span>
-                {debtBalance === 0
+                {debtBalance > 0 && (!promisedDate || !promisedTime)
+                  ? `Definir Fecha de Cobro (${formatCurrency(debtBalance)})`
+                  : debtBalance === 0
                   ? (saleType === 'autoventa'
                       ? `Confirmar y Despachar (${formatCurrency(cartTotalAmount)})`
                       : `Programar Pedido (${formatCurrency(cartTotalAmount)})`)
@@ -950,46 +987,56 @@ export function CartDrawer({
   );
 
   const creditModalContent = showCreditModal && (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in duration-200">
+    <div 
+      className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200"
+      onClick={() => setShowCreditModal(false)}
+    >
       <div 
-        className="w-full max-w-sm bg-white rounded-3xl p-5 shadow-2xl border border-slate-200 space-y-4 animate-in zoom-in-95 duration-150"
+        className="w-full max-w-sm bg-white rounded-3xl p-5 sm:p-6 shadow-2xl border border-slate-100 space-y-4 animate-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-800">
-              <AppleCalendarClockIcon size={18} />
+        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div className="flex items-center space-x-2.5">
+            <div className="w-9 h-9 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600">
+              <AppleCalendarClockIcon size={20} />
             </div>
             <div>
-              <h3 className="text-sm font-black text-slate-900">Fecha de Cobro</h3>
-              <p className="text-xs text-slate-500 font-medium">Pactar pago del saldo a crédito</p>
+              <h3 className="text-sm font-black text-slate-900">Fecha y Hora de Cobro</h3>
+              <p className="text-xs text-slate-500 font-medium">Horario de trabajo: 8:00 AM a 5:00 PM</p>
             </div>
           </div>
           <button
             type="button"
             onClick={() => setShowCreditModal(false)}
-            className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Selector de Fecha */}
-        <div className="space-y-1.5">
-          <label className="text-xs font-black text-slate-700 block">Día acordado:</label>
-          <div className="relative flex items-center bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 shadow-2xs">
-            <AppleCalendarIcon size={16} className="text-slate-500 mr-2.5 shrink-0" />
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-black text-slate-700 block">Día acordado:</label>
+            {tempDate && (
+              <span className="text-xs font-bold text-blue-600">
+                {formatHumanDate(tempDate)}
+              </span>
+            )}
+          </div>
+          <div className="relative flex items-center bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5">
+            <AppleCalendarIcon size={16} className="text-slate-400 mr-2.5 shrink-0" />
             <input
               type="date"
               min={todayIso}
-              value={promisedDate}
-              onChange={(e) => setPromisedDate(e.target.value)}
-              className="w-full text-xs sm:text-sm font-black text-slate-900 bg-transparent focus:outline-hidden cursor-pointer"
+              value={tempDate}
+              onChange={(e) => setTempDate(e.target.value)}
+              className="w-full text-sm font-bold text-slate-900 bg-transparent focus:outline-hidden cursor-pointer"
             />
           </div>
 
           {/* Opciones rápidas de fecha */}
-          <div className="grid grid-cols-4 gap-1 pt-1">
+          <div className="grid grid-cols-4 gap-1.5 pt-0.5">
             {[
               { label: 'Mañana', val: tomorrowIso },
               { label: 'En 3 días', val: in3DaysIso },
@@ -999,11 +1046,11 @@ export function CartDrawer({
               <button
                 key={shortcut.label}
                 type="button"
-                onClick={() => setPromisedDate(shortcut.val)}
-                className={`text-xs py-1 px-1.5 rounded-lg font-bold border transition-all cursor-pointer text-center truncate ${
-                  promisedDate === shortcut.val
-                    ? 'bg-amber-600 text-white border-amber-600 shadow-2xs'
-                    : 'bg-slate-50 hover:bg-amber-50 text-slate-700 border-slate-200'
+                onClick={() => setTempDate(shortcut.val)}
+                className={`text-xs py-1.5 px-1 rounded-xl font-bold border transition-all cursor-pointer text-center truncate ${
+                  tempDate === shortcut.val
+                    ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
                 }`}
               >
                 {shortcut.label}
@@ -1012,48 +1059,50 @@ export function CartDrawer({
           </div>
         </div>
 
-        {/* Selector de Hora / Franja */}
-        <div className="space-y-1.5">
-          <label className="text-xs font-black text-slate-700 block">Horario preferido:</label>
-          <select
-            value={isCustomTime ? 'custom' : promisedTime}
-            onChange={(e) => {
-              if (e.target.value === 'custom') {
-                setIsCustomTime(true);
-              } else {
-                setIsCustomTime(false);
-                setPromisedTime(e.target.value);
-              }
-            }}
-            className="w-full text-xs sm:text-sm font-bold px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:outline-hidden cursor-pointer shadow-2xs"
-          >
-            <option value="Mañana (8:00 - 11:00)">Mañana (8:00 - 11:00)</option>
-            <option value="Mediodía (11:00 - 13:00)">Mediodía (11:00 - 13:00)</option>
-            <option value="Tarde (13:00 - 16:00)">Tarde (13:00 - 16:00)</option>
-            <option value="Final de ruta (16:00 - 19:00)">Final de ruta (16:00 - 19:00)</option>
-            <option value="custom">✍️ Hora personalizada...</option>
-          </select>
+        {/* Selector de Hora - Estrictamente 8:00 AM a 5:00 PM */}
+        <div className="space-y-2 pt-1">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-black text-slate-700 block">
+              Hora estimada:
+            </label>
+            <span className="text-xs font-bold text-blue-600">
+              {tempTime}
+            </span>
+          </div>
 
-          {isCustomTime && (
-            <input
-              type="text"
-              placeholder="Ej: 10:30 AM"
-              value={customTimeInput}
-              onChange={(e) => setCustomTimeInput(e.target.value)}
-              className="w-full text-xs sm:text-sm font-black px-3 py-2 bg-white border border-amber-400 rounded-xl focus:ring-2 focus:ring-amber-500 focus:outline-hidden shadow-2xs placeholder:text-slate-400 mt-1"
-              autoFocus
-            />
-          )}
+          <div className="grid grid-cols-5 gap-1.5">
+            {WORK_HOURS.map((hour) => (
+              <button
+                key={hour}
+                type="button"
+                onClick={() => setTempTime(hour)}
+                className={`py-2 px-0.5 text-xs font-bold rounded-xl border transition-all text-center cursor-pointer ${
+                  tempTime === hour
+                    ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                }`}
+              >
+                {hour}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Botón Listo */}
-        <div className="pt-2">
+        {/* Resumen & Botón Guardar */}
+        <div className="pt-2 space-y-2">
+          <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs flex items-center justify-between">
+            <span className="text-slate-500 font-medium">Cobro programado:</span>
+            <span className="font-bold text-slate-900">
+              {tempDate ? formatHumanDate(tempDate) : 'Fecha no elegida'} • {tempTime}
+            </span>
+          </div>
+
           <button
             type="button"
-            onClick={() => setShowCreditModal(false)}
-            className="w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black shadow-xs transition-transform active:scale-98 cursor-pointer flex items-center justify-center space-x-1.5"
+            onClick={handleSaveCreditSchedule}
+            className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black shadow-xs transition-transform active:scale-98 cursor-pointer flex items-center justify-center space-x-1.5"
           >
-            <Check className="w-4 h-4 text-emerald-400" />
+            <Check className="w-4 h-4 text-white" />
             <span>Guardar Programación</span>
           </button>
         </div>
