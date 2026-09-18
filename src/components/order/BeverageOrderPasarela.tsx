@@ -6,14 +6,12 @@ import {
   BeverageType,
   JavaProductOption,
   CartItem,
-  SurtidoBreakdown,
 } from '@/types';
 import { formatCurrency } from '@/lib/utils/formatters';
 import confetti from 'canvas-confetti';
 import {
   Plus,
   Minus,
-  RotateCcw,
   Sparkles,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -144,32 +142,13 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
     return catalog.find((opt) => opt.id === selectedOptionId) || availableOptionsForType[0];
   }, [catalog, selectedOptionId, availableOptionsForType]);
 
-  // Sabor o Surtido
-  const [flavorMode, setFlavorMode] = useState<'single' | 'surtido'>('single');
+  // Selección de Sabor (Único)
   const [selectedSingleFlavor, setSelectedSingleFlavor] = useState<string>('Piña');
-  const [surtidoCounts, setSurtidoCounts] = useState<SurtidoBreakdown>({});
 
   React.useEffect(() => {
     if (currentOption) {
       const flavors = currentOption.allowedFlavors;
       setSelectedSingleFlavor(flavors[0] || 'Piña');
-
-      const totalUnits = currentOption.unitsPerJava;
-      const initialSurtido: SurtidoBreakdown = {};
-      if (flavors.length > 1) {
-        const perFlavor = Math.floor(totalUnits / flavors.length);
-        const remainder = totalUnits % flavors.length;
-        flavors.forEach((fl, idx) => {
-          initialSurtido[fl] = perFlavor + (idx < remainder ? 1 : 0);
-        });
-      } else {
-        initialSurtido[flavors[0]] = totalUnits;
-      }
-      setSurtidoCounts(initialSurtido);
-
-      if (flavors.length <= 1) {
-        setFlavorMode('single');
-      }
     }
   }, [currentOption]);
 
@@ -203,13 +182,6 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
     }
   };
 
-  const handleFlavorModeChange = (mode: 'single' | 'surtido') => {
-    if (mode !== flavorMode) {
-      setFlavorMode(mode);
-      resetQuantities();
-    }
-  };
-
   // Precio por Java adaptado a la categoría del cliente
   const effectivePricePerJava = useMemo(() => {
     if (!currentOption) return 0;
@@ -236,41 +208,7 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
     return Number((javasVal + unitsVal).toFixed(2));
   }, [currentOption, javasCount, unitsCount, effectivePricePerJava, unitPrice]);
 
-  const currentTotalBottles = useMemo(() => {
-    if (!currentOption) return 0;
-    return (javasCount * currentOption.unitsPerJava) + unitsCount;
-  }, [currentOption, javasCount, unitsCount]);
-
-  // Surtido validación
-  const totalSurtidoUnits = useMemo(() => {
-    return Object.values(surtidoCounts).reduce((sum, n) => sum + (n || 0), 0);
-  }, [surtidoCounts]);
-
-  const targetUnits = currentOption?.unitsPerJava || 12;
-  const isSurtidoValid = flavorMode === 'single' || totalSurtidoUnits === targetUnits;
-  const canAddToCart = isSurtidoValid && (javasCount > 0 || unitsCount > 0);
-
-  const handleSurtidoCountChange = (flavor: string, delta: number) => {
-    const currentVal = surtidoCounts[flavor] || 0;
-    const newVal = Math.max(0, currentVal + delta);
-    setSurtidoCounts((prev) => ({
-      ...prev,
-      [flavor]: newVal,
-    }));
-  };
-
-  const handleEqualizeSurtido = () => {
-    if (!currentOption) return;
-    const flavors = currentOption.allowedFlavors;
-    const totalUnits = currentOption.unitsPerJava;
-    const perFlavor = Math.floor(totalUnits / flavors.length);
-    const remainder = totalUnits % flavors.length;
-    const resetSurtido: SurtidoBreakdown = {};
-    flavors.forEach((fl, idx) => {
-      resetSurtido[fl] = perFlavor + (idx < remainder ? 1 : 0);
-    });
-    setSurtidoCounts(resetSurtido);
-  };
+  const canAddToCart = javasCount > 0 || unitsCount > 0;
 
   const handleAddToCart = () => {
     if (!currentOption || !canAddToCart) return;
@@ -282,15 +220,14 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
       beverageType: currentOption.beverageType,
       container: currentOption.container,
       size: currentOption.size,
-      flavorType: flavorMode,
-      selectedFlavor: flavorMode === 'single' ? selectedSingleFlavor : undefined,
-      surtidoDetails: flavorMode === 'surtido' ? surtidoCounts : undefined,
+      flavorType: 'single',
+      selectedFlavor: selectedSingleFlavor,
       quantityJavas: javasCount,
       quantityUnits: unitsCount,
       unitsPerJava: currentOption.unitsPerJava,
       pricePerJava: effectivePricePerJava,
       pricePerUnit: unitPrice,
-      totalBottles: currentTotalBottles,
+      totalBottles: (javasCount * currentOption.unitsPerJava) + unitsCount,
       subtotal: currentTotalSubtotal,
       imageUrl: currentOption.imageUrl,
     };
@@ -487,237 +424,147 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
                   Elige el Sabor
                 </label>
 
-                {currentOption.allowedFlavors.length > 1 && (
-                  <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200">
-                    <button
-                      type="button"
-                      onClick={() => handleFlavorModeChange('single')}
-                      className={`px-2.5 py-1 rounded-lg text-xs sm:text-sm font-black transition-all active:scale-95 ${
-                        flavorMode === 'single'
-                          ? 'bg-white text-slate-950 shadow-xs'
-                          : 'text-slate-600 hover:text-slate-900'
-                      }`}
-                    >
-                      Sabor Único
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleFlavorModeChange('surtido')}
-                      className={`px-2.5 py-1 rounded-lg text-xs sm:text-sm font-black transition-all active:scale-95 ${
-                        flavorMode === 'surtido'
-                          ? 'bg-blue-600 text-white shadow-xs'
-                          : 'text-slate-600 hover:text-slate-900'
-                      }`}
-                    >
-                      Java Surtida
-                    </button>
-                  </div>
-                )}
               </div>
 
-              {flavorMode === 'single' ? (
-                <div className={`grid gap-2 ${
-                  currentOption.allowedFlavors.length <= 2 
-                    ? 'grid-cols-2' 
-                    : 'grid-cols-3 sm:grid-cols-5'
-                }`}>
-                  {currentOption.allowedFlavors.map((flavor) => {
-                    const isSelected = selectedSingleFlavor === flavor;
-                    const style = FLAVOR_STYLES[flavor] || DEFAULT_FLAVOR_STYLE;
-                    const hasFlavorGraphic = Boolean(FLAVOR_ICON_URLS[flavor] || flavor === 'Sin Gas' || flavor === 'Con Gas');
+              <div className={`grid gap-2 ${
+                currentOption.allowedFlavors.length <= 2 
+                  ? 'grid-cols-2' 
+                  : 'grid-cols-3 sm:grid-cols-5'
+              }`}>
+                {currentOption.allowedFlavors.map((flavor) => {
+                  const isSelected = selectedSingleFlavor === flavor;
+                  const style = FLAVOR_STYLES[flavor] || DEFAULT_FLAVOR_STYLE;
+                  const hasFlavorGraphic = Boolean(FLAVOR_ICON_URLS[flavor] || flavor === 'Sin Gas' || flavor === 'Con Gas');
 
-                    return (
-                      <button
-                        key={flavor}
-                        type="button"
-                        onClick={() => handleFlavorChange(flavor)}
-                        className={`p-2 sm:p-2.5 rounded-2xl border text-center flex flex-col sm:flex-row items-center justify-center space-y-1 sm:space-y-0 sm:space-x-2.5 transition-all active:scale-[0.97] group ${
-                          isSelected
-                            ? `${style.bgSelected} ${style.borderSelected} ${style.ringSelected} shadow-sm`
-                            : 'border-slate-200/90 hover:border-slate-300 bg-white hover:bg-slate-50/80 shadow-2xs'
-                        }`}
-                      >
-                        {/* 3D Fruit Icon directo sin recuadro */}
-                        {hasFlavorGraphic ? (
-                          <FruitVectorIcon flavor={flavor} size={34} className="shrink-0 drop-shadow-xs" />
-                        ) : null}
-
-                        <div className="text-sm sm:text-base font-black text-slate-900 leading-tight truncate">
-                          {flavor}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : (
-                /* Constructor de Surtido */
-                <div className="bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200 space-y-3.5">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-black text-slate-900 text-sm">
-                      Asigna botellas por sabor • {currentOption.unitsPerJava} unidades
-                    </span>
+                  return (
                     <button
+                      key={flavor}
                       type="button"
-                      onClick={handleEqualizeSurtido}
-                      className="text-blue-700 hover:underline flex items-center font-black text-xs"
+                      onClick={() => handleFlavorChange(flavor)}
+                      className={`p-2 sm:p-2.5 rounded-2xl border text-center flex flex-col sm:flex-row items-center justify-center space-y-1 sm:space-y-0 sm:space-x-2.5 transition-all active:scale-[0.97] group cursor-pointer select-none ${
+                        isSelected
+                          ? `${style.bgSelected} ${style.borderSelected} ${style.ringSelected} shadow-sm`
+                          : 'border-slate-200/90 hover:border-slate-300 bg-white hover:bg-slate-50/80 shadow-2xs'
+                      }`}
                     >
-                      <RotateCcw className="w-3.5 h-3.5 mr-1" />
-                      Repartir equitativo
+                      {/* 3D Fruit Icon directo sin recuadro */}
+                      {hasFlavorGraphic ? (
+                        <FruitVectorIcon flavor={flavor} size={34} className="shrink-0 drop-shadow-xs" />
+                      ) : null}
+
+                      <div className="text-sm sm:text-base font-black text-slate-900 leading-tight truncate">
+                        {flavor}
+                      </div>
                     </button>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    {currentOption.allowedFlavors.map((flavor) => {
-                      const count = surtidoCounts[flavor] || 0;
-                      const hasFlavorGraphic = Boolean(FLAVOR_ICON_URLS[flavor] || flavor === 'Sin Gas' || flavor === 'Con Gas');
-
-                      return (
-                        <div
-                          key={flavor}
-                          className="flex items-center justify-between bg-white p-3 rounded-xl border border-slate-200 shadow-2xs"
-                        >
-                          <div className="flex items-center space-x-2.5">
-                            {hasFlavorGraphic ? (
-                              <FruitVectorIcon flavor={flavor} size={30} className="shrink-0 drop-shadow-xs" />
-                            ) : null}
-                            <span className="font-black text-sm sm:text-base text-slate-900">{flavor}</span>
-                          </div>
-
-                          <div className="flex items-center space-x-2">
-                            <button
-                              type="button"
-                              onClick={() => handleSurtidoCountChange(flavor, -1)}
-                              disabled={count <= 0}
-                              className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 flex items-center justify-center font-black disabled:opacity-30 transition-colors"
-                            >
-                              <Minus className="w-3.5 h-3.5" />
-                            </button>
-                            <span className="w-7 text-center font-mono font-black text-base text-slate-900">
-                              {count}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => handleSurtidoCountChange(flavor, 1)}
-                              disabled={totalSurtidoUnits >= targetUnits}
-                              className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 flex items-center justify-center font-black disabled:opacity-30 transition-colors"
-                            >
-                              <Plus className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  <div
-                    className={`text-xs sm:text-sm p-3 rounded-xl border flex items-center justify-between font-black ${
-                      isSurtidoValid
-                        ? 'bg-emerald-50 text-emerald-950 border-emerald-300'
-                        : 'bg-amber-50 text-amber-950 border-amber-300'
-                    }`}
-                  >
-                    <span>
-                      {totalSurtidoUnits} de {targetUnits} botellas asignadas
-                    </span>
-                    {!isSurtidoValid && (
-                      <span className="text-xs font-bold">
-                        {targetUnits > totalSurtidoUnits
-                          ? `Faltan ${targetUnits - totalSurtidoUnits}`
-                          : `Sobran ${totalSurtidoUnits - targetUnits}`}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              )}
+                  );
+                })}
+              </div>
             </div>
           )}
 
-          {/* PASO 3: VENTA MIXTA (JAVAS + UNIDADES SUELTAS) Y PRECIO DINÁMICO */}
+          {/* PASO 3: CANTIDAD Y TOTAL */}
           {currentOption && (
-            <div className="pt-3.5 border-t border-slate-100 space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/90 p-3 sm:p-4 rounded-2xl border border-slate-200/90">
-                {/* Total Price Display */}
+            <div className="pt-3.5 border-t border-slate-100 space-y-3 sm:space-y-3.5">
+              {/* 1. Total prominente en móvil y escritorio */}
+              <div className="flex items-center justify-between bg-slate-50/90 px-4 py-3 sm:px-5 sm:py-3.5 rounded-2xl border border-slate-200/90">
                 <div>
-                  <div className="flex items-center space-x-1.5 flex-wrap gap-y-1">
-                    <span className="text-xs sm:text-sm font-bold text-slate-500">Precio Total:</span>
-                    <span className="text-xs sm:text-sm font-bold text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-md border border-blue-200">
-                      {currentTotalBottles} {currentTotalBottles === 1 ? 'botella' : 'botellas'}
-                    </span>
-                    {clientTier === 'distribuidor' && (
-                      <span className="text-xs font-black text-purple-700 bg-purple-100 border border-purple-200 px-2.5 py-0.5 rounded-md">
-                        Tarifa Distribuidor
-                      </span>
-                    )}
-                    {clientTier === 'especial' && (
-                      <span className="text-xs font-black text-amber-700 bg-amber-100 border border-amber-200 px-2.5 py-0.5 rounded-md">
-                        Tarifa Especial
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-2xl sm:text-3xl font-black text-slate-900 font-mono mt-0.5">
+                  <span className="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider block">
+                    Total a Pagar
+                  </span>
+                  <div className="text-2xl sm:text-3xl font-black text-slate-900 font-mono tracking-tight leading-none mt-1">
                     {javasCount === 0 && unitsCount === 0 ? '$0.00' : formatCurrency(currentTotalSubtotal)}
-                  </div>
-                  <div className="text-xs sm:text-sm font-bold text-slate-500 mt-0.5">
-                    {javasCount > 0 && `${javasCount} ${javasCount === 1 ? (currentOption?.container === 'Vidrio' ? 'Java' : 'Pack') : (currentOption?.container === 'Vidrio' ? 'Javas' : 'Packs')}`}
-                    {javasCount > 0 && unitsCount > 0 && ' + '}
-                    {unitsCount > 0 && `${unitsCount} ${unitsCount === 1 ? 'Unidad suelta' : 'Unidades sueltas'}`}
-                    {javasCount === 0 && unitsCount === 0 && 'Indica la cantidad deseada'}
                   </div>
                 </div>
 
-                {/* Dual Stepper Pills: Javas/Packs & Unidades */}
-                <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
-                  {/* Javas / Packs Pill */}
-                  <div className="flex items-center space-x-1.5 bg-white p-1.5 rounded-xl border border-slate-200 shadow-2xs">
-                    <span className="text-xs sm:text-sm font-black text-slate-700 px-1">
-                      {currentOption?.container === 'Vidrio' ? 'Javas:' : 'Packs:'}
+                {/* Badges de tarifas si aplica */}
+                <div className="flex items-center gap-1.5">
+                  {clientTier === 'distribuidor' && (
+                    <span className="text-xs font-black text-purple-700 bg-purple-100 border border-purple-200 px-3 py-1 rounded-xl">
+                      Tarifa Distribuidor
                     </span>
+                  )}
+                  {clientTier === 'especial' && (
+                    <span className="text-xs font-black text-amber-700 bg-amber-100 border border-amber-200 px-3 py-1 rounded-xl">
+                      Tarifa Especial
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* 2. Dos filas con botones grandes, intuitivos y a la misma altura */}
+              <div className="space-y-2.5">
+                {/* Fila 1: Javas / Packs */}
+                <div className="flex items-center justify-between bg-white px-4 py-3 sm:py-3.5 rounded-2xl border border-slate-200 shadow-2xs">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-base sm:text-lg font-black text-slate-900">
+                      {currentOption?.container === 'Vidrio' ? 'Javas' : 'Packs'}
+                    </span>
+                    <span className="text-xs sm:text-sm font-semibold text-slate-400">
+                      ({currentOption?.unitsPerJava} un.)
+                    </span>
+                  </div>
+
+                  <div className="flex items-center space-x-3">
                     <button
                       type="button"
                       disabled={javasCount <= 0}
                       onClick={() => setJavasCount((c) => Math.max(0, c - 1))}
-                      className="w-7 h-7 rounded-lg bg-slate-100 text-slate-900 flex items-center justify-center hover:bg-slate-200 disabled:opacity-30 transition-colors font-black"
+                      className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-slate-100 text-slate-800 hover:bg-slate-200 active:scale-95 disabled:opacity-25 flex items-center justify-center font-black transition-all cursor-pointer disabled:cursor-not-allowed select-none"
+                      aria-label="Restar java"
                     >
-                      <Minus className="w-3.5 h-3.5" />
+                      <Minus className="w-4 h-4 sm:w-5 sm:h-5" />
                     </button>
-                    <span className="w-7 text-center font-black font-mono text-base sm:text-lg text-slate-900">
+                    <span className="w-8 sm:w-9 text-center font-mono font-black text-xl sm:text-2xl text-slate-900 select-none">
                       {javasCount}
                     </span>
                     <button
                       type="button"
                       onClick={() => setJavasCount((c) => c + 1)}
-                      className="w-7 h-7 rounded-lg bg-slate-100 text-slate-900 flex items-center justify-center hover:bg-slate-200 transition-colors font-black"
+                      className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-blue-600 text-white hover:bg-blue-700 active:scale-95 flex items-center justify-center font-black transition-all shadow-xs cursor-pointer select-none"
+                      aria-label="Sumar java"
                     >
-                      <Plus className="w-3.5 h-3.5" />
+                      <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
                     </button>
                   </div>
+                </div>
 
-                  {/* Loose Units Pill */}
-                  <div className="flex items-center space-x-1.5 bg-white p-1.5 rounded-xl border border-slate-200 shadow-2xs">
-                    <span className="text-xs sm:text-sm font-black text-slate-700 px-1">Unidades:</span>
+                {/* Fila 2: Unidades Sueltas */}
+                <div className="flex items-center justify-between bg-white px-4 py-3 sm:py-3.5 rounded-2xl border border-slate-200 shadow-2xs">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-base sm:text-lg font-black text-slate-900">
+                      Unidades
+                    </span>
+                    <span className="text-xs sm:text-sm font-semibold text-slate-400">
+                      (sueltas)
+                    </span>
+                  </div>
+
+                  <div className="flex items-center space-x-3">
                     <button
                       type="button"
                       disabled={unitsCount <= 0}
                       onClick={() => setUnitsCount((c) => Math.max(0, c - 1))}
-                      className="w-7 h-7 rounded-lg bg-slate-100 text-slate-900 flex items-center justify-center hover:bg-slate-200 disabled:opacity-30 transition-colors font-black"
+                      className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-slate-100 text-slate-800 hover:bg-slate-200 active:scale-95 disabled:opacity-25 flex items-center justify-center font-black transition-all cursor-pointer disabled:cursor-not-allowed select-none"
+                      aria-label="Restar unidad"
                     >
-                      <Minus className="w-3.5 h-3.5" />
+                      <Minus className="w-4 h-4 sm:w-5 sm:h-5" />
                     </button>
-                    <span className="w-7 text-center font-black font-mono text-base sm:text-lg text-slate-900">
+                    <span className="w-8 sm:w-9 text-center font-mono font-black text-xl sm:text-2xl text-slate-900 select-none">
                       {unitsCount}
                     </span>
                     <button
                       type="button"
                       onClick={() => setUnitsCount((c) => c + 1)}
-                      className="w-7 h-7 rounded-lg bg-slate-100 text-slate-900 flex items-center justify-center hover:bg-slate-200 transition-colors font-black"
+                      className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-blue-600 text-white hover:bg-blue-700 active:scale-95 flex items-center justify-center font-black transition-all shadow-xs cursor-pointer select-none"
+                      aria-label="Sumar unidad"
                     >
-                      <Plus className="w-3.5 h-3.5" />
+                      <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
                     </button>
                   </div>
                 </div>
               </div>
 
-              {/* CTA: Agregar al Pedido */}
+              {/* 3. CTA: Agregar al Pedido */}
               <button
                 type="button"
                 disabled={!canAddToCart}
