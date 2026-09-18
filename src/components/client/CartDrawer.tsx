@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useDistribution } from '@/context/DistributionContext';
 import { formatCurrency, formatItemTitle } from '@/lib/utils/formatters';
@@ -125,51 +125,20 @@ export function CartDrawer({
   const [promisedDate, setPromisedDate] = useState<string>('');
   const [promisedTime, setPromisedTime] = useState<string>('');
   const [tempDate, setTempDate] = useState<string>('');
-  const [tempTime, setTempTime] = useState<string>('9:00 AM');
+  const [tempTime, setTempTime] = useState<string>('8:00 a 10:00 AM');
+  const dateInputRef = useRef<HTMLInputElement>(null);
 
-  const WORK_HOURS = [
-    '8:00 AM',
-    '9:00 AM',
-    '10:00 AM',
-    '11:00 AM',
-    '12:00 PM',
-    '1:00 PM',
-    '2:00 PM',
-    '3:00 PM',
-    '4:00 PM',
-    '5:00 PM',
+  const WORK_TIME_SLOTS = [
+    '8:00 a 10:00 AM',
+    '10:00 a 12:00 PM',
+    '1:00 a 3:00 PM',
+    '3:00 a 5:00 PM',
   ];
 
   const todayIso = new Date().toISOString().split('T')[0];
   const tomorrowIso = new Date(Date.now() + 86400000).toISOString().split('T')[0];
   const in3DaysIso = new Date(Date.now() + 3 * 86400000).toISOString().split('T')[0];
-  const in7DaysIso = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
-
-  const getNextSaturdayIso = () => {
-    const d = new Date();
-    const day = d.getDay();
-    const diff = (6 - day + 7) % 7 || 7;
-    const sat = new Date(d.getTime() + diff * 86400000);
-    return sat.toISOString().split('T')[0];
-  };
-
-  const getNextMondayIso = () => {
-    const d = new Date();
-    const day = d.getDay();
-    const diff = (1 - day + 7) % 7 || 7;
-    const mon = new Date(d.getTime() + diff * 86400000);
-    return mon.toISOString().split('T')[0];
-  };
-
-  const getEndOfMonthIso = () => {
-    const now = new Date();
-    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    return lastDay.toISOString().split('T')[0];
-  };
-
-  const nextSatIso = getNextSaturdayIso();
-  const nextMonIso = getNextMondayIso();
-  const endMonthIso = getEndOfMonthIso();
+  const in8DaysIso = new Date(Date.now() + 8 * 86400000).toISOString().split('T')[0];
 
   const formatHumanDate = (dateStr?: string) => {
     if (!dateStr) return '';
@@ -255,15 +224,29 @@ export function CartDrawer({
   const numericPaid = parseFloat(amountPaidInput) || 0;
   const debtBalance = Math.max(0, Number((cartTotalAmount - numericPaid).toFixed(2)));
 
+  const handleOpenDatePicker = () => {
+    if (dateInputRef.current) {
+      try {
+        if (typeof dateInputRef.current.showPicker === 'function') {
+          dateInputRef.current.showPicker();
+        } else {
+          dateInputRef.current.focus();
+        }
+      } catch {
+        dateInputRef.current.focus();
+      }
+    }
+  };
+
   const openCreditModal = () => {
     setTempDate(promisedDate || tomorrowIso);
-    setTempTime(promisedTime || '9:00 AM');
+    setTempTime(promisedTime || '8:00 a 10:00 AM');
     setShowCreditModal(true);
   };
 
   const handleSaveCreditSchedule = () => {
     setPromisedDate(tempDate || tomorrowIso);
-    setPromisedTime(tempTime || '9:00 AM');
+    setPromisedTime(tempTime || '8:00 a 10:00 AM');
     setShowCreditModal(false);
   };
 
@@ -1024,30 +1007,53 @@ export function CartDrawer({
               </span>
             )}
           </div>
-          <div className="relative flex items-center bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5">
-            <AppleCalendarIcon size={16} className="text-slate-400 mr-2.5 shrink-0" />
-            <input
-              type="date"
-              min={todayIso}
-              value={tempDate}
-              onChange={(e) => setTempDate(e.target.value)}
-              className="w-full text-sm font-bold text-slate-900 bg-transparent focus:outline-hidden cursor-pointer"
-            />
+
+          <div 
+            onClick={handleOpenDatePicker}
+            className="relative flex items-center justify-between bg-slate-50 hover:bg-slate-100/80 border border-slate-200 rounded-xl px-3.5 py-2.5 cursor-pointer transition-colors"
+          >
+            <div className="flex items-center space-x-2.5 flex-1 min-w-0">
+              <AppleCalendarIcon size={18} className="text-blue-600 shrink-0" />
+              <input
+                ref={dateInputRef}
+                type="date"
+                min={todayIso}
+                value={tempDate}
+                onChange={(e) => setTempDate(e.target.value)}
+                onClick={(e) => {
+                  try {
+                    if (typeof (e.currentTarget as any).showPicker === 'function') {
+                      (e.currentTarget as any).showPicker();
+                    }
+                  } catch {}
+                }}
+                className="w-full text-sm font-bold text-slate-900 bg-transparent focus:outline-hidden cursor-pointer py-0.5"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleOpenDatePicker();
+              }}
+              className="text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-lg shrink-0 transition-colors cursor-pointer"
+            >
+              Calendario
+            </button>
           </div>
 
-          {/* Opciones rápidas de fecha */}
-          <div className="grid grid-cols-4 gap-1.5 pt-0.5">
+          {/* Opciones rápidas de fecha: Mañana, En 3 días, En 8 días distribuidos en la fila */}
+          <div className="grid grid-cols-3 gap-2 pt-0.5">
             {[
               { label: 'Mañana', val: tomorrowIso },
               { label: 'En 3 días', val: in3DaysIso },
-              { label: 'Sábado', val: nextSatIso },
-              { label: 'Lunes', val: nextMonIso },
+              { label: 'En 8 días', val: in8DaysIso },
             ].map((shortcut) => (
               <button
                 key={shortcut.label}
                 type="button"
                 onClick={() => setTempDate(shortcut.val)}
-                className={`text-xs py-1.5 px-1 rounded-xl font-bold border transition-all cursor-pointer text-center truncate ${
+                className={`text-xs sm:text-sm py-2 px-1 rounded-xl font-bold border transition-all cursor-pointer text-center truncate ${
                   tempDate === shortcut.val
                     ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
                     : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
@@ -1059,30 +1065,30 @@ export function CartDrawer({
           </div>
         </div>
 
-        {/* Selector de Hora - Estrictamente 8:00 AM a 5:00 PM */}
+        {/* Selector de Hora - Zonas de 2 horas */}
         <div className="space-y-2 pt-1">
           <div className="flex items-center justify-between">
             <label className="text-xs font-black text-slate-700 block">
-              Hora estimada:
+              Horario preferido (zonas de 2h):
             </label>
             <span className="text-xs font-bold text-blue-600">
               {tempTime}
             </span>
           </div>
 
-          <div className="grid grid-cols-5 gap-1.5">
-            {WORK_HOURS.map((hour) => (
+          <div className="grid grid-cols-2 gap-2">
+            {WORK_TIME_SLOTS.map((slot) => (
               <button
-                key={hour}
+                key={slot}
                 type="button"
-                onClick={() => setTempTime(hour)}
-                className={`py-2 px-0.5 text-xs font-bold rounded-xl border transition-all text-center cursor-pointer ${
-                  tempTime === hour
+                onClick={() => setTempTime(slot)}
+                className={`py-2.5 px-3 text-xs sm:text-sm font-bold rounded-xl border transition-all text-center cursor-pointer ${
+                  tempTime === slot
                     ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
                     : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
                 }`}
               >
-                {hour}
+                {slot}
               </button>
             ))}
           </div>
