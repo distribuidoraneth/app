@@ -22,6 +22,7 @@ interface AppleIconProps extends React.ImgHTMLAttributes<HTMLImageElement> {
     | 'printer'
     | 'cart'
     | 'waterbottle'
+    | 'waterbottle.fill'
     | 'tag';
   size?: number | string;
   className?: string;
@@ -495,9 +496,28 @@ export const AppleWaterBottleIcon: React.FC<{
   className?: string;
   color?: string;
   alt?: string;
-}> = ({ size, width, height, className = '', color = 'currentColor', alt = 'Botella' }) => {
+  filled?: boolean;
+}> = ({ size, width, height, className = '', color = 'currentColor', alt = 'Botella', filled = false }) => {
   const pixelWidth = width ? (typeof width === 'number' ? `${width}px` : width) : (size ? (typeof size === 'number' ? `${size}px` : size) : undefined);
   const pixelHeight = height ? (typeof height === 'number' ? `${height}px` : height) : (size ? (typeof size === 'number' ? `${typeof size === 'number' ? size * 2.07 : size}px` : size) : undefined);
+
+  if (filled) {
+    return (
+      <svg
+        viewBox="0 0 10.7083 23.1448"
+        fill={color}
+        className={`inline-block shrink-0 select-none ${className}`}
+        style={{
+          width: pixelWidth,
+          height: pixelHeight,
+        }}
+        aria-label={alt}
+        role="img"
+      >
+        <path d="M2.69478 2.5144L8.02173 2.5144C8.5261 2.5144 8.89129 2.14921 8.89129 1.64484L8.89129 0.869554C8.89129 0.354836 8.5261 0 8.02173 0L2.69478 0C2.18217 0 1.82734 0.354836 1.82734 0.869554L1.82734 1.64484C1.82734 2.14921 2.18217 2.5144 2.69478 2.5144ZM0.0103507 7.2394L10.6979 7.2394C10.6565 6.12556 10.4759 5.31369 9.83008 4.4579L9.61131 4.15573C9.34561 3.81104 8.9141 3.54976 8.47395 3.54976L2.22398 3.54976C1.79417 3.54976 1.35231 3.81104 1.09696 4.15573L0.878196 4.4579C0.232337 5.31369 0.0517536 6.12556 0.0103507 7.2394ZM0 8.52319L0 18.426L10.7083 18.426L10.7083 8.52319ZM5.34685 16.8446C3.93474 16.8446 3.00862 15.9392 3.00862 14.5708C3.00862 13.8751 3.32838 13.3061 3.49037 12.9365C3.85998 12.1411 4.4767 11.1132 4.98759 10.322C5.08728 10.16 5.22224 10.0749 5.34685 10.0749C5.48392 10.0749 5.60642 10.16 5.70611 10.322C6.22736 11.1132 6.85653 12.1411 7.21579 12.9365C7.39024 13.3061 7.69755 13.8751 7.69755 14.5708C7.69755 15.9392 6.76931 16.8446 5.34685 16.8446ZM0 19.7098L0 19.8753C0 21.9804 1.04632 23.122 2.95475 23.122L7.75141 23.122C9.66195 23.122 10.7083 21.9804 10.7083 19.8753L10.7083 19.7098Z" />
+      </svg>
+    );
+  }
 
   return (
     <svg

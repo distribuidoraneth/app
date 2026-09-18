@@ -414,8 +414,8 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
               <span className="text-xs sm:text-sm text-slate-500 font-bold">Tamaño • Unidades • Valor</span>
             </div>
 
-            {/* Grid de tiles con estructura de 3 secciones: Ícono | Tamaño+Unidades | Precio */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3">
+            {/* Grid compacto de tiles con estructura de 3 secciones: Ícono | Tamaño+Unidades | Precio */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-2.5">
               {availableOptionsForType.map((option) => {
                 let displayTitle: string = option.size;
                 if (option.size === '1500 ml' || option.size === '1.5 Litros') displayTitle = '1.5 Litros';
@@ -434,34 +434,37 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
                     key={option.id}
                     type="button"
                     onClick={() => handleOptionChange(option.id)}
-                    className={`group relative p-3 sm:p-3.5 rounded-2xl border text-left transition-all duration-150 flex items-center justify-between gap-3 cursor-pointer select-none ${
+                    className={`group relative p-2.5 sm:p-3 rounded-2xl border transition-all duration-150 flex items-center justify-between gap-2 sm:gap-2.5 cursor-pointer select-none ${
                       isSelected
-                        ? 'bg-blue-50/70 border-blue-600 shadow-xs ring-2 ring-blue-500/20'
+                        ? 'bg-blue-50/80 border-blue-600 shadow-xs ring-2 ring-blue-500/20'
                         : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/60 shadow-2xs'
                     }`}
                   >
-                    {/* 1. Izquierda: Ícono Water Bottle sin recuadro */}
-                    <AppleWaterBottleIcon
-                      width={18}
-                      height={36}
-                      className={`shrink-0 transition-transform duration-200 group-hover:scale-105 ${
-                        isSelected ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'
-                      }`}
-                    />
+                    {/* 1. Izquierda: Ícono Water Bottle (outline por defecto, fill si está seleccionado) */}
+                    <div className="shrink-0 flex items-center justify-center">
+                      <AppleWaterBottleIcon
+                        width={14}
+                        height={30}
+                        filled={isSelected}
+                        className={`transition-transform duration-150 group-hover:scale-105 ${
+                          isSelected ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'
+                        }`}
+                      />
+                    </div>
 
                     {/* 2. En medio: Tamaño y Cantidad de botellas */}
-                    <div className="min-w-0 flex-1 space-y-0.5">
-                      <div className="text-base sm:text-lg font-black text-slate-900 tracking-tight leading-snug truncate">
+                    <div className="min-w-0 flex-1 text-center px-1">
+                      <div className="text-sm sm:text-base font-black text-slate-900 tracking-tight leading-tight truncate">
                         {displayTitle}
                       </div>
-                      <div className="text-xs sm:text-[13px] font-semibold text-slate-500 truncate">
+                      <div className="text-[11px] sm:text-xs font-semibold text-slate-500 truncate mt-0.5">
                         {option.unitsPerJava} unidades
                       </div>
                     </div>
 
-                    {/* 3. Derecha: Precio de mayor fuente y jerarquía */}
-                    <div className="shrink-0 text-right pl-1">
-                      <span className={`text-lg sm:text-xl md:text-2xl font-black font-mono tracking-tight transition-colors ${
+                    {/* 3. Derecha: Precio con jerarquía visual destacada */}
+                    <div className="shrink-0 text-right pl-0.5">
+                      <span className={`text-base sm:text-lg font-black font-mono tracking-tight transition-colors ${
                         isSelected ? 'text-blue-600' : 'text-slate-900 group-hover:text-blue-600'
                       }`}>
                         {formatCurrency(optPrice)}
