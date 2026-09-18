@@ -31,7 +31,7 @@ import {
 } from 'lucide-react';
 import { PaymentMethod, SaleType, Invoice, Order } from '@/types';
 import { ThermalReceiptModal } from '@/components/receipt/ThermalReceiptModal';
-import { AppleWhatsAppIcon, AppleTrashIcon } from '@/components/ui/AppleIcons';
+import { AppleWhatsAppIcon, AppleTrashIcon, AppleBanknoteIcon, AppleBuildingClassicalIcon } from '@/components/ui/AppleIcons';
 
 const FLAVOR_ASSET_URLS: Record<string, string> = {
   'piña': '/flavors/pina.webp',
@@ -648,8 +648,8 @@ export function CartDrawer({
                         : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold'
                     }`}
                   >
-                    <Banknote className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span className="text-xs">Efectivo</span>
+                    <AppleBanknoteIcon size={18} className="shrink-0 text-emerald-600" />
+                    <span className="text-xs font-bold">Efectivo</span>
                   </button>
 
                   <button
@@ -661,8 +661,12 @@ export function CartDrawer({
                         : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold'
                     }`}
                   >
-                    <Zap className="w-4 h-4 text-purple-600 shrink-0" />
-                    <span className="text-xs">DeUna</span>
+                    <img
+                      src="/icons/icon-deuna.png"
+                      alt="DeUna"
+                      className="w-4 h-4 object-contain shrink-0"
+                    />
+                    <span className="text-xs font-bold">DeUna</span>
                   </button>
 
                   <button
@@ -674,8 +678,8 @@ export function CartDrawer({
                         : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold'
                     }`}
                   >
-                    <Building2 className="w-4 h-4 text-blue-600 shrink-0" />
-                    <span className="text-xs">Transferencia</span>
+                    <AppleBuildingClassicalIcon size={18} className="shrink-0 text-blue-600" />
+                    <span className="text-xs font-bold">Transferencia</span>
                   </button>
                 </div>
 
@@ -684,7 +688,7 @@ export function CartDrawer({
                   <div className="p-3.5 bg-blue-50/80 border border-blue-200 rounded-2xl space-y-2.5 animate-in fade-in duration-150">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-black text-blue-900 uppercase tracking-wider flex items-center">
-                        <Building2 className="w-3.5 h-3.5 mr-1.5 text-blue-700 shrink-0" />
+                        <AppleBuildingClassicalIcon size={15} className="mr-1.5 text-blue-700 shrink-0" />
                         Datos Bancarios para Transferencia
                       </span>
                       <button
@@ -741,7 +745,11 @@ export function CartDrawer({
                   <div className="p-3.5 bg-purple-50/80 border border-purple-200 rounded-2xl space-y-2.5 animate-in fade-in duration-150">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-black text-purple-900 uppercase tracking-wider flex items-center">
-                        <Zap className="w-3.5 h-3.5 mr-1.5 text-purple-700 shrink-0" />
+                        <img
+                          src="/icons/icon-deuna.png"
+                          alt="DeUna"
+                          className="w-3.5 h-3.5 object-contain mr-1.5 shrink-0"
+                        />
                         Cobro Inmediato por DeUna
                       </span>
                       <button
@@ -778,37 +786,11 @@ export function CartDrawer({
                   </div>
                 )}
 
-                {/* Monto Recibido / Pagado ($) Input */}
+                {/* Monto Recibido Input */}
                 <div className="p-3.5 sm:p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
-                  <div className="flex items-center justify-between flex-wrap gap-1.5">
-                    <label className="text-xs font-black text-slate-800">
-                      Monto Recibido / Pagado ($):
-                    </label>
-                    <div className="flex items-center space-x-1.5">
-                      <button
-                        type="button"
-                        onClick={() => setAmountPaidInput(cartTotalAmount.toFixed(2))}
-                        className={`text-xs font-black px-3 py-1 rounded-xl border transition-all active:scale-95 cursor-pointer ${
-                          numericPaid === cartTotalAmount
-                            ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
-                            : 'bg-white hover:bg-blue-50 text-blue-700 border-slate-200'
-                        }`}
-                      >
-                        Total
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setAmountPaidInput('0.00')}
-                        className={`text-xs font-black px-3 py-1 rounded-xl border transition-all active:scale-95 cursor-pointer ${
-                          numericPaid === 0 && amountPaidInput !== ''
-                            ? 'bg-amber-600 text-white border-amber-600 shadow-2xs'
-                            : 'bg-white hover:bg-amber-50 text-amber-800 border-slate-200'
-                        }`}
-                      >
-                        Crédito
-                      </button>
-                    </div>
-                  </div>
+                  <label className="text-xs font-black text-slate-800 block">
+                    Monto Recibido
+                  </label>
 
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
@@ -818,28 +800,23 @@ export function CartDrawer({
                       type="number"
                       step="0.01"
                       min="0"
+                      max={cartTotalAmount}
                       value={amountPaidInput}
-                      onChange={(e) => setAmountPaidInput(e.target.value)}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        const num = parseFloat(val);
+                        if (!isNaN(num) && num > cartTotalAmount) {
+                          setAmountPaidInput(cartTotalAmount.toFixed(2));
+                        } else {
+                          setAmountPaidInput(val);
+                        }
+                      }}
                       placeholder={cartTotalAmount.toFixed(2)}
                       className="w-full text-lg sm:text-xl font-black font-mono pl-9 pr-3.5 py-2.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-hidden [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none shadow-xs"
                     />
                   </div>
 
-                  {debtBalance === 0 ? (
-                    <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 font-bold flex items-center justify-between">
-                      <span className="flex items-center">
-                        <CheckCircle2 className="w-4 h-4 mr-1.5 text-emerald-600 shrink-0" />
-                        {numericPaid > cartTotalAmount
-                          ? 'Vuelto / Cambio a entregar:'
-                          : 'Pago Completo • Cancelado en su totalidad'}
-                      </span>
-                      <span className="font-mono text-xs font-black text-emerald-700">
-                        {numericPaid > cartTotalAmount
-                          ? formatCurrency(Number((numericPaid - cartTotalAmount).toFixed(2)))
-                          : '$0.00 pendiente'}
-                      </span>
-                    </div>
-                  ) : (
+                  {debtBalance > 0 && (
                     <div className="p-4 bg-gradient-to-br from-amber-50 to-orange-50/70 border-2 border-amber-300/80 rounded-2xl space-y-3.5 shadow-xs animate-in fade-in duration-150">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-black text-amber-950 uppercase tracking-wider flex items-center">
@@ -847,7 +824,7 @@ export function CartDrawer({
                           Programar Cobro del Saldo
                         </span>
                         <span className="font-mono text-xs font-black text-amber-900 bg-amber-100 border border-amber-300 px-2.5 py-1 rounded-xl shadow-2xs">
-                          {formatCurrency(debtBalance)} a cobrar
+                          {formatCurrency(debtBalance)} a crédito
                         </span>
                       </div>
 
