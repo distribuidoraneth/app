@@ -17,10 +17,8 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import {
   ArrowLeft,
-  Navigation,
   ChevronDown,
   Plus,
-  RefreshCw,
 } from 'lucide-react';
 
 function StandaloneOrderContent() {
@@ -190,10 +188,8 @@ function StandaloneOrderContent() {
               title="Toca para buscar o cambiar cliente"
             >
               <div className="flex items-center space-x-3 min-w-0 flex-1">
-                {/* Ícono de tienda oficial */}
-                <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200/70 text-blue-600 flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:bg-blue-100/70 transition-all">
-                  <AppleStorefrontIcon size={20} className="text-blue-600" alt="Tienda" />
-                </div>
+                {/* Ícono de tienda oficial sin recuadro */}
+                <AppleStorefrontIcon size={26} className="text-blue-600 shrink-0 group-hover:scale-105 transition-transform" alt="Tienda" />
 
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center space-x-1.5 flex-wrap gap-y-0.5">
@@ -237,37 +233,9 @@ function StandaloneOrderContent() {
                 </div>
               </div>
 
-              {/* Lado derecho: Distancia GPS, refresco y flecha dropdown */}
-              <div className="flex items-center space-x-1.5 shrink-0">
-                {isLocating && !userLocation ? (
-                  <span className="text-[11px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200 flex items-center animate-pulse">
-                    <Navigation className="w-3 h-3 mr-1 text-blue-600 shrink-0 animate-spin" />
-                    <span className="hidden sm:inline">GPS...</span>
-                  </span>
-                ) : formattedDistance ? (
-                  <span className="text-[11px] font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 flex items-center">
-                    <Navigation className="w-3 h-3 mr-1 text-emerald-600 shrink-0" />
-                    {formattedDistance}
-                  </span>
-                ) : null}
-
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    refreshGpsLocation();
-                  }}
-                  disabled={isLocating}
-                  title="Actualizar GPS para detectar el local más cercano"
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors active:scale-95 cursor-pointer"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${isLocating ? 'animate-spin text-blue-600' : ''}`} />
-                </button>
-
-                {/* Flecha minimalista para desplegar la búsqueda de clientes */}
-                <div className="p-1 rounded-lg text-slate-400 group-hover:text-blue-600 group-hover:bg-blue-50 transition-all">
-                  <ChevronDown className="w-5 h-5 transition-transform group-hover:translate-y-0.5" />
-                </div>
+              {/* Lado derecho: Flecha dropdown limpia */}
+              <div className="p-1.5 rounded-xl text-slate-400 group-hover:text-blue-600 group-hover:bg-blue-50 transition-all shrink-0">
+                <ChevronDown className="w-5 h-5 transition-transform group-hover:translate-y-0.5" />
               </div>
             </div>
           ) : (

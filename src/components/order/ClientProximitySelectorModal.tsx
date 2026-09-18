@@ -10,14 +10,12 @@ import { AppleMapPinIcon, AppleStorefrontIcon } from '@/components/ui/AppleIcons
 import {
   Search,
   Plus,
-  Navigation,
   Store,
   Check,
   X,
   Phone,
   CreditCard,
   Building2,
-  RefreshCw,
   LocateFixed,
 } from 'lucide-react';
 
@@ -37,26 +35,22 @@ export function ClientProximitySelectorModal({
   const { clients } = useDistribution();
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [userLocation, setUserLocation] = useState<GeoCoordinates | null>(null);
-  const [isLocating, setIsLocating] = useState<boolean>(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState<boolean>(false);
 
-  // Request GPS position on open
+  // Request GPS position on open to subtly sort clients if available
   useEffect(() => {
     if (!isOpen) return;
 
     if (navigator.geolocation) {
-      setIsLocating(true);
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           setUserLocation({
             latitude: pos.coords.latitude,
             longitude: pos.coords.longitude,
           });
-          setIsLocating(false);
         },
         (err) => {
           console.warn('GPS location not available:', err);
-          setIsLocating(false);
         },
         { enableHighAccuracy: true, timeout: 8000 }
       );
@@ -87,66 +81,21 @@ export function ClientProximitySelectorModal({
         <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-200 flex flex-col max-h-[90vh]">
           {/* Header */}
           <div className="p-4 sm:p-5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-            <div className="flex items-center space-x-2.5">
-              <div className="w-9 h-9 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center">
-                <AppleStorefrontIcon size={18} className="text-blue-600" alt="Tienda" />
-              </div>
-              <div>
-                <h3 className="font-black text-sm sm:text-base text-slate-900 leading-tight">
-                  Seleccionar Cliente
-                </h3>
-                <p className="text-xs text-slate-500 font-semibold flex items-center mt-0.5">
-                  {userLocation ? (
-                    <span className="text-emerald-600 flex items-center">
-                      <Navigation className="w-3.5 h-3.5 mr-1 text-emerald-600" />
-                      Ordenados por cercanía GPS
-                    </span>
-                  ) : isLocating ? (
-                    <span className="text-blue-600 flex items-center">
-                      <RefreshCw className="w-3.5 h-3.5 mr-1 animate-spin" />
-                      Detectando ubicación GPS...
-                    </span>
-                  ) : (
-                    <span>Directorio de clientes</span>
-                  )}
-                </p>
-              </div>
+            <div className="flex items-center space-x-3">
+              <AppleStorefrontIcon size={24} className="text-blue-600 shrink-0" alt="Tienda" />
+              <h3 className="font-black text-base sm:text-lg text-slate-900 leading-tight">
+                Seleccionar Cliente
+              </h3>
             </div>
 
-            <div className="flex items-center space-x-1.5">
-              <button
-                type="button"
-                onClick={() => {
-                  if (navigator.geolocation) {
-                    setIsLocating(true);
-                    navigator.geolocation.getCurrentPosition(
-                      (pos) => {
-                        setUserLocation({
-                          latitude: pos.coords.latitude,
-                          longitude: pos.coords.longitude,
-                        });
-                        setIsLocating(false);
-                      },
-                      () => setIsLocating(false),
-                      { enableHighAccuracy: true, timeout: 8000 }
-                    );
-                  }
-                }}
-                disabled={isLocating}
-                title="Actualizar mi ubicación GPS"
-                className="p-2 rounded-xl text-blue-600 hover:bg-blue-50 border border-transparent hover:border-blue-200 transition-all active:scale-95 cursor-pointer"
-              >
-                <RefreshCw className={`w-4 h-4 ${isLocating ? 'animate-spin' : ''}`} />
-              </button>
-
-              <button
-                type="button"
-                onClick={onClose}
-                className="p-2 rounded-xl text-slate-400 hover:text-slate-800 hover:bg-slate-200 transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-2 rounded-xl text-slate-400 hover:text-slate-800 hover:bg-slate-200 transition-colors cursor-pointer"
+              title="Cerrar"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
 
           {/* Search & Actions Bar */}
@@ -229,12 +178,6 @@ export function ClientProximitySelectorModal({
                         {client.clientTier === 'especial' && (
                           <span className="text-xs font-black bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-full shrink-0">
                             Especial
-                          </span>
-                        )}
-                        {client.distanceFormatted && userLocation && (
-                          <span className="text-xs font-black bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full shrink-0 flex items-center">
-                            <Navigation className="w-3 h-3 mr-0.5" />
-                            {client.distanceFormatted}
                           </span>
                         )}
                       </div>
