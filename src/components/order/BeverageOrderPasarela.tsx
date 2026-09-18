@@ -17,81 +17,10 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { AppleWaterBottleIcon } from '@/components/ui/AppleIcons';
 
 interface BeverageOrderPasarelaProps {
   onGoToCheckout?: () => void;
-}
-
-// Minimalist vector SVG bottle silhouette
-function BottleVectorIcon({
-  size,
-  container,
-  isSelected,
-}: {
-  size: string;
-  container: 'Plástico' | 'Vidrio';
-  isSelected: boolean;
-}) {
-  const isGlass = container === 'Vidrio';
-  const isLarge = size.includes('1.5') || size.includes('3.0') || size.includes('1500') || size.includes('3000') || size.includes('1 Litro') || size.includes('1L') || size.includes('1000');
-  const isMedium = size.includes('500') || size.includes('550') || size.includes('600');
-
-  const strokeColor = isSelected ? '#2563eb' : '#64748b';
-  const fillColor = isSelected ? '#dbeafe' : '#f1f5f9';
-
-  return (
-    <svg
-      viewBox="0 0 24 44"
-      className="w-full h-full max-h-11 transition-all"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      {/* Cap */}
-      <rect
-        x={isLarge ? "9" : "9.5"}
-        y="1"
-        width={isLarge ? "6" : "5"}
-        height="3"
-        rx="1"
-        fill={strokeColor}
-      />
-      {/* Neck */}
-      <path
-        d={
-          isGlass
-            ? "M10 4 H14 V12 L17 17 V40 C17 41.5 15.5 43 14 43 H10 C8.5 43 7 41.5 7 40 V17 L10 12 Z"
-            : isLarge
-            ? "M9.5 4 H14.5 V10 L19 16 V40 C19 41.5 17.5 43 15.5 43 H8.5 C6.5 43 5 41.5 5 40 V16 L9.5 10 Z"
-            : isMedium
-            ? "M10 4 H14 V11 L18 17 V39 C18 41 16.5 42.5 15 42.5 H9 C7.5 42.5 6 41 6 39 V17 L10 11 Z"
-            : "M10 4 H14 V12 L17 18 V38 C17 40.5 15.5 42 13.5 42 H10.5 C8.5 42 7 40.5 7 38 V18 L10 12 Z"
-        }
-        fill={fillColor}
-        stroke={strokeColor}
-        strokeWidth="1.75"
-        strokeLinejoin="round"
-      />
-      {/* Texture rings */}
-      <line
-        x1={isLarge ? "8" : "9"}
-        y1={isLarge ? "24" : "25"}
-        x2={isLarge ? "16" : "15"}
-        y2={isLarge ? "24" : "25"}
-        stroke={strokeColor}
-        strokeWidth="1.25"
-        strokeOpacity="0.4"
-      />
-      <line
-        x1={isLarge ? "8" : "9"}
-        y1={isLarge ? "31" : "32"}
-        x2={isLarge ? "16" : "15"}
-        y2={isLarge ? "31" : "32"}
-        stroke={strokeColor}
-        strokeWidth="1.25"
-        strokeOpacity="0.4"
-      />
-    </svg>
-  );
 }
 
 const FLAVOR_ICON_URLS: Record<string, string> = {
@@ -485,8 +414,8 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
               <span className="text-xs sm:text-sm text-slate-500 font-bold">Tamaño • Unidades • Valor</span>
             </div>
 
-            {/* Grid compacto de mini-tiles horizontales */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-2.5">
+            {/* Grid de tiles con estructura de 3 secciones: Ícono | Tamaño+Unidades | Precio */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3">
               {availableOptionsForType.map((option) => {
                 let displayTitle: string = option.size;
                 if (option.size === '1500 ml' || option.size === '1.5 Litros') displayTitle = '1.5 Litros';
@@ -505,34 +434,38 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
                     key={option.id}
                     type="button"
                     onClick={() => handleOptionChange(option.id)}
-                    className={`relative p-3 rounded-2xl border text-left transition-all flex items-center space-x-3 cursor-pointer ${
+                    className={`group relative p-3 sm:p-3.5 rounded-2xl border text-left transition-all duration-150 flex items-center justify-between gap-3 cursor-pointer select-none ${
                       isSelected
-                        ? 'bg-blue-50/80 border-blue-600 shadow-xs ring-2 ring-blue-500/20'
-                        : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/50'
+                        ? 'bg-blue-50/70 border-blue-600 shadow-xs ring-2 ring-blue-500/20'
+                        : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/60 shadow-2xs'
                     }`}
                   >
-                    {/* Bottle Icon */}
-                    <div className={`w-8 h-10 rounded-xl flex items-center justify-center p-0.5 flex-shrink-0 ${
-                      isSelected ? 'bg-white shadow-2xs' : 'bg-slate-50'
-                    }`}>
-                      <BottleVectorIcon
-                        size={option.size}
-                        container={option.container}
-                        isSelected={isSelected}
-                      />
-                    </div>
+                    {/* 1. Izquierda: Ícono Water Bottle sin recuadro */}
+                    <AppleWaterBottleIcon
+                      width={18}
+                      height={36}
+                      className={`shrink-0 transition-transform duration-200 group-hover:scale-105 ${
+                        isSelected ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'
+                      }`}
+                    />
 
-                    {/* Content on the right */}
+                    {/* 2. En medio: Tamaño y Cantidad de botellas */}
                     <div className="min-w-0 flex-1 space-y-0.5">
-                      <div className="text-sm sm:text-base font-black text-slate-900 leading-tight truncate">
+                      <div className="text-base sm:text-lg font-black text-slate-900 tracking-tight leading-snug truncate">
                         {displayTitle}
                       </div>
-                      <div className="text-xs font-bold text-slate-500">
+                      <div className="text-xs sm:text-[13px] font-semibold text-slate-500 truncate">
                         {option.unitsPerJava} unidades
                       </div>
-                      <div className="text-sm sm:text-base font-black text-blue-700 font-mono">
+                    </div>
+
+                    {/* 3. Derecha: Precio de mayor fuente y jerarquía */}
+                    <div className="shrink-0 text-right pl-1">
+                      <span className={`text-lg sm:text-xl md:text-2xl font-black font-mono tracking-tight transition-colors ${
+                        isSelected ? 'text-blue-600' : 'text-slate-900 group-hover:text-blue-600'
+                      }`}>
                         {formatCurrency(optPrice)}
-                      </div>
+                      </span>
                     </div>
                   </button>
                 );
