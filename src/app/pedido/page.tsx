@@ -164,12 +164,12 @@ function StandaloneOrderContent() {
             <button
               type="button"
               onClick={() => setIsCartOpen(true)}
-              className="relative px-3.5 sm:px-4 py-2 bg-slate-950 hover:bg-slate-900 active:scale-95 text-white rounded-xl shadow-xs border border-slate-800/80 transition-all flex items-center gap-2 text-xs sm:text-sm font-black cursor-pointer select-none group"
+              className="relative px-4 sm:px-4.5 py-2 sm:py-2.5 bg-slate-950 hover:bg-slate-900 active:scale-95 text-white rounded-xl shadow-xs border border-slate-800/80 transition-all flex items-center gap-3 text-sm sm:text-[15px] font-black cursor-pointer select-none group"
             >
-              <div className="relative flex items-center justify-center">
-                <AppleCartIcon size={18} className="text-white shrink-0 group-hover:scale-105 transition-transform" />
+              <div className="relative flex items-center justify-center mr-0.5">
+                <AppleCartIcon size={19} className="text-white shrink-0 group-hover:scale-105 transition-transform" />
                 {(cartTotalJavas > 0 || cartTotalUnits > 0) && (
-                  <span className="absolute -top-2 -right-2.5 min-w-[18px] h-[18px] px-1 bg-blue-600 text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-slate-950 shadow-xs tabular-nums animate-in zoom-in-75 duration-150">
+                  <span className="absolute -top-2 -right-2 min-w-[18px] h-[18px] px-1 bg-blue-600 text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-slate-950 shadow-xs tabular-nums animate-in zoom-in-75 duration-150">
                     {cart.length}
                   </span>
                 )}
