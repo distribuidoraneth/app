@@ -31,7 +31,16 @@ import {
 } from 'lucide-react';
 import { PaymentMethod, SaleType, Invoice, Order } from '@/types';
 import { ThermalReceiptModal } from '@/components/receipt/ThermalReceiptModal';
-import { AppleWhatsAppIcon, AppleTrashIcon, AppleBanknoteIcon, AppleBuildingClassicalIcon } from '@/components/ui/AppleIcons';
+import {
+  AppleWhatsAppIcon,
+  AppleTrashIcon,
+  AppleBanknoteIcon,
+  AppleBuildingClassicalIcon,
+  AppleCalendarClockIcon,
+  AppleCalendarIcon,
+  ApplePencilIcon,
+  AppleCheckmarkSealIcon,
+} from '@/components/ui/AppleIcons';
 
 const FLAVOR_ASSET_URLS: Record<string, string> = {
   'piña': '/flavors/pina.webp',
@@ -206,6 +215,7 @@ export function CartDrawer({
   } | null>(null);
   const [createdOrder, setCreatedOrder] = useState<Order | null>(null);
   const [showThermalModal, setShowThermalModal] = useState<boolean>(false);
+  const [showCreditModal, setShowCreditModal] = useState<boolean>(false);
   const [mounted, setMounted] = useState<boolean>(false);
   const [copiedBank, setCopiedBank] = useState<boolean>(false);
   const [copiedDeuna, setCopiedDeuna] = useState<boolean>(false);
@@ -817,203 +827,32 @@ export function CartDrawer({
                   </div>
 
                   {debtBalance > 0 && (
-                    <div className="p-4 bg-gradient-to-br from-amber-50 to-orange-50/70 border-2 border-amber-300/80 rounded-2xl space-y-3.5 shadow-xs animate-in fade-in duration-150">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-black text-amber-950 uppercase tracking-wider flex items-center">
-                          <Clock className="w-4 h-4 mr-1.5 text-amber-700 shrink-0" />
-                          Programar Cobro del Saldo
-                        </span>
-                        <span className="font-mono text-xs font-black text-amber-900 bg-amber-100 border border-amber-300 px-2.5 py-1 rounded-xl shadow-2xs">
-                          {formatCurrency(debtBalance)} a crédito
-                        </span>
-                      </div>
-
-                      <p className="text-xs text-amber-900 font-medium leading-relaxed">
-                        ¿Cuándo y a qué hora ofreció pagar el saldo restante <strong className="text-slate-950 underline decoration-amber-400">{activeClient?.businessName || activeClient?.fullName}</strong>?
-                      </p>
-
-                      {/* Callout mostrando la fecha elegida en español claro */}
-                      <div className="bg-white border border-amber-200 rounded-xl p-2.5 flex items-center justify-between shadow-2xs">
-                        <div className="flex items-center space-x-2 min-w-0">
-                          <Calendar className="w-4 h-4 text-amber-600 shrink-0" />
-                          <span className="text-xs font-black text-amber-950 truncate">
-                            {formatHumanDate(promisedDate)}
+                    <div className="p-3.5 bg-amber-50/70 border border-amber-200 rounded-2xl flex items-center justify-between gap-3 animate-in fade-in duration-150">
+                      <div className="min-w-0 space-y-0.5">
+                        <div className="flex items-center space-x-1.5">
+                          <span className="text-xs font-black text-amber-900 uppercase tracking-wider">
+                            Saldo a Crédito:
+                          </span>
+                          <span className="font-mono text-xs font-black text-amber-950 bg-amber-200/80 px-2 py-0.5 rounded-md">
+                            {formatCurrency(debtBalance)}
                           </span>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            try {
-                              dateInputRef.current?.showPicker();
-                            } catch {
-                              dateInputRef.current?.focus();
-                            }
-                          }}
-                          className="text-xs font-black text-amber-800 hover:text-amber-950 bg-amber-100/90 hover:bg-amber-200 px-2.5 py-1 rounded-lg transition-colors cursor-pointer shrink-0 ml-2"
-                        >
-                          Abrir Calendario 📅
-                        </button>
+                        <p className="text-xs text-slate-600 font-medium truncate flex items-center gap-1.5 pt-0.5">
+                          <AppleCalendarClockIcon size={14} className="text-amber-700 shrink-0 inline-block" />
+                          <span>
+                            {formatHumanDate(promisedDate)} • {isCustomTime && customTimeInput.trim() ? customTimeInput : promisedTime}
+                          </span>
+                        </p>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-0.5">
-                        {/* Selector de Fecha */}
-                        <div className="space-y-1.5">
-                          <label className="text-xs font-black text-amber-950 flex items-center justify-between">
-                            <span>Fecha de Cobro Pactada:</span>
-                            <span className="text-xs text-amber-700 font-semibold">Toca para cambiar</span>
-                          </label>
-
-                          <div
-                            onClick={() => {
-                              try {
-                                dateInputRef.current?.showPicker();
-                              } catch {
-                                dateInputRef.current?.focus();
-                              }
-                            }}
-                            className="relative flex items-center bg-white border-2 border-amber-300 rounded-xl px-3 py-2 cursor-pointer hover:border-amber-500 transition-colors shadow-2xs"
-                          >
-                            <Calendar className="w-4 h-4 text-amber-600 mr-2 shrink-0" />
-                            <input
-                              ref={dateInputRef}
-                              type="date"
-                              min={todayIso}
-                              value={promisedDate}
-                              onChange={(e) => setPromisedDate(e.target.value)}
-                              onClick={(e) => {
-                                try {
-                                  e.currentTarget.showPicker();
-                                } catch {}
-                              }}
-                              className="w-full text-xs sm:text-sm font-black text-slate-900 bg-transparent focus:outline-hidden cursor-pointer"
-                            />
-                          </div>
-
-                          {/* Botones de fechas rápidas y comunes */}
-                          <div className="flex gap-1.5 pt-1 flex-wrap">
-                            <button
-                              type="button"
-                              onClick={() => setPromisedDate(todayIso)}
-                              className={`text-xs font-black px-2.5 py-1 rounded-lg transition-all cursor-pointer border ${
-                                promisedDate === todayIso
-                                  ? 'bg-amber-600 text-white border-amber-600 shadow-2xs'
-                                  : 'bg-white hover:bg-amber-100 text-amber-900 border-amber-200'
-                              }`}
-                            >
-                              Hoy
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setPromisedDate(tomorrowIso)}
-                              className={`text-xs font-black px-2.5 py-1 rounded-lg transition-all cursor-pointer border ${
-                                promisedDate === tomorrowIso
-                                  ? 'bg-amber-600 text-white border-amber-600 shadow-2xs'
-                                  : 'bg-white hover:bg-amber-100 text-amber-900 border-amber-200'
-                              }`}
-                            >
-                              Mañana
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setPromisedDate(in3DaysIso)}
-                              className={`text-xs font-black px-2.5 py-1 rounded-lg transition-all cursor-pointer border ${
-                                promisedDate === in3DaysIso
-                                  ? 'bg-amber-600 text-white border-amber-600 shadow-2xs'
-                                  : 'bg-white hover:bg-amber-100 text-amber-900 border-amber-200'
-                              }`}
-                            >
-                              En 3 días
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setPromisedDate(nextSatIso)}
-                              className={`text-xs font-black px-2.5 py-1 rounded-lg transition-all cursor-pointer border ${
-                                promisedDate === nextSatIso
-                                  ? 'bg-amber-600 text-white border-amber-600 shadow-2xs'
-                                  : 'bg-white hover:bg-amber-100 text-amber-900 border-amber-200'
-                              }`}
-                            >
-                              Sábado
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setPromisedDate(nextMonIso)}
-                              className={`text-xs font-black px-2.5 py-1 rounded-lg transition-all cursor-pointer border ${
-                                promisedDate === nextMonIso
-                                  ? 'bg-amber-600 text-white border-amber-600 shadow-2xs'
-                                  : 'bg-white hover:bg-amber-100 text-amber-900 border-amber-200'
-                              }`}
-                            >
-                              Próx. Lunes
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setPromisedDate(in7DaysIso)}
-                              className={`text-xs font-black px-2.5 py-1 rounded-lg transition-all cursor-pointer border ${
-                                promisedDate === in7DaysIso
-                                  ? 'bg-amber-600 text-white border-amber-600 shadow-2xs'
-                                  : 'bg-white hover:bg-amber-100 text-amber-900 border-amber-200'
-                              }`}
-                            >
-                              En 1 semana
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setPromisedDate(endMonthIso)}
-                              className={`text-xs font-black px-2.5 py-1 rounded-lg transition-all cursor-pointer border ${
-                                promisedDate === endMonthIso
-                                  ? 'bg-amber-600 text-white border-amber-600 shadow-2xs'
-                                  : 'bg-white hover:bg-amber-100 text-amber-900 border-amber-200'
-                              }`}
-                            >
-                              Fin de mes
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Selector de Hora / Franja Horaria con Opción Personalizada */}
-                        <div className="space-y-1.5">
-                          <label className="text-xs font-black text-amber-950 block">
-                            Hora o Franja de Cobro:
-                          </label>
-                          <select
-                            value={isCustomTime ? 'custom' : promisedTime}
-                            onChange={(e) => {
-                              if (e.target.value === 'custom') {
-                                setIsCustomTime(true);
-                              } else {
-                                setIsCustomTime(false);
-                                setPromisedTime(e.target.value);
-                              }
-                            }}
-                            className="w-full text-xs sm:text-sm font-black px-3 py-2 bg-white border-2 border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:outline-hidden cursor-pointer shadow-2xs"
-                          >
-                            <option value="Mañana (8:00 - 11:00)">Mañana (8:00 - 11:00)</option>
-                            <option value="Mediodía (11:00 - 13:00)">Mediodía (11:00 - 13:00)</option>
-                            <option value="Tarde (13:00 - 16:00)">Tarde (13:00 - 16:00)</option>
-                            <option value="Final de ruta (16:00 - 19:00)">Final de ruta (16:00 - 19:00)</option>
-                            <option value="custom">✍️ Hora exacta pactada (Personalizada)...</option>
-                          </select>
-
-                          {isCustomTime && (
-                            <div className="pt-1.5 animate-in fade-in duration-150">
-                              <input
-                                type="text"
-                                placeholder="Ej: 10:30 AM, o después del almuerzo"
-                                value={customTimeInput}
-                                onChange={(e) => setCustomTimeInput(e.target.value)}
-                                className="w-full text-xs sm:text-sm font-black px-3 py-2 bg-white border-2 border-amber-400 rounded-xl focus:ring-2 focus:ring-amber-500 focus:outline-hidden shadow-2xs placeholder:text-amber-900/40"
-                                autoFocus
-                              />
-                            </div>
-                          )}
-
-                          <div className="flex items-center space-x-1 text-xs text-amber-800 font-bold mt-1.5">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                            <span>Se guarda en PostgreSQL (Supabase), cartera y recibo.</span>
-                          </div>
-                        </div>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowCreditModal(true)}
+                        className="px-3 py-2 bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-xl text-xs font-black shrink-0 flex items-center space-x-1.5 shadow-2xs transition-all active:scale-95 cursor-pointer"
+                      >
+                        <ApplePencilIcon size={13} className="text-amber-800 shrink-0" />
+                        <span>Cambiar Fecha</span>
+                      </button>
                     </div>
                   )}
                 </div>
@@ -1110,9 +949,122 @@ export function CartDrawer({
     </div>
   );
 
+  const creditModalContent = showCreditModal && (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in duration-200">
+      <div 
+        className="w-full max-w-sm bg-white rounded-3xl p-5 shadow-2xl border border-slate-200 space-y-4 animate-in zoom-in-95 duration-150"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-800">
+              <AppleCalendarClockIcon size={18} />
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-slate-900">Fecha de Cobro</h3>
+              <p className="text-xs text-slate-500 font-medium">Pactar pago del saldo a crédito</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowCreditModal(false)}
+            className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 transition-colors cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Selector de Fecha */}
+        <div className="space-y-1.5">
+          <label className="text-xs font-black text-slate-700 block">Día acordado:</label>
+          <div className="relative flex items-center bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 shadow-2xs">
+            <AppleCalendarIcon size={16} className="text-slate-500 mr-2.5 shrink-0" />
+            <input
+              type="date"
+              min={todayIso}
+              value={promisedDate}
+              onChange={(e) => setPromisedDate(e.target.value)}
+              className="w-full text-xs sm:text-sm font-black text-slate-900 bg-transparent focus:outline-hidden cursor-pointer"
+            />
+          </div>
+
+          {/* Opciones rápidas de fecha */}
+          <div className="grid grid-cols-4 gap-1 pt-1">
+            {[
+              { label: 'Mañana', val: tomorrowIso },
+              { label: 'En 3 días', val: in3DaysIso },
+              { label: 'Sábado', val: nextSatIso },
+              { label: 'Lunes', val: nextMonIso },
+            ].map((shortcut) => (
+              <button
+                key={shortcut.label}
+                type="button"
+                onClick={() => setPromisedDate(shortcut.val)}
+                className={`text-xs py-1 px-1.5 rounded-lg font-bold border transition-all cursor-pointer text-center truncate ${
+                  promisedDate === shortcut.val
+                    ? 'bg-amber-600 text-white border-amber-600 shadow-2xs'
+                    : 'bg-slate-50 hover:bg-amber-50 text-slate-700 border-slate-200'
+                }`}
+              >
+                {shortcut.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Selector de Hora / Franja */}
+        <div className="space-y-1.5">
+          <label className="text-xs font-black text-slate-700 block">Horario preferido:</label>
+          <select
+            value={isCustomTime ? 'custom' : promisedTime}
+            onChange={(e) => {
+              if (e.target.value === 'custom') {
+                setIsCustomTime(true);
+              } else {
+                setIsCustomTime(false);
+                setPromisedTime(e.target.value);
+              }
+            }}
+            className="w-full text-xs sm:text-sm font-bold px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:outline-hidden cursor-pointer shadow-2xs"
+          >
+            <option value="Mañana (8:00 - 11:00)">Mañana (8:00 - 11:00)</option>
+            <option value="Mediodía (11:00 - 13:00)">Mediodía (11:00 - 13:00)</option>
+            <option value="Tarde (13:00 - 16:00)">Tarde (13:00 - 16:00)</option>
+            <option value="Final de ruta (16:00 - 19:00)">Final de ruta (16:00 - 19:00)</option>
+            <option value="custom">✍️ Hora personalizada...</option>
+          </select>
+
+          {isCustomTime && (
+            <input
+              type="text"
+              placeholder="Ej: 10:30 AM"
+              value={customTimeInput}
+              onChange={(e) => setCustomTimeInput(e.target.value)}
+              className="w-full text-xs sm:text-sm font-black px-3 py-2 bg-white border border-amber-400 rounded-xl focus:ring-2 focus:ring-amber-500 focus:outline-hidden shadow-2xs placeholder:text-slate-400 mt-1"
+              autoFocus
+            />
+          )}
+        </div>
+
+        {/* Botón Listo */}
+        <div className="pt-2">
+          <button
+            type="button"
+            onClick={() => setShowCreditModal(false)}
+            className="w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black shadow-xs transition-transform active:scale-98 cursor-pointer flex items-center justify-center space-x-1.5"
+          >
+            <Check className="w-4 h-4 text-emerald-400" />
+            <span>Guardar Programación</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <>
       {createPortal(modalContent, document.body)}
+      {showCreditModal && createPortal(creditModalContent, document.body)}
       {showThermalModal && createdOrder && (
         <ThermalReceiptModal
           isOpen={showThermalModal}
