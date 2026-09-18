@@ -21,7 +21,7 @@ import {
   Sparkles,
   ArrowRight,
 } from 'lucide-react';
-import { AppleMapPinIcon } from '@/components/ui/AppleIcons';
+import { AppleMapPinIcon, AppleCartIcon } from '@/components/ui/AppleIcons';
 
 export default function ClientExperiencePage({
   params,
@@ -82,16 +82,16 @@ export default function ClientExperiencePage({
               <MobileTestButton />
             </div>
 
-            {/* Botón Mi Pedido - Acabado Limpio Blanco y Negro con insignia */}
+            {/* Botón Pedido - Acabado Limpio Blanco y Negro con insignia */}
             <button
               type="button"
               onClick={() => setIsCartOpen(true)}
-              className="px-4 py-2 bg-slate-950 hover:bg-slate-800 active:scale-95 text-white rounded-xl shadow-xs transition-all flex items-center space-x-2 text-xs sm:text-sm font-black"
+              className="px-3.5 sm:px-4 py-2 bg-slate-950 hover:bg-slate-800 active:scale-95 text-white rounded-xl shadow-xs border border-slate-800/80 transition-all flex items-center gap-2 text-xs sm:text-sm font-black cursor-pointer select-none"
             >
-              <ShoppingBag className="w-4 h-4 text-white" />
-              <span>Mi Pedido</span>
+              <AppleCartIcon size={18} className="text-white shrink-0" />
+              <span className="tracking-tight">Pedido</span>
               {cartTotalJavas > 0 && (
-                <span className="px-2 py-0.5 rounded-full bg-blue-600 text-white text-xs font-mono font-black animate-in fade-in">
+                <span className="px-2 py-0.5 rounded-full bg-blue-600 text-white text-[11px] font-mono font-black animate-in fade-in leading-tight shadow-xs">
                   {cartTotalJavas}
                 </span>
               )}

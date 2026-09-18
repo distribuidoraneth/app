@@ -12,18 +12,15 @@ import { AnethFullLogo, AnethIsotype } from '@/components/ui/AnethLogo';
 import { sortClientsByProximity, calculateDistanceMeters, formatDistance, GeoCoordinates } from '@/lib/utils/geo';
 import { Client, SaleType } from '@/types';
 import { cleanAddress } from '@/lib/utils/formatters';
-import { AppleMapPinIcon, AppleStorefrontIcon } from '@/components/ui/AppleIcons';
+import { AppleMapPinIcon, AppleStorefrontIcon, AppleCartIcon } from '@/components/ui/AppleIcons';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import {
-  ShoppingBag,
   ArrowLeft,
   Navigation,
   ChevronDown,
   Plus,
   RefreshCw,
-  Zap,
-  Calendar,
 } from 'lucide-react';
 
 function StandaloneOrderContent() {
@@ -156,31 +153,23 @@ function StandaloneOrderContent() {
             <div className="sm:hidden">
               <AnethIsotype size="sm" variant="color" />
             </div>
-            {/* Modalidad de venta fija según selección inicial */}
-            <div className="pl-1 sm:pl-2">
-              {saleType === 'preventa' ? (
-                <span className="inline-flex items-center px-2.5 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200/80 rounded-full text-xs font-black">
-                  <Calendar className="w-3.5 h-3.5 text-emerald-600 mr-1" />
-                  Preventa
-                </span>
-              ) : (
-                <span className="inline-flex items-center px-2.5 py-1 bg-blue-50 text-blue-800 border border-blue-200/80 rounded-full text-xs font-black">
-                  <Zap className="w-3.5 h-3.5 text-blue-600 fill-blue-600 mr-1" />
-                  Autoventa
-                </span>
-              )}
+            {/* Título de Modalidad en Azul estilo pestaña */}
+            <div className="pl-1.5 sm:pl-2.5 flex items-center">
+              <span className="text-base sm:text-lg font-black text-blue-600 tracking-tight select-none">
+                {saleType === 'preventa' ? 'Preventa' : 'Autoventa'}
+              </span>
             </div>
           </div>
 
           <button
             type="button"
             onClick={() => setIsCartOpen(true)}
-            className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl shadow-xs transition-colors flex items-center space-x-2 text-xs sm:text-sm font-black active:scale-95 cursor-pointer"
+            className="px-3.5 sm:px-4 py-2 bg-slate-950 hover:bg-slate-800 active:scale-95 text-white rounded-xl shadow-xs border border-slate-800/80 transition-all flex items-center gap-2 text-xs sm:text-sm font-black cursor-pointer select-none"
           >
-            <ShoppingBag className="w-4 h-4 text-blue-400" />
-            <span>Mi Pedido</span>
+            <AppleCartIcon size={18} className="text-white shrink-0" />
+            <span className="tracking-tight">Pedido</span>
             {(cartTotalJavas > 0 || cartTotalUnits > 0) && (
-              <span className="px-2 py-0.5 bg-blue-600 text-white text-xs font-black rounded-full min-w-[20px] text-center">
+              <span className="px-2 py-0.5 bg-blue-600 text-white text-[11px] font-black rounded-full min-w-[20px] text-center leading-tight shadow-xs">
                 {cart.length}
               </span>
             )}
@@ -315,7 +304,7 @@ function StandaloneOrderContent() {
             className="w-full py-3.5 px-5 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-black text-sm shadow-2xl flex items-center justify-between active:scale-97 transition-transform duration-150 ease-out cursor-pointer"
           >
             <div className="flex items-center space-x-2">
-              <ShoppingBag className="w-5 h-5 text-white" />
+              <AppleCartIcon size={20} className="text-white shrink-0" />
               <span>Ver Pedido</span>
               <span className="px-2.5 py-0.5 bg-blue-500/40 text-white text-xs font-bold rounded-full">
                 {cartTotalBottles} {cartTotalBottles === 1 ? 'botella' : 'botellas'}
