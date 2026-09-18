@@ -452,8 +452,8 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
                       />
                     </div>
 
-                    {/* 2. En medio: Tamaño y Cantidad de botellas */}
-                    <div className="min-w-0 flex-1 text-center px-1">
+                    {/* 2. En medio/Izquierda: Tamaño y Cantidad de botellas */}
+                    <div className="min-w-0 flex-1 text-left pl-1 sm:pl-1.5">
                       <div className="text-sm sm:text-base font-black text-slate-900 tracking-tight leading-tight truncate">
                         {displayTitle}
                       </div>
