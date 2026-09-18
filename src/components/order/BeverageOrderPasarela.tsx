@@ -537,14 +537,10 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
                             : 'border-slate-200/90 hover:border-slate-300 bg-white hover:bg-slate-50/80 shadow-2xs'
                         }`}
                       >
-                        {/* 3D Fruit Icon o espacio en blanco si no tiene icono definido */}
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 p-1 ${
-                          hasFlavorGraphic
-                            ? 'bg-white shadow-2xs border border-slate-100'
-                            : 'bg-white/50 border border-slate-200/60'
-                        }`}>
-                          {hasFlavorGraphic ? <FruitVectorIcon flavor={flavor} size={32} /> : null}
-                        </div>
+                        {/* 3D Fruit Icon directo sin recuadro */}
+                        {hasFlavorGraphic ? (
+                          <FruitVectorIcon flavor={flavor} size={34} className="shrink-0 drop-shadow-xs" />
+                        ) : null}
 
                         <div className="text-sm sm:text-base font-black text-slate-900 leading-tight truncate">
                           {flavor}
@@ -581,13 +577,9 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
                           className="flex items-center justify-between bg-white p-3 rounded-xl border border-slate-200 shadow-2xs"
                         >
                           <div className="flex items-center space-x-2.5">
-                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 p-1 ${
-                              hasFlavorGraphic
-                                ? 'bg-slate-50 border border-slate-100 shadow-2xs'
-                                : 'bg-white/50 border border-slate-200/60'
-                            }`}>
-                              {hasFlavorGraphic ? <FruitVectorIcon flavor={flavor} size={30} /> : null}
-                            </div>
+                            {hasFlavorGraphic ? (
+                              <FruitVectorIcon flavor={flavor} size={30} className="shrink-0 drop-shadow-xs" />
+                            ) : null}
                             <span className="font-black text-sm sm:text-base text-slate-900">{flavor}</span>
                           </div>
 
