@@ -877,7 +877,7 @@ export function CartDrawer({
               <div className="space-y-2">
                 <div className="flex items-baseline justify-between">
                   <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                    Total Pedido ({cartTotalBottles} {cartTotalBottles === 1 ? 'botella' : 'botellas'}):
+                    Total Pedido:
                   </span>
                   <span className="text-2xl sm:text-3xl font-black font-mono text-slate-900">
                     {formatCurrency(cartTotalAmount)}
@@ -886,29 +886,23 @@ export function CartDrawer({
 
                 <div className="grid grid-cols-2 gap-2">
                   {/* Badge Cobro Hoy */}
-                  <div className="bg-emerald-50/90 border border-emerald-200/80 rounded-xl px-3 py-2 flex items-center justify-between shadow-2xs">
-                    <div className="min-w-0">
-                      <span className="text-[11px] sm:text-xs font-bold text-emerald-700 block truncate">
-                        Cobro Hoy ({paymentMethod === 'cash' ? 'Efectivo' : paymentMethod === 'deuna' ? 'DeUna' : 'Transf.'})
-                      </span>
-                      <span className="text-base sm:text-lg font-black font-mono text-emerald-800 block">
-                        {formatCurrency(numericPaid)}
-                      </span>
-                    </div>
-                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0 ml-1.5" />
+                  <div className="bg-emerald-50/90 border border-emerald-200/80 rounded-xl px-3.5 py-2.5 shadow-2xs">
+                    <span className="text-xs font-bold text-emerald-700 block truncate">
+                      Cobro Hoy
+                    </span>
+                    <span className="text-base sm:text-lg font-black font-mono text-emerald-800 block mt-0.5">
+                      {formatCurrency(numericPaid)}
+                    </span>
                   </div>
 
                   {/* Badge Saldo a Crédito */}
-                  <div className="bg-amber-50/90 border border-amber-200/80 rounded-xl px-3 py-2 flex items-center justify-between shadow-2xs">
-                    <div className="min-w-0">
-                      <span className="text-[11px] sm:text-xs font-bold text-amber-700 block truncate">
-                        A Crédito
-                      </span>
-                      <span className="text-base sm:text-lg font-black font-mono text-amber-800 block">
-                        {formatCurrency(debtBalance)}
-                      </span>
-                    </div>
-                    <div className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0 ml-1.5" />
+                  <div className="bg-amber-50/90 border border-amber-200/80 rounded-xl px-3.5 py-2.5 shadow-2xs">
+                    <span className="text-xs font-bold text-amber-700 block truncate">
+                      A Crédito
+                    </span>
+                    <span className="text-base sm:text-lg font-black font-mono text-amber-800 block mt-0.5">
+                      {formatCurrency(debtBalance)}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -916,15 +910,14 @@ export function CartDrawer({
               <div className="flex justify-between items-end">
                 <div>
                   <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
-                    Cobro Total ({cartTotalBottles} {cartTotalBottles === 1 ? 'botella' : 'botellas'}):
+                    Total Pedido:
                   </span>
                   <span className="text-2xl sm:text-3xl font-black font-mono text-blue-700 block mt-0.5">
                     {formatCurrency(cartTotalAmount)}
                   </span>
                 </div>
                 <div className="text-right pb-1">
-                  <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <span className="inline-flex items-center text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg">
                     Pago completo
                   </span>
                 </div>
