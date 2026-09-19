@@ -15,6 +15,7 @@ import {
   Building2,
   MapPin,
   ArrowRight,
+  Lock,
   Package,
   ChevronLeft,
   Calendar,
@@ -831,41 +832,32 @@ export function CartDrawer({
                   </div>
 
                   {debtBalance > 0 && (
-                    <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between gap-3 animate-in fade-in duration-150">
-                      <div className="min-w-0">
-                        <div className="flex items-baseline gap-1.5">
-                          <span className="text-xs font-semibold text-slate-500">
-                            Saldo a crédito:
-                          </span>
-                          <span className="font-mono text-sm font-black text-slate-900">
-                            {formatCurrency(debtBalance)}
-                          </span>
-                        </div>
-                        <div className="text-xs text-slate-500 font-medium flex items-center gap-1.5 mt-0.5">
-                          <AppleCalendarClockIcon size={13} className={promisedDate && promisedTime ? "text-blue-600 shrink-0" : "text-amber-500 shrink-0"} />
-                          {promisedDate && promisedTime ? (
-                            <span className="text-slate-700 font-medium truncate">
-                              {formatHumanDate(promisedDate)} • {promisedTime}
-                            </span>
-                          ) : (
-                            <span className="text-amber-600 font-medium truncate">
-                              Definir fecha y hora de cobro
-                            </span>
-                          )}
-                        </div>
+                    <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between gap-2 animate-in fade-in duration-150">
+                      <div className="flex items-baseline gap-1.5 shrink-0">
+                        <span className="text-xs font-semibold text-slate-500">
+                          Saldo a crédito:
+                        </span>
+                        <span className="font-mono text-sm font-black text-slate-900">
+                          {formatCurrency(debtBalance)}
+                        </span>
                       </div>
 
                       <button
                         type="button"
                         onClick={openCreditModal}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-1.5 ${
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-1.5 max-w-[210px] sm:max-w-none ${
                           promisedDate && promisedTime
-                            ? 'text-blue-600 hover:bg-blue-50 border border-slate-200'
-                            : 'bg-blue-600 hover:bg-blue-700 text-white shadow-xs'
+                            ? 'text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200/80 shadow-2xs'
+                            : 'bg-blue-600 hover:bg-blue-700 text-white shadow-xs active:scale-97'
                         }`}
+                        title={promisedDate && promisedTime ? 'Cambiar fecha y hora de cobro' : 'Definir fecha de cobro'}
                       >
-                        <AppleCalendarClockIcon size={13} />
-                        <span>{promisedDate && promisedTime ? 'Cambiar' : 'Definir'}</span>
+                        <AppleCalendarClockIcon size={13} className={promisedDate && promisedTime ? 'text-blue-600 shrink-0' : 'shrink-0'} />
+                        <span className="truncate">
+                          {promisedDate && promisedTime
+                            ? `${formatHumanDate(promisedDate)} • ${promisedTime}`
+                            : 'Definir fecha'}
+                        </span>
                       </button>
                     </div>
                   )}
@@ -934,35 +926,48 @@ export function CartDrawer({
               )}
             </div>
 
-            <button
-              type="button"
-              disabled={isSubmitting || cart.length === 0}
-              onClick={
-                debtBalance > 0 && (!promisedDate || !promisedTime)
-                  ? openCreditModal
-                  : handleConfirmOrder
-              }
-              className={`w-full py-4 px-5 active:scale-97 text-white font-black rounded-2xl text-base sm:text-lg shadow-md flex items-center justify-center space-x-2 transition-transform duration-150 ease-out disabled:opacity-50 cursor-pointer ${
-                debtBalance > 0 && (!promisedDate || !promisedTime)
-                  ? 'bg-blue-600 hover:bg-blue-700'
-                  : saleType === 'autoventa'
-                  ? 'bg-blue-600 hover:bg-blue-700'
-                  : 'bg-emerald-600 hover:bg-emerald-700'
-              }`}
-            >
-              <span>
-                {debtBalance > 0 && (!promisedDate || !promisedTime)
-                  ? `Definir Fecha de Cobro (${formatCurrency(debtBalance)})`
-                  : debtBalance === 0
-                  ? (saleType === 'autoventa'
-                      ? `Confirmar y Despachar (${formatCurrency(cartTotalAmount)})`
-                      : `Programar Pedido (${formatCurrency(cartTotalAmount)})`)
-                  : numericPaid > 0
-                  ? `Cobrar ${formatCurrency(numericPaid)} + Dejar ${formatCurrency(debtBalance)} a Crédito`
-                  : `Confirmar Venta a Crédito (${formatCurrency(cartTotalAmount)})`}
-              </span>
-              <ArrowRight className="w-5 h-5" />
-            </button>
+            {(() => {
+              const isCreditPendingDate = debtBalance > 0 && (!promisedDate || !promisedTime);
+
+              return (
+                <button
+                  type="button"
+                  disabled={isSubmitting || cart.length === 0}
+                  onClick={
+                    isCreditPendingDate
+                      ? openCreditModal
+                      : handleConfirmOrder
+                  }
+                  className={`w-full py-4 px-5 active:scale-98 font-black rounded-2xl text-base sm:text-lg flex items-center justify-center space-x-2 transition-all duration-150 ease-out disabled:opacity-50 cursor-pointer ${
+                    isCreditPendingDate
+                      ? 'bg-slate-200 hover:bg-slate-300 text-slate-600 border border-slate-300 shadow-none'
+                      : saleType === 'autoventa'
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md'
+                      : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md'
+                  }`}
+                >
+                  {isCreditPendingDate ? (
+                    <>
+                      <Lock className="w-5 h-5 text-slate-500 shrink-0" />
+                      <span>Definir Fecha de Cobro ({formatCurrency(debtBalance)})</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>
+                        {debtBalance === 0
+                          ? (saleType === 'autoventa'
+                              ? `Confirmar y Despachar (${formatCurrency(cartTotalAmount)})`
+                              : `Programar Pedido (${formatCurrency(cartTotalAmount)})`)
+                          : numericPaid > 0
+                          ? `Cobrar ${formatCurrency(numericPaid)} + Dejar ${formatCurrency(debtBalance)} a Crédito`
+                          : `Confirmar Venta a Crédito (${formatCurrency(cartTotalAmount)})`}
+                      </span>
+                      <ArrowRight className="w-5 h-5 shrink-0" />
+                    </>
+                  )}
+                </button>
+              );
+            })()}
           </div>
         )}
       </div>
