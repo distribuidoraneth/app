@@ -15,7 +15,6 @@ import {
   Building2,
   MapPin,
   ArrowRight,
-  Lock,
   Package,
   ChevronLeft,
   Calendar,
@@ -41,6 +40,7 @@ import {
   AppleCalendarIcon,
   ApplePencilIcon,
   AppleCheckmarkSealIcon,
+  AppleLockIcon,
 } from '@/components/ui/AppleIcons';
 
 const FLAVOR_ASSET_URLS: Record<string, string> = {
@@ -147,24 +147,12 @@ export function CartDrawer({
       const [y, m, d] = dateStr.split('-').map(Number);
       const date = new Date(y, m - 1, d);
 
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const target = new Date(y, m - 1, d);
-      target.setHours(0, 0, 0, 0);
-      const diffDays = Math.round((target.getTime() - today.getTime()) / 86400000);
-
-      let badge = '';
-      if (diffDays === 0) badge = ' (Hoy)';
-      else if (diffDays === 1) badge = ' (Mañana)';
-      else if (diffDays === 2) badge = ' (Pasado mañana)';
-      else if (diffDays > 2) badge = ` (en ${diffDays} días)`;
-
       const formatted = date.toLocaleDateString('es-EC', {
         weekday: 'short',
         day: 'numeric',
         month: 'short',
       });
-      return `${formatted.charAt(0).toUpperCase() + formatted.slice(1)}${badge}`;
+      return formatted.charAt(0).toUpperCase() + formatted.slice(1);
     } catch {
       return dateStr;
     }
@@ -606,10 +594,10 @@ export function CartDrawer({
                           <button
                             type="button"
                             onClick={() => removeFromCart(item.id)}
-                            className="text-slate-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+                            className="text-red-500 hover:text-red-600 p-1 transition-colors cursor-pointer"
                             title="Eliminar producto"
                           >
-                            <AppleTrashIcon size={16} />
+                            <AppleTrashIcon size={18} />
                           </button>
                         </div>
                       </div>
@@ -657,20 +645,20 @@ export function CartDrawer({
                   <button
                     type="button"
                     onClick={() => handlePaymentMethodChange('cash')}
-                    className={`py-3 px-2 rounded-2xl border flex items-center justify-center space-x-2 transition-all active:scale-95 cursor-pointer ${
+                    className={`py-3 px-2 rounded-2xl border flex items-center justify-center space-x-1.5 transition-all active:scale-95 cursor-pointer ${
                       paymentMethod === 'cash'
                         ? 'border-blue-600 bg-blue-50 text-blue-950 ring-2 ring-blue-500/20 font-black'
                         : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold'
                     }`}
                   >
-                    <AppleBanknoteIcon size={18} className="shrink-0 text-emerald-600" />
-                    <span className="text-xs font-bold">Efectivo</span>
+                    <AppleBanknoteIcon size={20} className="shrink-0 text-emerald-600" />
+                    <span className="text-sm font-black tracking-tight">Efectivo</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => handlePaymentMethodChange('deuna')}
-                    className={`py-3 px-2 rounded-2xl border flex items-center justify-center space-x-2 transition-all active:scale-95 cursor-pointer ${
+                    className={`py-3 px-2 rounded-2xl border flex items-center justify-center space-x-1.5 transition-all active:scale-95 cursor-pointer ${
                       paymentMethod === 'deuna'
                         ? 'border-blue-600 bg-blue-50 text-blue-950 ring-2 ring-blue-500/20 font-black'
                         : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold'
@@ -679,22 +667,22 @@ export function CartDrawer({
                     <img
                       src="/icons/icon-deuna.png"
                       alt="DeUna"
-                      className="w-4 h-4 object-contain shrink-0"
+                      className="w-4.5 h-4.5 object-contain shrink-0"
                     />
-                    <span className="text-xs font-bold">DeUna</span>
+                    <span className="text-sm font-black tracking-tight">DeUna</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => handlePaymentMethodChange('transfer')}
-                    className={`py-3 px-2 rounded-2xl border flex items-center justify-center space-x-2 transition-all active:scale-95 cursor-pointer ${
+                    className={`py-3 px-2 rounded-2xl border flex items-center justify-center space-x-1.5 transition-all active:scale-95 cursor-pointer ${
                       paymentMethod === 'transfer'
                         ? 'border-blue-600 bg-blue-50 text-blue-950 ring-2 ring-blue-500/20 font-black'
                         : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold'
                     }`}
                   >
-                    <AppleBuildingClassicalIcon size={18} className="shrink-0 text-blue-600" />
-                    <span className="text-xs font-bold">Transferencia</span>
+                    <AppleBuildingClassicalIcon size={20} className="shrink-0 text-blue-600" />
+                    <span className="text-sm font-black tracking-tight">Transferencia</span>
                   </button>
                 </div>
 
@@ -884,47 +872,64 @@ export function CartDrawer({
         {/* Modal Sticky Footer with iOS Safe-Area support */}
         {!createdOrderSummary && cart.length > 0 && (
           <div className="p-4 sm:p-5 bg-white border-t border-slate-200 space-y-3 sticky bottom-0 z-20 shadow-lg pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
-            <div className="flex justify-between items-end">
-              <div>
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
-                  {debtBalance === 0
-                    ? `Cobro Total (${cartTotalBottles} botellas):`
-                    : numericPaid > 0
-                    ? `A Cobrar Hoy (${paymentMethod === 'cash' ? 'Efectivo' : paymentMethod === 'deuna' ? 'DeUna' : 'Transferencia'}):`
-                    : 'Venta 100% a Crédito:'}
-                </span>
-                <div className="flex items-baseline space-x-2 mt-0.5">
-                  <span
-                    className={`text-2xl sm:text-3xl font-black font-mono ${
-                      debtBalance === 0
-                        ? 'text-blue-700'
-                        : numericPaid > 0
-                        ? 'text-emerald-700'
-                        : 'text-slate-900'
-                    }`}
-                  >
-                    {debtBalance === 0
-                      ? formatCurrency(cartTotalAmount)
-                      : formatCurrency(numericPaid)}
+            {/* Resumen de cobro y crédito */}
+            {debtBalance > 0 ? (
+              <div className="space-y-2">
+                <div className="flex items-baseline justify-between">
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                    Total Pedido ({cartTotalBottles} {cartTotalBottles === 1 ? 'botella' : 'botellas'}):
                   </span>
-
-                  {debtBalance > 0 && (
-                    <span className="text-xs font-semibold text-slate-500">
-                      (+{formatCurrency(debtBalance)} a crédito)
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {debtBalance > 0 && (
-                <div className="text-right">
-                  <span className="text-xs text-slate-400 font-bold block">Total Pedido:</span>
-                  <span className="font-mono text-sm sm:text-base font-black text-slate-700">
+                  <span className="text-2xl sm:text-3xl font-black font-mono text-slate-900">
                     {formatCurrency(cartTotalAmount)}
                   </span>
                 </div>
-              )}
-            </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  {/* Badge Cobro Hoy */}
+                  <div className="bg-emerald-50/90 border border-emerald-200/80 rounded-xl px-3 py-2 flex items-center justify-between shadow-2xs">
+                    <div className="min-w-0">
+                      <span className="text-[11px] sm:text-xs font-bold text-emerald-700 block truncate">
+                        Cobro Hoy ({paymentMethod === 'cash' ? 'Efectivo' : paymentMethod === 'deuna' ? 'DeUna' : 'Transf.'})
+                      </span>
+                      <span className="text-base sm:text-lg font-black font-mono text-emerald-800 block">
+                        {formatCurrency(numericPaid)}
+                      </span>
+                    </div>
+                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0 ml-1.5" />
+                  </div>
+
+                  {/* Badge Saldo a Crédito */}
+                  <div className="bg-amber-50/90 border border-amber-200/80 rounded-xl px-3 py-2 flex items-center justify-between shadow-2xs">
+                    <div className="min-w-0">
+                      <span className="text-[11px] sm:text-xs font-bold text-amber-700 block truncate">
+                        A Crédito
+                      </span>
+                      <span className="text-base sm:text-lg font-black font-mono text-amber-800 block">
+                        {formatCurrency(debtBalance)}
+                      </span>
+                    </div>
+                    <div className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0 ml-1.5" />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="flex justify-between items-end">
+                <div>
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
+                    Cobro Total ({cartTotalBottles} {cartTotalBottles === 1 ? 'botella' : 'botellas'}):
+                  </span>
+                  <span className="text-2xl sm:text-3xl font-black font-mono text-blue-700 block mt-0.5">
+                    {formatCurrency(cartTotalAmount)}
+                  </span>
+                </div>
+                <div className="text-right pb-1">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                    Pago completo
+                  </span>
+                </div>
+              </div>
+            )}
 
             {(() => {
               const isCreditPendingDate = debtBalance > 0 && (!promisedDate || !promisedTime);
@@ -948,19 +953,15 @@ export function CartDrawer({
                 >
                   {isCreditPendingDate ? (
                     <>
-                      <Lock className="w-5 h-5 text-slate-500 shrink-0" />
+                      <AppleLockIcon size={18} className="text-slate-500 shrink-0" />
                       <span>Definir Fecha de Cobro ({formatCurrency(debtBalance)})</span>
                     </>
                   ) : (
                     <>
                       <span>
-                        {debtBalance === 0
-                          ? (saleType === 'autoventa'
-                              ? `Confirmar y Despachar (${formatCurrency(cartTotalAmount)})`
-                              : `Programar Pedido (${formatCurrency(cartTotalAmount)})`)
-                          : numericPaid > 0
-                          ? `Cobrar ${formatCurrency(numericPaid)} + Dejar ${formatCurrency(debtBalance)} a Crédito`
-                          : `Confirmar Venta a Crédito (${formatCurrency(cartTotalAmount)})`}
+                        {saleType === 'autoventa'
+                          ? 'Confirmar Despacho'
+                          : 'Programar Pedido'}
                       </span>
                       <ArrowRight className="w-5 h-5 shrink-0" />
                     </>
