@@ -651,8 +651,8 @@ export function CartDrawer({
                         : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold'
                     }`}
                   >
-                    <AppleBanknoteIcon size={20} className="shrink-0 text-emerald-600" />
-                    <span className="text-sm font-black tracking-tight">Efectivo</span>
+                    <AppleBanknoteIcon size={18} className="shrink-0 text-emerald-600" />
+                    <span className="text-xs sm:text-[13px] font-bold">Efectivo</span>
                   </button>
 
                   <button
@@ -667,9 +667,9 @@ export function CartDrawer({
                     <img
                       src="/icons/icon-deuna.png"
                       alt="DeUna"
-                      className="w-4.5 h-4.5 object-contain shrink-0"
+                      className="w-[18px] h-[18px] object-contain shrink-0"
                     />
-                    <span className="text-sm font-black tracking-tight">DeUna</span>
+                    <span className="text-xs sm:text-[13px] font-bold">DeUna</span>
                   </button>
 
                   <button
@@ -681,8 +681,8 @@ export function CartDrawer({
                         : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold'
                     }`}
                   >
-                    <AppleBuildingClassicalIcon size={20} className="shrink-0 text-blue-600" />
-                    <span className="text-sm font-black tracking-tight">Transferencia</span>
+                    <AppleBuildingClassicalIcon size={18} className="shrink-0 text-blue-600" />
+                    <span className="text-xs sm:text-[13px] font-bold">Transferencia</span>
                   </button>
                 </div>
 
