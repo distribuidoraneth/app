@@ -8,7 +8,7 @@ import {
   formatCurrency,
   formatDate,
   formatOrderNumber,
-  formatShortDateTime,
+  formatSmartOrderTime,
   generateWhatsAppOrderLink,
   formatItemTitle,
   getGoogleMapsNavigationUrl,
@@ -376,26 +376,21 @@ export function OrderDispatchBoard() {
                 onClick={() => router.push(`/pedido/${order.id}`)}
                 className="bg-white rounded-2xl border border-slate-200/80 p-3.5 sm:p-4 shadow-xs hover:border-slate-300 active:scale-[0.99] transition-all cursor-pointer select-none space-y-2.5"
               >
-                {/* Header Fila 1: Número, Fecha, Estado */}
+                {/* Header Fila 1: Número de orden y Estado */}
                 <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center space-x-2">
-                    <span className="font-mono font-black text-xs sm:text-sm text-slate-900 bg-slate-100 px-2.5 py-0.5 rounded-md border border-slate-200/70">
-                      {formatOrderNumber(order.orderNumber)}
-                    </span>
-                    <span className="text-xs text-slate-400 font-medium">
-                      {formatShortDateTime(order.createdAt)}
-                    </span>
-                  </div>
+                  <span className="font-mono font-bold text-xs sm:text-[13px] text-slate-800 bg-slate-100/90 px-2.5 py-1 rounded-lg border border-slate-200/80 tracking-tight select-all">
+                    {formatOrderNumber(order.orderNumber)}
+                  </span>
 
-                  <div>
+                  <div className="shrink-0">
                     {isDelivered ? (
-                      <span className="inline-flex items-center text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200/70">
-                        <AppleCheckmarkSealIcon size={14} className="mr-1 text-emerald-700" />
+                      <span className="inline-flex items-center text-xs font-semibold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200/70 shadow-2xs">
+                        <AppleCheckmarkSealIcon size={14} className="mr-1 text-emerald-600 shrink-0" />
                         Entregado
                       </span>
                     ) : (
-                      <span className="inline-flex items-center text-xs font-bold text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200/70">
-                        <Clock className="w-3.5 h-3.5 mr-1" />
+                      <span className="inline-flex items-center text-xs font-semibold text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200/70 shadow-2xs">
+                        <Clock className="w-3.5 h-3.5 mr-1 text-amber-600 shrink-0" />
                         Por Despachar
                       </span>
                     )}
@@ -403,14 +398,14 @@ export function OrderDispatchBoard() {
                 </div>
 
                 {/* Centro Fila 2: Nombre de Comercio y Dirección/Referencia */}
-                <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start justify-between gap-3 pt-0.5">
                   <div className="space-y-0.5 min-w-0">
-                    <h3 className="text-base font-black text-slate-900 truncate">
+                    <h3 className="text-base font-bold text-slate-900 tracking-tight truncate leading-snug">
                       {order.businessName || order.clientName}
                     </h3>
                     {cleanAddress(order.addressReference) && (
-                      <p className="text-xs sm:text-[13px] text-slate-500 truncate flex items-center">
-                        <AppleMapPinIcon size={14} className="shrink-0 mr-1 opacity-60" alt="Dirección" />
+                      <p className="text-xs text-slate-500 truncate flex items-center tracking-normal">
+                        <AppleMapPinIcon size={13} className="shrink-0 mr-1 opacity-50" alt="Dirección" />
                         <span className="truncate">{cleanAddress(order.addressReference)}</span>
                       </p>
                     )}
@@ -418,26 +413,28 @@ export function OrderDispatchBoard() {
 
                   {/* Total y paquetes */}
                   <div className="text-right shrink-0">
-                    <div className="text-lg font-black font-mono text-slate-900 leading-tight">
+                    <div className="text-lg font-bold font-mono text-slate-900 leading-tight tracking-tight">
                       {formatCurrency(order.totalAmount)}
                     </div>
-                    <div className="text-xs font-bold text-slate-400">
-                      {order.totalJavas} paquetes
+                    <div className="text-xs font-medium text-slate-400">
+                      {order.totalJavas} {order.totalJavas === 1 ? 'paquete' : 'paquetes'}
                     </div>
                   </div>
                 </div>
 
-                {/* Footer Fila 3: Saldo pendiente (solo si > 0) y Acciones Rápidas */}
-                <div className="flex items-center justify-between pt-1.5 border-t border-slate-100">
-                  {/* Saldo deudor (únicamente si existe) */}
-                  <div className="min-w-0">
-                    {order.debtBalance > 0 ? (
-                      <span className="inline-flex items-center text-xs font-black text-amber-800 bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200/60 truncate">
+                {/* Footer Fila 3: Saldo / Hora y Acciones Rápidas */}
+                <div className="flex items-center justify-between pt-2 border-t border-slate-100/80 gap-2">
+                  {/* Saldo deudor y/o Hora de creación contextual */}
+                  <div className="flex items-center gap-2 min-w-0 flex-wrap sm:flex-nowrap">
+                    {order.debtBalance > 0 && (
+                      <span className="inline-flex items-center text-[11px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/60 shrink-0">
                         Saldo: {formatCurrency(order.debtBalance)}
                       </span>
-                    ) : (
-                      <span />
                     )}
+                    <div className="flex items-center space-x-1 text-slate-400 text-[11px] sm:text-xs font-medium tracking-tight shrink-0">
+                      <Clock className="w-3 h-3 text-slate-400/80 shrink-0" />
+                      <span>{formatSmartOrderTime(order.createdAt)}</span>
+                    </div>
                   </div>
 
                   {/* Micro-acciones rápidas (stopPropagation para no abrir la página al dar clic) */}
@@ -450,10 +447,10 @@ export function OrderDispatchBoard() {
                       <button
                         type="button"
                         onClick={() => handleOpenNavigation(order.latitude, order.longitude)}
-                        className="p-2 rounded-lg bg-slate-100 hover:bg-blue-50 text-slate-600 hover:text-blue-600 border border-slate-200/70 transition-colors cursor-pointer flex items-center justify-center"
+                        className="w-8 h-8 rounded-xl bg-slate-100/80 hover:bg-blue-50 text-slate-600 hover:text-blue-600 border border-slate-200/70 transition-all active:scale-95 cursor-pointer flex items-center justify-center shadow-2xs"
                         title="Navegar con GPS"
                       >
-                        <AppleMapPinIcon size={18} alt="Navegar con GPS" />
+                        <AppleMapPinIcon size={16} alt="Navegar con GPS" />
                       </button>
                     )}
 
@@ -462,10 +459,10 @@ export function OrderDispatchBoard() {
                       <button
                         type="button"
                         onClick={() => handleShareWhatsApp(order)}
-                        className="p-2 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/80 transition-colors cursor-pointer flex items-center justify-center"
+                        className="w-8 h-8 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/80 transition-all active:scale-95 cursor-pointer flex items-center justify-center shadow-2xs"
                         title="Enviar mensaje por WhatsApp"
                       >
-                        <AppleWhatsAppIcon size={18} alt="Enviar mensaje por WhatsApp" />
+                        <AppleWhatsAppIcon size={16} alt="Enviar mensaje por WhatsApp" />
                       </button>
                     )}
 
@@ -474,11 +471,11 @@ export function OrderDispatchBoard() {
                       <button
                         type="button"
                         onClick={() => updateOrderStatus(order.id, 'delivered')}
-                        className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-black flex items-center space-x-1.5 shadow-2xs transition-all cursor-pointer"
+                        className="h-8 px-2.5 sm:px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold flex items-center space-x-1 shadow-2xs transition-all cursor-pointer"
                         title="Marcar como entregado"
                       >
                         <Check className="w-3.5 h-3.5" />
-                        <span>Entregar</span>
+                        <span className="hidden sm:inline">Entregar</span>
                       </button>
                     )}
                   </div>
