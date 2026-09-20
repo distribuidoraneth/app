@@ -18,7 +18,7 @@ import {
   INITIAL_ORDERS,
   INITIAL_INVOICES,
 } from '@/lib/mockData';
-import { formatOrderNumber } from '@/lib/utils/formatters';
+import { formatOrderNumber, generateOrderNumber } from '@/lib/utils/formatters';
 import {
   saveOrderToDb,
   saveClientToDb,
@@ -197,16 +197,49 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
     refreshData();
   }, []);
 
-  // Save to local storage (Cap to 30 orders/20 invoices to strictly prevent QuotaExceededError)
+  // Save to local storage (Merge with existing cached orders to preserve past days)
   useEffect(() => {
     try {
+      let existingOrders: Order[] = [];
+      let existingInvoices: Invoice[] = [];
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed.orders)) existingOrders = parsed.orders;
+        if (Array.isArray(parsed.invoices)) existingInvoices = parsed.invoices;
+      }
+
+      // Merge: current active orders take priority, then preserve previous orders by ID
+      const mergedOrdersMap = new Map<string, Order>();
+      orders.forEach((o) => mergedOrdersMap.set(o.id, o));
+      existingOrders.forEach((o) => {
+        if (!mergedOrdersMap.has(o.id)) {
+          mergedOrdersMap.set(o.id, o);
+        }
+      });
+      const combinedOrders = Array.from(mergedOrdersMap.values())
+        .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
+        .slice(0, 50);
+
+      // Merge invoices
+      const mergedInvoicesMap = new Map<string, Invoice>();
+      invoices.forEach((i) => mergedInvoicesMap.set(i.id, i));
+      existingInvoices.forEach((i) => {
+        if (!mergedInvoicesMap.has(i.id)) {
+          mergedInvoicesMap.set(i.id, i);
+        }
+      });
+      const combinedInvoices = Array.from(mergedInvoicesMap.values())
+        .sort((a, b) => new Date(b.issuedAt || 0).getTime() - new Date(a.issuedAt || 0).getTime())
+        .slice(0, 30);
+
       localStorage.setItem(
         STORAGE_KEY,
         JSON.stringify({
           clients,
           catalog,
-          orders: orders.slice(0, 30),
-          invoices: invoices.slice(0, 20),
+          orders: combinedOrders,
+          invoices: combinedInvoices,
         })
       );
     } catch {
@@ -409,7 +442,7 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
       paymentStatus = 'partial';
     }
 
-    const orderNum = `ORD-${String(orders.length + 101).padStart(5, '0')}`;
+    const orderNum = generateOrderNumber(client);
 
     const formattedNotes = notes
       ? (promisedCollectionDate ? `[Cobro saldo: ${promisedCollectionDate} ${promisedCollectionTime || ''}] ${notes}` : notes)

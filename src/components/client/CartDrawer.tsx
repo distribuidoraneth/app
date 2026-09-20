@@ -110,7 +110,6 @@ export function CartDrawer({
   } = useDistribution();
 
   const activeClient = clients.find((c) => c.id === (clientId || selectedClientId)) || clients[0];
-  const nextOrderNumber = `ORD-${String(orders.length + 101).padStart(5, '0')}`;
 
   const [saleType, setSaleType] = useState<SaleType>(propSaleType);
 
@@ -386,9 +385,13 @@ export function CartDrawer({
               <h2 className="font-black text-base sm:text-lg text-slate-900 leading-tight">
                 {createdOrderSummary ? 'Comprobante' : 'Pedido'}
               </h2>
-              {!createdOrderSummary && (
-                <span className="font-mono text-xs font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
-                  #{nextOrderNumber}
+              {createdOrderSummary ? (
+                <span className="font-mono text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200">
+                  {createdOrderSummary.orderNumber}
+                </span>
+              ) : (
+                <span className="font-mono text-[11px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
+                  Nuevo
                 </span>
               )}
             </div>

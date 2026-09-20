@@ -59,15 +59,52 @@ export function formatItemFullDescription(item: {
   return formatItemTitle(item);
 }
 
-export function formatOrderNumber(orderNumber: string): string {
-  if (!orderNumber) return 'ORD - 1';
-  // Remove leading '#' or prefix 'ORD-' with leading zeros
-  const numPart = orderNumber.replace(/[^0-9]/g, '');
-  const cleanInt = parseInt(numPart, 10);
-  if (!isNaN(cleanInt)) {
-    return `ORD - ${cleanInt}`;
+export function generateOrderNumber(
+  client?: { taxId?: string; whatsappNumber?: string },
+  date: Date = new Date()
+): string {
+  const yyyy = date.getFullYear().toString();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  const hh = String(date.getHours()).padStart(2, '0');
+  const min = String(date.getMinutes()).padStart(2, '0');
+  const ss = String(date.getSeconds()).padStart(2, '0');
+
+  // Sufijo de 3 dígitos basado en cédula/RUC, teléfono o milisegundos aleatorios
+  let suffix = '';
+  const cleanTaxId = client?.taxId ? client.taxId.replace(/\D/g, '') : '';
+  const cleanPhone = client?.whatsappNumber ? client.whatsappNumber.replace(/\D/g, '') : '';
+
+  if (cleanTaxId.length >= 3 && cleanTaxId !== '9999999999999') {
+    suffix = cleanTaxId.slice(-3);
+  } else if (cleanPhone.length >= 3) {
+    suffix = cleanPhone.slice(-3);
+  } else {
+    suffix = String((date.getMilliseconds() % 900) + 100).padStart(3, '0');
   }
-  return orderNumber.replace(/^#/, '');
+
+  return `ORD-${yyyy}${mm}${dd}-${hh}${min}${ss}-${suffix}`;
+}
+
+export function formatOrderNumber(orderNumber: string): string {
+  if (!orderNumber) return 'ORD-1';
+  const clean = orderNumber.trim().replace(/^#/, '');
+
+  // Si ya es el formato estructurado con guiones ej: ORD-20260920-101542-810
+  if (clean.includes('-') && clean.split('-').length >= 3) {
+    return clean;
+  }
+
+  // Si es un formato antiguo secuencial ej: ORD-00101 -> ORD - 101
+  const numPart = clean.replace(/[^0-9]/g, '');
+  if (numPart && numPart.length <= 5) {
+    const cleanInt = parseInt(numPart, 10);
+    if (!isNaN(cleanInt)) {
+      return `ORD - ${cleanInt}`;
+    }
+  }
+
+  return clean.startsWith('ORD-') ? clean : `ORD-${clean}`;
 }
 
 export function formatShortDateTime(dateString: string): string {
