@@ -155,12 +155,10 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
   // VENTA MIXTA: Javas y Unidades Sueltas (inician en 0 para exigir confirmación con +)
   const [javasCount, setJavasCount] = useState<number>(0);
   const [unitsCount, setUnitsCount] = useState<number>(0);
-  const [conversionNotice, setConversionNotice] = useState<string | null>(null);
 
   const resetQuantities = () => {
     setJavasCount(0);
     setUnitsCount(0);
-    setConversionNotice(null);
   };
 
   const handleTypeChange = (type: BeverageType) => {
@@ -220,9 +218,6 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
     if (nextUnits >= currentOption.unitsPerJava) {
       setJavasCount((prev) => prev + 1);
       setUnitsCount(0);
-      const containerLabel = currentOption.container === 'Vidrio' ? 'Java' : 'Pack';
-      setConversionNotice(`¡${currentOption.unitsPerJava} unidades convertidas automáticamente a 1 ${containerLabel}!`);
-      setTimeout(() => setConversionNotice(null), 3500);
     } else {
       setUnitsCount(nextUnits);
     }
@@ -533,9 +528,6 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
                     <span className="text-base sm:text-lg font-black text-slate-900">
                       Unidades
                     </span>
-                    <span className="text-xs font-mono text-slate-400">
-                      (máx. {(currentOption?.unitsPerJava || 12) - 1})
-                    </span>
                   </div>
 
                   <div className="flex items-center space-x-3">
@@ -561,13 +553,6 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
                     </button>
                   </div>
                 </div>
-
-                {conversionNotice && (
-                  <div className="text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-3.5 py-2 rounded-xl flex items-center gap-2 animate-in fade-in slide-in-from-top-1 duration-200">
-                    <span className="text-sm">📦</span>
-                    <span>{conversionNotice}</span>
-                  </div>
-                )}
               </div>
 
               {/* 2. Total a Pagar (después de los botones de packs y unidades) */}
