@@ -95,6 +95,14 @@ const DistributionContext = createContext<DistributionContextType | undefined>(u
 
 export const STORAGE_KEY = 'distribuidora_aneth_oficial_v12';
 
+export function getNextInvoiceSequence(invoicesList: Invoice[]): number {
+  const maxSeq = (invoicesList || []).reduce((max, inv) => {
+    const num = parseInt(inv.invoiceNumber?.replace(/\D/g, '')?.slice(-9) || '0', 10);
+    return num > max ? num : max;
+  }, 113);
+  return maxSeq + 1;
+}
+
 export function DistributionProvider({ children }: { children: React.ReactNode }) {
   const [clients, setClients] = useState<Client[]>([]);
   const [catalog, setCatalog] = useState<JavaProductOption[]>(JAVA_PRODUCT_CATALOG);
@@ -539,7 +547,7 @@ function generateUuid(): string {
     // Auto-generate Invoice ONLY for orders that are delivered immediately (Autoventa)
     // For Preventa, the invoice is generated automatically at the exact moment of dispatch/delivery
     if (saleType === 'autoventa') {
-      const seqNumber = invoices.length + 100;
+      const seqNumber = getNextInvoiceSequence(invoices);
       const invoiceNum = `001-001-${String(seqNumber).padStart(9, '0')}`;
       const subtotal15 = Number((totalAmount / 1.15).toFixed(2));
       const tax = Number((totalAmount - subtotal15).toFixed(2));
@@ -723,7 +731,7 @@ function generateUuid(): string {
     // Facturación automática al momento del Despacho/Entrega si no tenía factura previa (Preventa)
     if (status === 'delivered' && targetOrder && !targetOrder.invoiceId) {
       const client = clients.find((c) => c.id === targetOrder.clientId);
-      const seqNumber = invoices.length + 100;
+      const seqNumber = getNextInvoiceSequence(invoices);
       const invoiceNum = `001-001-${String(seqNumber).padStart(9, '0')}`;
       const subtotal15 = Number((targetOrder.totalAmount / 1.15).toFixed(2));
       const tax = Number((targetOrder.totalAmount - subtotal15).toFixed(2));
@@ -899,7 +907,8 @@ function generateUuid(): string {
 
     const subtotal15 = Number((order.totalAmount / 1.15).toFixed(2));
     const tax15 = Number((order.totalAmount - subtotal15).toFixed(2));
-    const invoiceNum = `001-001-${String(invoices.length + 100).padStart(9, '0')}`;
+    const seqNumber = getNextInvoiceSequence(invoices);
+    const invoiceNum = `001-001-${String(seqNumber).padStart(9, '0')}`;
     const newInvoice: Invoice = {
       id: `fac-${Date.now()}`,
       invoiceNumber: invoiceNum,

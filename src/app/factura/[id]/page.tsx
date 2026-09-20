@@ -102,7 +102,24 @@ export default function PublicInvoicePage({
     setIsRetryingSri(true);
     setSriFeedback(null);
     try {
-      const seq = parseInt(invoice.invoiceNumber.replace(/\D/g, '').slice(-9), 10) || 1;
+      const isSequenceDuplicate =
+        sriErrorMsg?.includes('SECUENCIAL') ||
+        sriErrorMsg?.includes('45') ||
+        sriErrorMsg?.includes('REGISTRADO') ||
+        sriStatus === 'DEVUELTA';
+
+      let seq = parseInt(invoice.invoiceNumber.replace(/\D/g, '').slice(-9), 10) || 1;
+      let clave: string | undefined = claveAcceso;
+
+      if (isSequenceDuplicate) {
+        const maxSeq = invoices.reduce((max, inv) => {
+          const num = parseInt(inv.invoiceNumber?.replace(/\D/g, '')?.slice(-9) || '0', 10);
+          return num > max ? num : max;
+        }, 113);
+        seq = maxSeq + 1;
+        clave = undefined; // Forzar generación de nueva clave limpia para el nuevo secuencial
+      }
+
       const res = await fetch('/api/sri/facturar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -122,7 +139,7 @@ export default function PublicInvoicePage({
             addressReference: invoice.clientAddress,
           },
           secuencial: seq,
-          claveAcceso,
+          claveAcceso: clave,
         }),
       });
       const data = await res.json();
@@ -131,11 +148,38 @@ export default function PublicInvoicePage({
         setSriAuthNum(data.numeroAutorizacion);
         setSriAuthDate(data.fechaAutorizacion);
         setSriErrorMsg(data.error);
+
+        // Actualizar invoice en localStorage para que refleje el nuevo número y estado
+        try {
+          const storageKey = 'distribuidora_aneth_oficial_v12';
+          const saved = localStorage.getItem(storageKey);
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed.invoices)) {
+              parsed.invoices = parsed.invoices.map((inv: any) =>
+                inv.id === invoice.id || inv.invoiceNumber === invoice.invoiceNumber
+                  ? {
+                      ...inv,
+                      invoiceNumber: data.secuencialCompleto || inv.invoiceNumber,
+                      claveAcceso: data.claveAcceso || inv.claveAcceso,
+                      sriStatus: data.sriStatus,
+                      sriAuthorizationNumber: data.numeroAutorizacion,
+                      sriAuthorizationDate: data.fechaAutorizacion,
+                      sriErrorMessage: data.error,
+                      xmlContent: data.xml,
+                    }
+                  : inv
+              );
+              localStorage.setItem(storageKey, JSON.stringify(parsed));
+            }
+          }
+        } catch (_) {}
+
         setSriFeedback(
           data.sriStatus === 'AUTORIZADO'
-            ? '¡Factura reemitida y AUTORIZADA con éxito en el SRI!'
+            ? `¡Factura ${data.secuencialCompleto || ''} AUTORIZADA con éxito en el SRI!`
             : data.sriStatus === 'RECIBIDA'
-            ? 'Factura RECIBIDA por el SRI. En cola de autorización.'
+            ? `Factura ${data.secuencialCompleto || ''} RECIBIDA por el SRI. En cola de autorización.`
             : `El SRI devolvió: ${data.error || 'Error'}`
         );
       } else {

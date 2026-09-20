@@ -75,6 +75,24 @@ export function buildFacturaXml(params: {
   // Código de porcentaje de IVA: 4 = 15% (vigente en Ecuador), 0 = 0%
   const codigoPorcentajeIva = ivaRate === 15 ? '4' : '0';
 
+  // Autodetección rigurosa de tipo de identificación del comprador para el SRI:
+  // 04 = RUC (13 dígitos), 05 = Cédula (10 dígitos), 07 = Consumidor Final
+  const idLimpia = (cliente.identificacion || '').trim().replace(/\D/g, '');
+  let tipoIdComprador = cliente.tipoIdentificacion;
+  if (!tipoIdComprador || tipoIdComprador === '07') {
+    if (idLimpia.length === 10 && idLimpia !== '9999999999') {
+      tipoIdComprador = '05';
+    } else if (idLimpia.length === 13 && idLimpia !== '9999999999999') {
+      tipoIdComprador = '04';
+    } else {
+      tipoIdComprador = '07';
+    }
+  } else if (tipoIdComprador === '04' && idLimpia.length === 10) {
+    tipoIdComprador = '05';
+  } else if (tipoIdComprador === '05' && idLimpia.length === 13) {
+    tipoIdComprador = '04';
+  }
+
   let xml = `<?xml version="1.0" encoding="UTF-8"?>
 <factura id="comprobante" version="1.1.0">
   <infoTributaria>
@@ -95,7 +113,7 @@ export function buildFacturaXml(params: {
     <fechaEmision>${fechaStr}</fechaEmision>
     <dirEstablecimiento>${escapeXml(company.dirEstablecimiento || company.dirMatriz)}</dirEstablecimiento>
     <obligadoContabilidad>${company.obligadoContabilidad}</obligadoContabilidad>
-    <tipoIdentificacionComprador>${cliente.tipoIdentificacion}</tipoIdentificacionComprador>
+    <tipoIdentificacionComprador>${tipoIdComprador}</tipoIdentificacionComprador>
     <razonSocialComprador>${escapeXml(cliente.razonSocial)}</razonSocialComprador>
     <identificacionComprador>${escapeXml(cliente.identificacion)}</identificacionComprador>
     ${cliente.direccion ? `<direccionComprador>${escapeXml(cliente.direccion)}</direccionComprador>` : ''}
@@ -131,7 +149,10 @@ export function buildFacturaXml(params: {
       item.quantityJavas > 0 && item.quantityUnits > 0 ? ' + ' : ''
     }${item.quantityUnits > 0 ? `${item.quantityUnits} unidades` : ''})`;
 
-    const cantidad = item.totalBottles || (item.quantityJavas * item.unitsPerJava);
+    const cantidad =
+      item.totalBottles && item.totalBottles > 0
+        ? item.totalBottles
+        : (item.quantityJavas || 0) * (item.unitsPerJava || 12) + (item.quantityUnits || 0);
     const subtotalItemConIva = item.subtotal;
     const baseImponibleItem = ivaRate === 15 ? Number((subtotalItemConIva / 1.15).toFixed(2)) : subtotalItemConIva;
     const ivaItem = Number((subtotalItemConIva - baseImponibleItem).toFixed(2));

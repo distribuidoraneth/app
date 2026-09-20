@@ -79,13 +79,16 @@ export async function enviarRecepcionSRI(
     if (responseText.includes('<estado>RECIBIDA</estado>')) {
       return { estado: 'RECIBIDA', rawResponse: responseText };
     } else {
-      const msgMatch = responseText.match(/<mensaje>(.*?)<\/mensaje>/);
-      const infoMatch = responseText.match(/<informacionAdicional>(.*?)<\/informacionAdicional>/);
-      const idMatch = responseText.match(/<identificador>(.*?)<\/identificador>/);
+      const idMatch = responseText.match(/<identificador>([^<]+)<\/identificador>/);
+      const allMsgs = Array.from(responseText.matchAll(/<mensaje>([^<]+)<\/mensaje>/g)).map((m) => m[1]);
+      const cleanMsg = allMsgs.find((m) => !m.includes('<')) || '';
+      const infoMatch = responseText.match(/<informacionAdicional>([^<]+)<\/informacionAdicional>/);
+      const cleanInfo = infoMatch ? infoMatch[1] : '';
+
       const errorMsg = [
         idMatch ? `Error ${idMatch[1]}` : '',
-        msgMatch ? msgMatch[1] : '',
-        infoMatch ? infoMatch[1] : ''
+        cleanMsg,
+        cleanInfo
       ].filter(Boolean).join(': ') || responseText;
 
       return {
@@ -155,9 +158,17 @@ export async function consultarAutorizacionSRI(
         rawResponse: responseText,
       };
     } else {
-      const msgMatch = responseText.match(/<mensaje>(.*?)<\/mensaje>/);
-      const infoMatch = responseText.match(/<informacionAdicional>(.*?)<\/informacionAdicional>/);
-      const errorMsg = [msgMatch?.[1], infoMatch?.[1]].filter(Boolean).join(': ') || responseText;
+      const idMatch = responseText.match(/<identificador>([^<]+)<\/identificador>/);
+      const allMsgs = Array.from(responseText.matchAll(/<mensaje>([^<]+)<\/mensaje>/g)).map((m) => m[1]);
+      const cleanMsg = allMsgs.find((m) => !m.includes('<')) || '';
+      const infoMatch = responseText.match(/<informacionAdicional>([^<]+)<\/informacionAdicional>/);
+      const cleanInfo = infoMatch ? infoMatch[1] : '';
+
+      const errorMsg = [
+        idMatch ? `Error ${idMatch[1]}` : '',
+        cleanMsg,
+        cleanInfo
+      ].filter(Boolean).join(': ') || responseText;
 
       return {
         estado: 'NO AUTORIZADO',
