@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  serverExternalPackages: ['osodreamer-sri-xml-signer', 'node-forge'],
   images: {
     remotePatterns: [
       {
