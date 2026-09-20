@@ -211,6 +211,35 @@ export function CartDrawer({
     }
   };
 
+  const handleSendBankDetailsWhatsApp = () => {
+    let phone = activeClient?.whatsappNumber?.replace(/\D/g, '') || '';
+    if (phone.startsWith('0')) {
+      phone = '593' + phone.slice(1);
+    } else if (phone && !phone.startsWith('593')) {
+      phone = '593' + phone;
+    }
+
+    const clientName = activeClient?.businessName || activeClient?.fullName;
+    const greeting = clientName ? `Hola *${clientName}*, le` : 'Estimado/a cliente, le';
+
+    const text =
+      `*DISTRIBUIDORA ANETH* 📦\n\n` +
+      `${greeting} compartimos los datos bancarios para su transferencia:\n\n` +
+      `🏦 *Banco:* Banco Pichincha\n` +
+      `💳 *Tipo:* Cuenta de Ahorros\n` +
+      `🔢 *N° de Cuenta:* 5982790700\n` +
+      `🪪 *Cédula / RUC:* 1803013810\n` +
+      `👤 *Titular:* ANDRADE CONSTANTE ANA ELIZABETH\n` +
+      (cartTotalAmount > 0 ? `💰 *Valor a transferir:* $${cartTotalAmount.toFixed(2)}\n` : '') +
+      `\n_Por favor nos comparte el comprobante una vez realizada la transferencia._`;
+
+    const url = phone
+      ? `https://wa.me/${phone}?text=${encodeURIComponent(text)}`
+      : `https://wa.me/?text=${encodeURIComponent(text)}`;
+
+    window.open(url, '_blank');
+  };
+
   if (!isOpen || !mounted) return null;
 
   const numericPaid = parseFloat(amountPaidInput) || 0;
@@ -691,57 +720,66 @@ export function CartDrawer({
                   </button>
                 </div>
 
-                {/* TRANSFERENCIA BANCARIA: DATOS A LA MANO CON BOTÓN COPIAR */}
+                {/* TRANSFERENCIA BANCARIA: DATOS A LA MANO */}
                 {paymentMethod === 'transfer' && (
-                  <div className="p-3.5 bg-blue-50/80 border border-blue-200 rounded-2xl space-y-2.5 animate-in fade-in duration-150">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-black text-blue-900 uppercase tracking-wider flex items-center">
-                        <AppleBuildingClassicalIcon size={15} className="mr-1.5 text-blue-700 shrink-0" />
-                        Datos Bancarios para Transferencia
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleCopy(
-                            `Banco Pichincha - Cuenta de Ahorros\nCta: 2204567890\nTitular: ANDRADE CONSTANTE ANA ELIZABETH\nCI: 1803013810`,
-                            'bank'
-                          )
-                        }
-                        className="px-2.5 py-1 bg-white hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-xs font-black flex items-center space-x-1 shadow-2xs transition-all active:scale-95 cursor-pointer"
-                      >
-                        {copiedBank ? (
-                          <>
-                            <Check className="w-3 h-3 text-emerald-600" />
-                            <span className="text-emerald-700">¡Copiado!</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-3 h-3 text-blue-600" />
-                            <span>Copiar Datos</span>
-                          </>
-                        )}
-                      </button>
+                  <div className="p-3.5 bg-blue-50/70 border border-blue-200/90 rounded-2xl space-y-2.5 animate-in fade-in duration-150">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center space-x-1.5 min-w-0">
+                        <span className="text-xs sm:text-sm font-black text-blue-950 truncate">Banco Pichincha</span>
+                        <span className="text-[10px] sm:text-xs font-bold px-1.5 py-0.5 bg-blue-100/90 text-blue-800 rounded-md shrink-0">
+                          Ahorros
+                        </span>
+                      </div>
+
+                      <div className="flex items-center space-x-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={handleSendBankDetailsWhatsApp}
+                          className="px-2.5 py-1 bg-white hover:bg-emerald-50 text-emerald-800 border border-emerald-200/90 rounded-lg text-xs font-bold flex items-center space-x-1.5 shadow-2xs transition-all active:scale-95 cursor-pointer"
+                          title="Enviar datos bancarios al cliente por WhatsApp"
+                        >
+                          <AppleWhatsAppIcon size={14} alt="WhatsApp" />
+                          <span>WhatsApp</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleCopy(
+                              `Banco Pichincha - Cuenta de Ahorros\nCta: 5982790700\nTitular: ANDRADE CONSTANTE ANA ELIZABETH\nCI: 1803013810`,
+                              'bank'
+                            )
+                          }
+                          className="px-2.5 py-1 bg-white hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-xs font-black flex items-center space-x-1 shadow-2xs transition-all active:scale-95 cursor-pointer"
+                        >
+                          {copiedBank ? (
+                            <>
+                              <Check className="w-3 h-3 text-emerald-600" />
+                              <span className="text-emerald-700 font-bold">¡Copiado!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3 h-3 text-blue-600" />
+                              <span>Copiar</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm bg-white p-3 rounded-xl border border-blue-100 font-medium">
+                    <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm font-medium pt-2 border-t border-blue-100">
                       <div>
-                        <span className="text-slate-400 block text-xs font-bold">Banco:</span>
-                        <span className="font-black text-slate-800">Banco Pichincha</span>
+                        <span className="text-slate-400 block text-[11px] font-bold">N° Cuenta:</span>
+                        <span className="font-mono font-black text-blue-700 select-all text-sm sm:text-base">
+                          5982790700
+                        </span>
                       </div>
                       <div>
-                        <span className="text-slate-400 block text-xs font-bold">Tipo:</span>
-                        <span className="font-bold text-slate-800">Ahorros</span>
-                      </div>
-                      <div>
-                        <span className="text-slate-400 block text-xs font-bold">N° Cuenta:</span>
-                        <span className="font-mono font-black text-blue-700 select-all">2204567890</span>
-                      </div>
-                      <div>
-                        <span className="text-slate-400 block text-xs font-bold">Cédula / RUC:</span>
+                        <span className="text-slate-400 block text-[11px] font-bold">Cédula / RUC:</span>
                         <span className="font-mono font-bold text-slate-800 select-all">1803013810</span>
                       </div>
-                      <div className="col-span-2 pt-1.5 border-t border-slate-100">
-                        <span className="text-slate-400 block text-xs font-bold">Titular:</span>
+                      <div className="col-span-2 pt-1.5 border-t border-blue-100/70">
+                        <span className="text-slate-400 block text-[11px] font-bold">Titular:</span>
                         <span className="font-black text-slate-900">ANDRADE CONSTANTE ANA ELIZABETH</span>
                       </div>
                     </div>
