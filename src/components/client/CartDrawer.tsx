@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useDistribution } from '@/context/DistributionContext';
-import { formatCurrency, formatItemTitle } from '@/lib/utils/formatters';
+import { formatCurrency, formatUnitPrice, formatItemTitle } from '@/lib/utils/formatters';
 import confetti from 'canvas-confetti';
 import Link from 'next/link';
 import {
@@ -627,7 +627,7 @@ export function CartDrawer({
                             </span>
                           ) : loose > 0 ? (
                             <span className="font-bold text-slate-800">
-                              {loose} {loose === 1 ? 'Unidad suelta' : 'Unidades sueltas'} <span className="text-slate-500 font-normal">• {formatCurrency(item.pricePerUnit)} c/u</span>
+                              {loose} {loose === 1 ? 'Unidad' : 'Unidades'} <span className="text-slate-500 font-normal">• {formatUnitPrice(item.pricePerUnit)} c/u</span>
                             </span>
                           ) : null}
                         </div>

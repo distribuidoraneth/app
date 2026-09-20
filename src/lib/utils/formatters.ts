@@ -7,6 +7,17 @@ export function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
+export function formatUnitPrice(amount: number): string {
+  const rounded2 = Number(amount.toFixed(2));
+  const isFractionalCent = Math.abs(amount - rounded2) > 0.0001;
+  return new Intl.NumberFormat('es-EC', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: isFractionalCent ? 4 : 2,
+  }).format(amount);
+}
+
 export function formatContainerAbbrev(container?: string): string {
   if (!container) return 'Plást.';
   const lower = container.toLowerCase();

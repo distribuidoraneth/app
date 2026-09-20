@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useDistribution, STORAGE_KEY } from '@/context/DistributionContext';
 import {
   formatCurrency,
+  formatUnitPrice,
   formatOrderNumber,
   formatShortDateTime,
   generateWhatsAppOrderLink,
@@ -424,7 +425,7 @@ export default function OrderDetailPage({
                         </div>
 
                         <p className="text-xs text-slate-400">
-                          {formatCurrency(effectivePricePerUnit)} c/unidad
+                          {formatUnitPrice(effectivePricePerUnit)} c/unidad
                         </p>
                       </div>
 

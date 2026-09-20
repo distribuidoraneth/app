@@ -155,10 +155,12 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
   // VENTA MIXTA: Javas y Unidades Sueltas (inician en 0 para exigir confirmación con +)
   const [javasCount, setJavasCount] = useState<number>(0);
   const [unitsCount, setUnitsCount] = useState<number>(0);
+  const [conversionNotice, setConversionNotice] = useState<string | null>(null);
 
   const resetQuantities = () => {
     setJavasCount(0);
     setUnitsCount(0);
+    setConversionNotice(null);
   };
 
   const handleTypeChange = (type: BeverageType) => {
@@ -194,24 +196,47 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
     return currentOption.pricePerJava;
   }, [currentOption, clientTier]);
 
-  // Cálculo de Precio Unitario
+  // Cálculo de Precio Unitario con precisión contable de hasta 4 decimales (SRI)
   const unitPrice = useMemo(() => {
     if (!currentOption) return 0;
-    return currentOption.pricePerUnit || Number((effectivePricePerJava / currentOption.unitsPerJava).toFixed(2));
+    return currentOption.pricePerUnit || Number((effectivePricePerJava / currentOption.unitsPerJava).toFixed(4));
   }, [currentOption, effectivePricePerJava]);
 
-  // Subtotal Actual Dinámico
+  // Subtotal Actual Dinámico con auto-conversión si las unidades completan paquetes
   const currentTotalSubtotal = useMemo(() => {
     if (!currentOption) return 0;
-    const javasVal = javasCount * effectivePricePerJava;
-    const unitsVal = unitsCount * unitPrice;
+    const extraJavas = Math.floor(unitsCount / currentOption.unitsPerJava);
+    const effectiveUnits = unitsCount % currentOption.unitsPerJava;
+    const effectiveJavas = javasCount + extraJavas;
+
+    const javasVal = effectiveJavas * effectivePricePerJava;
+    const unitsVal = effectiveUnits * unitPrice;
     return Number((javasVal + unitsVal).toFixed(2));
   }, [currentOption, javasCount, unitsCount, effectivePricePerJava, unitPrice]);
+
+  const handleIncrementUnits = () => {
+    if (!currentOption) return;
+    const nextUnits = unitsCount + 1;
+    if (nextUnits >= currentOption.unitsPerJava) {
+      setJavasCount((prev) => prev + 1);
+      setUnitsCount(0);
+      const containerLabel = currentOption.container === 'Vidrio' ? 'Java' : 'Pack';
+      setConversionNotice(`¡${currentOption.unitsPerJava} unidades convertidas automáticamente a 1 ${containerLabel}!`);
+      setTimeout(() => setConversionNotice(null), 3500);
+    } else {
+      setUnitsCount(nextUnits);
+    }
+  };
 
   const canAddToCart = javasCount > 0 || unitsCount > 0;
 
   const handleAddToCart = () => {
     if (!currentOption || !canAddToCart) return;
+
+    // Normalización: auto-convertir cualquier múltiplo completo de unidades a paquetes
+    const extraJavas = Math.floor(unitsCount / currentOption.unitsPerJava);
+    const finalUnits = unitsCount % currentOption.unitsPerJava;
+    const finalJavas = javasCount + extraJavas;
 
     const newItem: CartItem = {
       id: `cart-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
@@ -222,13 +247,13 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
       size: currentOption.size,
       flavorType: 'single',
       selectedFlavor: selectedSingleFlavor,
-      quantityJavas: javasCount,
-      quantityUnits: unitsCount,
+      quantityJavas: finalJavas,
+      quantityUnits: finalUnits,
       unitsPerJava: currentOption.unitsPerJava,
       pricePerJava: effectivePricePerJava,
       pricePerUnit: unitPrice,
-      totalBottles: (javasCount * currentOption.unitsPerJava) + unitsCount,
-      subtotal: currentTotalSubtotal,
+      totalBottles: (finalJavas * currentOption.unitsPerJava) + finalUnits,
+      subtotal: Number(((finalJavas * effectivePricePerJava) + (finalUnits * unitPrice)).toFixed(2)),
       imageUrl: currentOption.imageUrl,
     };
 
@@ -508,8 +533,8 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
                     <span className="text-base sm:text-lg font-black text-slate-900">
                       Unidades
                     </span>
-                    <span className="text-xs sm:text-sm font-semibold text-slate-400">
-                      (sueltas)
+                    <span className="text-xs font-mono text-slate-400">
+                      (máx. {(currentOption?.unitsPerJava || 12) - 1})
                     </span>
                   </div>
 
@@ -528,7 +553,7 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
                     </span>
                     <button
                       type="button"
-                      onClick={() => setUnitsCount((c) => c + 1)}
+                      onClick={handleIncrementUnits}
                       className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-blue-600 text-white hover:bg-blue-700 active:scale-95 flex items-center justify-center transition-all shadow-xs cursor-pointer select-none"
                       aria-label="Sumar unidad"
                     >
@@ -536,6 +561,13 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
                     </button>
                   </div>
                 </div>
+
+                {conversionNotice && (
+                  <div className="text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-3.5 py-2 rounded-xl flex items-center gap-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                    <span className="text-sm">📦</span>
+                    <span>{conversionNotice}</span>
+                  </div>
+                )}
               </div>
 
               {/* 2. Total a Pagar (después de los botones de packs y unidades) */}

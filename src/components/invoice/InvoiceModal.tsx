@@ -2,7 +2,7 @@
 
 import React, { useMemo } from 'react';
 import { Invoice } from '@/types';
-import { formatCurrency, formatDate, generateWhatsAppOrderLink } from '@/lib/utils/formatters';
+import { formatCurrency, formatUnitPrice, formatDate, generateWhatsAppOrderLink } from '@/lib/utils/formatters';
 import { QRCodeSVG } from 'qrcode.react';
 import { AnethFullLogo } from '@/components/ui/AnethLogo';
 import { AppleWhatsAppIcon } from '@/components/ui/AppleIcons';
@@ -320,7 +320,7 @@ export function InvoiceModal({ invoice, isOpen, onClose }: InvoiceModalProps) {
                           </td>
                           <td className="py-2.5 px-3">
                             <span className="font-black text-slate-900 block">
-                              {it.brand || 'Fructi'} • {it.size} {it.container} (Unidad Suelta)
+                              {it.brand || 'Fructi'} • {it.size} {it.container}
                             </span>
                             <span className="text-slate-500 text-[11px]">
                               Botella individual
@@ -334,7 +334,7 @@ export function InvoiceModal({ invoice, isOpen, onClose }: InvoiceModalProps) {
                             )}
                           </td>
                           <td className="py-2.5 px-3 text-right font-mono text-slate-700">
-                            {formatCurrency(effectivePricePerUnit)} / und
+                            {formatUnitPrice(effectivePricePerUnit)} / und
                           </td>
                           <td className="py-2.5 px-3 text-right font-mono font-black text-slate-900">
                             {formatCurrency(unitSubtotal)}

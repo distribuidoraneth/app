@@ -2,7 +2,7 @@
 
 import React, { use, useState, useMemo } from 'react';
 import { useDistribution } from '@/context/DistributionContext';
-import { formatCurrency, formatDate, generateWhatsAppOrderLink } from '@/lib/utils/formatters';
+import { formatCurrency, formatUnitPrice, formatDate, generateWhatsAppOrderLink } from '@/lib/utils/formatters';
 import { PoplQRCodeSVG } from '@/components/ui/PoplQRCodeSVG';
 import Link from 'next/link';
 import { AnethFullLogo } from '@/components/ui/AnethLogo';
@@ -345,14 +345,14 @@ export default function PublicInvoicePage({
                         </td>
                         <td className="py-3 px-2">
                           <p className="font-bold text-slate-900">
-                            {item.brand || 'Fructi'} {item.size} ({item.container}) - Unidad Suelta
+                            {item.brand || 'Fructi'} {item.size} ({item.container})
                           </p>
                           <p className="text-[11px] text-slate-500">
                             {item.flavorType === 'single' ? `Sabor: ${item.selectedFlavor}` : 'Surtido'} • Botella individual
                           </p>
                         </td>
                         <td className="py-3 px-2 text-right font-mono font-medium">
-                          ${effectivePricePerUnit.toFixed(2)}/und
+                          {formatUnitPrice(effectivePricePerUnit)}/und
                         </td>
                         <td className="py-3 pl-2 text-right font-mono font-bold text-slate-900">
                           {formatCurrency(unitSubtotal)}

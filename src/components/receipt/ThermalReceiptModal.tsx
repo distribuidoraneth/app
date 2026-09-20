@@ -346,7 +346,7 @@ export function ThermalReceiptModal({
                         <div className="flex justify-between items-start">
                           <span className="w-10 font-semibold">{it.quantityUnits} UNI</span>
                           <span className="flex-1 text-left px-1 font-semibold leading-tight">
-                            {it.brand || 'Fructi'} {it.size} {it.container} (Suelta)
+                            {it.brand || 'Fructi'} {it.size} {it.container}
                           </span>
                           <span className="w-10 text-right font-mono text-[9.5px]">
                             ${effectivePricePerUnit.toFixed(2)}
@@ -356,7 +356,7 @@ export function ThermalReceiptModal({
                           </span>
                         </div>
                         <div className="pl-10 text-[9px] text-slate-700 leading-none">
-                          {it.flavorType === 'single' ? it.selectedFlavor : 'Surtido'} (Unidad individual)
+                          {it.flavorType === 'single' ? it.selectedFlavor : 'Surtido'}
                         </div>
                       </div>
                     )}

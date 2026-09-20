@@ -250,19 +250,36 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
   // Cart operations
   const addToCart = (newItem: CartItem) => {
     setCart((prev) => {
+      // Auto-conversión si el nuevo ítem trae suficientes unidades para armar paquetes
+      const itemExtraJavas = Math.floor((newItem.quantityUnits || 0) / (newItem.unitsPerJava || 12));
+      const normalizedUnits = (newItem.quantityUnits || 0) % (newItem.unitsPerJava || 12);
+      const normalizedJavas = newItem.quantityJavas + itemExtraJavas;
+
+      const normalizedItem: CartItem = {
+        ...newItem,
+        quantityJavas: normalizedJavas,
+        quantityUnits: normalizedUnits,
+        totalBottles: (normalizedJavas * (newItem.unitsPerJava || 12)) + normalizedUnits,
+        subtotal: Number(
+          ((normalizedJavas * newItem.pricePerJava) + (normalizedUnits * newItem.pricePerUnit)).toFixed(2)
+        ),
+      };
+
       const existingIndex = prev.findIndex(
         (item) =>
-          item.productOptionId === newItem.productOptionId &&
-          item.flavorType === newItem.flavorType &&
-          item.selectedFlavor === newItem.selectedFlavor &&
-          JSON.stringify(item.surtidoDetails || {}) === JSON.stringify(newItem.surtidoDetails || {})
+          item.productOptionId === normalizedItem.productOptionId &&
+          item.flavorType === normalizedItem.flavorType &&
+          item.selectedFlavor === normalizedItem.selectedFlavor &&
+          JSON.stringify(item.surtidoDetails || {}) === JSON.stringify(normalizedItem.surtidoDetails || {})
       );
 
       if (existingIndex > -1) {
         const updated = [...prev];
         const existing = updated[existingIndex];
-        const combinedJavas = existing.quantityJavas + newItem.quantityJavas;
-        const combinedUnits = (existing.quantityUnits || 0) + (newItem.quantityUnits || 0);
+        const rawUnits = (existing.quantityUnits || 0) + normalizedItem.quantityUnits;
+        const extraJavas = Math.floor(rawUnits / (existing.unitsPerJava || 12));
+        const combinedUnits = rawUnits % (existing.unitsPerJava || 12);
+        const combinedJavas = existing.quantityJavas + normalizedItem.quantityJavas + extraJavas;
         const combinedBottles = (combinedJavas * existing.unitsPerJava) + combinedUnits;
         const combinedSubtotal = Number(
           ((combinedJavas * existing.pricePerJava) + (combinedUnits * existing.pricePerUnit)).toFixed(2)
@@ -278,7 +295,7 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
         return updated;
       }
 
-      return [...prev, newItem];
+      return [...prev, normalizedItem];
     });
   };
 
@@ -299,8 +316,10 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
     setCart((prev) =>
       prev.map((item) => {
         if (item.id === itemId) {
-          const qJ = Math.max(0, quantityJavas);
-          const qU = quantityUnits !== undefined ? Math.max(0, quantityUnits) : (item.quantityUnits || 0);
+          const rawUnits = quantityUnits !== undefined ? Math.max(0, quantityUnits) : (item.quantityUnits || 0);
+          const extraJavas = Math.floor(rawUnits / (item.unitsPerJava || 12));
+          const qU = rawUnits % (item.unitsPerJava || 12);
+          const qJ = Math.max(0, quantityJavas) + extraJavas;
           const totalBottles = (qJ * item.unitsPerJava) + qU;
           const subtotal = Number(((qJ * item.pricePerJava) + (qU * item.pricePerUnit)).toFixed(2));
           return {
