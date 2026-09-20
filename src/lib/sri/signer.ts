@@ -47,13 +47,9 @@ export function signXmlXadesBes(xmlString: string, options?: SigningOptions): st
       return xmlString;
     }
 
-    // Extraer certificados individuales
-    const certs = certFull
-      .split('-----END CERTIFICATE-----')
-      .filter((c) => c.includes('-----BEGIN CERTIFICATE-----'))
-      .map((c) => c.replace('-----BEGIN CERTIFICATE-----', '').replace(/\s+/g, '') + '-----END CERTIFICATE-----');
-
-    const signingCertBase64 = certs[0]?.replace('-----END CERTIFICATE-----', '').trim() || '';
+    // Extraer certificado X509 en Base64 puro (sin encabezados ni Bag Attributes de OpenSSL)
+    const certMatch = certFull.match(/-----BEGIN CERTIFICATE-----([\s\S]*?)-----END CERTIFICATE-----/);
+    const signingCertBase64 = certMatch ? certMatch[1].replace(/\s+/g, '') : '';
 
     // Generar IDs aleatorios para los nodos de la firma
     const randomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;

@@ -79,10 +79,19 @@ export async function enviarRecepcionSRI(
     if (responseText.includes('<estado>RECIBIDA</estado>')) {
       return { estado: 'RECIBIDA', rawResponse: responseText };
     } else {
+      const msgMatch = responseText.match(/<mensaje>(.*?)<\/mensaje>/);
+      const infoMatch = responseText.match(/<informacionAdicional>(.*?)<\/informacionAdicional>/);
+      const idMatch = responseText.match(/<identificador>(.*?)<\/identificador>/);
+      const errorMsg = [
+        idMatch ? `Error ${idMatch[1]}` : '',
+        msgMatch ? msgMatch[1] : '',
+        infoMatch ? infoMatch[1] : ''
+      ].filter(Boolean).join(': ') || responseText;
+
       return {
         estado: 'DEVUELTA',
         rawResponse: responseText,
-        error: responseText,
+        error: errorMsg,
       };
     }
   } catch (err: any) {
@@ -137,16 +146,23 @@ export async function consultarAutorizacionSRI(
         xmlAutorizado: responseText,
         rawResponse: responseText,
       };
-    } else if (responseText.includes('<estado>EN PROCESO</estado>')) {
+    } else if (
+      responseText.includes('<estado>EN PROCESO</estado>') ||
+      responseText.includes('<numeroComprobantes>0</numeroComprobantes>')
+    ) {
       return {
         estado: 'EN PROCESO',
         rawResponse: responseText,
       };
     } else {
+      const msgMatch = responseText.match(/<mensaje>(.*?)<\/mensaje>/);
+      const infoMatch = responseText.match(/<informacionAdicional>(.*?)<\/informacionAdicional>/);
+      const errorMsg = [msgMatch?.[1], infoMatch?.[1]].filter(Boolean).join(': ') || responseText;
+
       return {
         estado: 'NO AUTORIZADO',
         rawResponse: responseText,
-        error: responseText,
+        error: errorMsg,
       };
     }
   } catch (err: any) {

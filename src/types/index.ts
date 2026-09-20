@@ -123,7 +123,7 @@ export interface PaymentTransaction {
 }
 
 export type SriEnvironment = '1' | '2'; // 1: Sandbox/Pruebas, 2: Producción
-export type SriStatus = 'PENDING' | 'RECIBIDA' | 'DEVUELTA' | 'AUTORIZADO' | 'NO AUTORIZADO';
+export type SriStatus = 'PENDING' | 'RECIBIDA' | 'DEVUELTA' | 'AUTORIZADO' | 'NO AUTORIZADO' | 'EN PROCESO';
 export type TaxIdentificationType = '04' | '05' | '06' | '07'; // 04: RUC, 05: Cédula, 06: Pasaporte, 07: Consumidor Final
 
 export interface Invoice {

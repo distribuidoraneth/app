@@ -20,6 +20,10 @@ import {
   FileText,
   ShieldCheck,
   Store,
+  RefreshCw,
+  AlertCircle,
+  Clock,
+  Info,
 } from 'lucide-react';
 
 export default function PublicInvoicePage({
@@ -29,7 +33,6 @@ export default function PublicInvoicePage({
 }) {
   const resolvedParams = use(params);
   const { invoices } = useDistribution();
-  const [copied, setCopied] = useState<boolean>(false);
 
   const invoice =
     invoices.find((i) => i.invoiceNumber === resolvedParams.id || i.id === resolvedParams.id) ||
@@ -47,6 +50,103 @@ export default function PublicInvoicePage({
       secuencial: seq,
     });
   }, [invoice]);
+
+  const [copied, setCopied] = useState<boolean>(false);
+  const [sriStatus, setSriStatus] = useState<string | null>(invoice?.sriStatus || null);
+  const [sriAuthNum, setSriAuthNum] = useState<string | null>(invoice?.sriAuthorizationNumber || null);
+  const [sriAuthDate, setSriAuthDate] = useState<string | null>(invoice?.sriAuthorizationDate || null);
+  const [sriErrorMsg, setSriErrorMsg] = useState<string | null>(invoice?.sriErrorMessage || null);
+  const [isCheckingSri, setIsCheckingSri] = useState<boolean>(false);
+  const [isRetryingSri, setIsRetryingSri] = useState<boolean>(false);
+  const [sriFeedback, setSriFeedback] = useState<string | null>(null);
+
+  const handleConsultarSri = async () => {
+    if (!claveAcceso) return;
+    setIsCheckingSri(true);
+    setSriFeedback(null);
+    try {
+      const res = await fetch('/api/sri/consultar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          claveAcceso,
+          ambiente: invoice?.ambiente || '1',
+        }),
+      });
+      const data = await res.json();
+      if (data.estado) {
+        setSriStatus(data.estado);
+        if (data.numeroAutorizacion) setSriAuthNum(data.numeroAutorizacion);
+        if (data.fechaAutorizacion) setSriAuthDate(data.fechaAutorizacion);
+        if (data.error) setSriErrorMsg(data.error);
+
+        if (data.estado === 'AUTORIZADO') {
+          setSriFeedback('¡Comprobante AUTORIZADO oficialmente por el SRI!');
+        } else if (data.estado === 'RECIBIDA' || data.estado === 'EN PROCESO') {
+          setSriFeedback('Comprobante recibido por el SRI (en cola de autorización).');
+        } else {
+          setSriFeedback(data.error || 'Respuesta obtenida del SRI');
+        }
+      } else {
+        setSriFeedback(data.error || 'No se pudo verificar ante el SRI');
+      }
+    } catch (err: any) {
+      setSriFeedback(err?.message || 'Error de red al consultar el SRI');
+    } finally {
+      setIsCheckingSri(false);
+    }
+  };
+
+  const handleReintentarSri = async () => {
+    if (!invoice) return;
+    setIsRetryingSri(true);
+    setSriFeedback(null);
+    try {
+      const seq = parseInt(invoice.invoiceNumber.replace(/\D/g, '').slice(-9), 10) || 1;
+      const res = await fetch('/api/sri/facturar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          order: {
+            id: invoice.orderId,
+            items: invoice.items,
+            paymentMethod: 'cash',
+          },
+          client: {
+            fullName: invoice.clientName,
+            businessName: invoice.businessName,
+            taxId: invoice.clientTaxId,
+            taxIdType: invoice.clientTaxIdType,
+            whatsappNumber: invoice.clientWhatsapp,
+            email: invoice.clientEmail,
+            addressReference: invoice.clientAddress,
+          },
+          secuencial: seq,
+          claveAcceso,
+        }),
+      });
+      const data = await res.json();
+      if (data && data.sriStatus) {
+        setSriStatus(data.sriStatus);
+        setSriAuthNum(data.numeroAutorizacion);
+        setSriAuthDate(data.fechaAutorizacion);
+        setSriErrorMsg(data.error);
+        setSriFeedback(
+          data.sriStatus === 'AUTORIZADO'
+            ? '¡Factura reemitida y AUTORIZADA con éxito en el SRI!'
+            : data.sriStatus === 'RECIBIDA'
+            ? 'Factura RECIBIDA por el SRI. En cola de autorización.'
+            : `El SRI devolvió: ${data.error || 'Error'}`
+        );
+      } else {
+        setSriFeedback(data.error || 'Error al reintentar facturación');
+      }
+    } catch (err: any) {
+      setSriFeedback(err?.message || 'Error al conectar con la API');
+    } finally {
+      setIsRetryingSri(false);
+    }
+  };
 
   const handlePrint = () => {
     window.print();
@@ -182,6 +282,28 @@ export default function PublicInvoicePage({
 
           <button
             type="button"
+            onClick={handleConsultarSri}
+            disabled={isCheckingSri}
+            className="px-3.5 py-2 bg-amber-50 hover:bg-amber-100 disabled:opacity-50 border border-amber-200 text-amber-900 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition-all shadow-xs cursor-pointer"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-amber-600 ${isCheckingSri ? 'animate-spin' : ''}`} />
+            <span>{isCheckingSri ? 'Consultando...' : 'Consultar SRI en Vivo'}</span>
+          </button>
+
+          {(sriStatus === 'DEVUELTA' || sriStatus === 'NO AUTORIZADO') && (
+            <button
+              type="button"
+              onClick={handleReintentarSri}
+              disabled={isRetryingSri}
+              className="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 transition-all shadow-xs cursor-pointer"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isRetryingSri ? 'animate-spin' : ''}`} />
+              <span>{isRetryingSri ? 'Reemitiendo...' : 'Reintentar Emisión SRI'}</span>
+            </button>
+          )}
+
+          <button
+            type="button"
             onClick={handleShareWhatsApp}
             className="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 text-emerald-800 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition-all shadow-xs"
           >
@@ -199,6 +321,23 @@ export default function PublicInvoicePage({
           </button>
         </div>
       </div>
+
+      {/* Alerta de resultado SRI en vivo */}
+      {sriFeedback && (
+        <div className="print:hidden w-full max-w-3xl mb-4 p-3 bg-blue-50 border border-blue-200 text-blue-900 rounded-2xl text-xs flex items-center justify-between shadow-xs">
+          <div className="flex items-center space-x-2">
+            <Info className="w-4 h-4 text-blue-600 shrink-0" />
+            <span className="font-semibold">{sriFeedback}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSriFeedback(null)}
+            className="text-blue-500 hover:text-blue-700 font-black text-sm ml-2 cursor-pointer"
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {/* Official SRI Printable RIDE */}
       <div
@@ -231,18 +370,85 @@ export default function PublicInvoicePage({
                 No. {invoice.invoiceNumber}
               </span>
             </div>
+
+            {/* Estado SRI Oficial */}
+            <div className="flex items-center justify-between bg-white p-2 rounded-xl border border-slate-200">
+              <span className="text-[11px] font-extrabold text-slate-600 uppercase">Estado SRI:</span>
+              {sriStatus === 'AUTORIZADO' ? (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-100 text-emerald-800 border border-emerald-300">
+                  <CheckCircle2 className="w-3.5 h-3.5 mr-1 text-emerald-600" />
+                  AUTORIZADO
+                </span>
+              ) : sriStatus === 'RECIBIDA' || sriStatus === 'EN PROCESO' ? (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-black bg-amber-100 text-amber-800 border border-amber-300">
+                  <Clock className="w-3.5 h-3.5 mr-1 text-amber-600 animate-spin" />
+                  RECIBIDA (EN PROCESO)
+                </span>
+              ) : sriStatus === 'DEVUELTA' || sriStatus === 'NO AUTORIZADO' ? (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-black bg-rose-100 text-rose-800 border border-rose-300">
+                  <AlertCircle className="w-3.5 h-3.5 mr-1 text-rose-600" />
+                  DEVUELTA POR SRI
+                </span>
+              ) : (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                  PENDIENTE DE RECEPCIÓN
+                </span>
+              )}
+            </div>
+
+            {sriErrorMsg && (
+              <div className="bg-rose-50 border border-rose-200 rounded-xl p-2 text-[11px] text-rose-800">
+                <strong className="block font-bold">Motivo SRI:</strong>
+                <p className="mt-0.5 leading-snug">{sriErrorMsg}</p>
+              </div>
+            )}
+
             <div className="space-y-1 text-slate-600">
               <p><strong className="text-slate-800">Fecha de Emisión:</strong> {formatDate(invoice.issuedAt)}</p>
-              <p><strong className="text-slate-800">Ambiente:</strong> PRUEBAS (Sandbox SRI)</p>
+              <p>
+                <strong className="text-slate-800">Ambiente:</strong>{' '}
+                <span className="font-bold text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                  PRUEBAS (Celcer)
+                </span>
+              </p>
               <p><strong className="text-slate-800">Tipo de Emisión:</strong> NORMAL</p>
+              {sriAuthNum && sriStatus === 'AUTORIZADO' && (
+                <p><strong className="text-slate-800">No. Autorización:</strong> <span className="font-mono">{sriAuthNum}</span></p>
+              )}
+              {sriAuthDate && (
+                <p><strong className="text-slate-800">Fecha Autorización:</strong> {formatDate(sriAuthDate)}</p>
+              )}
             </div>
+
             <div className="pt-1">
-              <span className="text-[10px] text-slate-500 font-extrabold block uppercase tracking-wider">
-                Clave de Acceso / No. Autorización:
-              </span>
-              <span className="font-mono text-[10px] text-slate-900 font-bold break-all block bg-white p-1.5 rounded border border-slate-200 mt-0.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-slate-500 font-extrabold uppercase tracking-wider">
+                  Clave de Acceso (49 dígitos):
+                </span>
+                <button
+                  type="button"
+                  onClick={handleConsultarSri}
+                  disabled={isCheckingSri}
+                  className="print:hidden text-[10px] text-blue-600 hover:text-blue-800 font-bold flex items-center space-x-1 cursor-pointer"
+                >
+                  <RefreshCw className={`w-3 h-3 ${isCheckingSri ? 'animate-spin' : ''}`} />
+                  <span>Verificar con SRI</span>
+                </button>
+              </div>
+              <span className="font-mono text-[10px] text-slate-900 font-bold break-all block bg-white p-1.5 rounded border border-slate-200 mt-0.5 select-all">
                 {claveAcceso}
               </span>
+            </div>
+
+            {/* Advertencia amigable sobre búsqueda en SRI en Línea */}
+            <div className="print:hidden bg-blue-50/70 border border-blue-200 rounded-xl p-2.5 text-[11px] text-blue-900 space-y-1 mt-2">
+              <div className="flex items-start space-x-1.5 font-bold">
+                <Info className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5" />
+                <span>¿Cómo buscar esta clave en SRI en Línea?</span>
+              </div>
+              <p className="text-[10px] text-blue-800 leading-relaxed">
+                Al estar en <strong>Ambiente de Pruebas</strong>, en el portal de <em>srienlinea.sri.gob.ec</em> debes seleccionar obligatoriamente <strong>&quot;PRUEBAS&quot;</strong> en el filtro de Ambiente. Si buscas con el filtro por defecto (&quot;PRODUCCIÓN&quot;), el SRI indicará que no existe.
+              </p>
             </div>
           </div>
         </div>

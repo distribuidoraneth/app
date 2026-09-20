@@ -6,7 +6,7 @@ import { useDistribution } from '@/context/DistributionContext';
 import { Invoice } from '@/types';
 import { InvoiceModal } from '@/components/invoice/InvoiceModal';
 import { formatCurrency, formatDate } from '@/lib/utils/formatters';
-import { FileText, Search, X, Receipt, CheckCircle2 } from 'lucide-react';
+import { FileText, Search, X, Receipt, CheckCircle2, Clock } from 'lucide-react';
 
 export function InvoicesManager() {
   const { invoices } = useDistribution();
@@ -38,17 +38,17 @@ export function InvoicesManager() {
         }),
       });
       const data = await res.json();
-      if (data.result) {
+      if (data.success) {
         setTestResult({
           success: true,
-          esValidoYDisponible: data.result.esValidoYDisponible,
-          yaRegistrado: data.result.yaRegistrado,
-          claveAcceso: data.result.claveAcceso,
-          mensaje: data.result.esValidoYDisponible
+          esValidoYDisponible: data.esValidoYDisponible,
+          yaRegistrado: data.yaRegistrado,
+          claveAcceso: data.claveAcceso,
+          mensaje: data.esValidoYDisponible
             ? `Secuencial #${testSequence} DISPONIBLE y aceptado en el SRI (Ambiente de Pruebas).`
-            : data.result.yaRegistrado
+            : data.yaRegistrado
             ? `Secuencial #${testSequence} YA REGISTRADO en el SRI. Prueba con un número mayor.`
-            : `Respuesta del SRI: ${data.result.recepcion?.estado || 'Error en validación'}.`,
+            : `Respuesta del SRI: ${data.recepcion?.estado || data.error || 'Validación completada'}.`,
         });
       } else {
         setTestResult({
@@ -253,10 +253,30 @@ export function InvoicesManager() {
                             </span>
                           )}
                         </div>
-                      ) : (
+                      ) : inv.sriStatus === 'AUTORIZADO' ? (
                         <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
                           <CheckCircle2 className="w-3 h-3 mr-1 text-emerald-600" />
                           AUTORIZADA SRI
+                        </span>
+                      ) : inv.sriStatus === 'RECIBIDA' || inv.sriStatus === 'EN PROCESO' ? (
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-black bg-amber-50 text-amber-700 border border-amber-200" title="Recibida por el SRI, en cola de procesamiento">
+                          <Clock className="w-3 h-3 mr-1 text-amber-600 animate-spin" />
+                          RECIBIDA SRI
+                        </span>
+                      ) : inv.sriStatus === 'DEVUELTA' || inv.sriStatus === 'NO AUTORIZADO' ? (
+                        <div className="flex flex-col items-center gap-0.5">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-black bg-rose-50 text-rose-700 border border-rose-200" title={inv.sriErrorMessage || 'Devuelta por el SRI'}>
+                            DEVUELTA SRI
+                          </span>
+                          {inv.sriErrorMessage && (
+                            <span className="text-[10px] text-rose-600 truncate max-w-[130px]" title={inv.sriErrorMessage}>
+                              {inv.sriErrorMessage}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                          PENDIENTE SRI
                         </span>
                       )}
                     </td>

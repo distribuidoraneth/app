@@ -7,7 +7,13 @@ import { enviarRecepcionSRI, consultarAutorizacionSRI } from '@/lib/sri/soapClie
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { order, client, taxProfile = DEFAULT_TAX_PROFILE, secuencial = 1 } = body;
+    const {
+      order,
+      client,
+      taxProfile = DEFAULT_TAX_PROFILE,
+      secuencial = 1,
+      claveAcceso: customClaveAcceso,
+    } = body;
 
     if (!order || !client) {
       return NextResponse.json(
@@ -16,18 +22,28 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const fechaEmision = new Date();
     const ambiente = taxProfile.ambiente || '1';
+    let claveAcceso = customClaveAcceso;
+    let fechaEmision = new Date();
 
-    // 1. Generar Clave de Acceso de 49 Dígitos (Módulo 11)
-    const claveAcceso = generarClaveAcceso({
-      fecha: fechaEmision,
-      ruc: taxProfile.ruc,
-      ambiente,
-      establecimiento: taxProfile.establecimiento,
-      puntoEmision: taxProfile.puntoEmision,
-      secuencial,
-    });
+    if (customClaveAcceso && typeof customClaveAcceso === 'string' && customClaveAcceso.length === 49) {
+      // Sincronizar fecha con la clave provista para que coincida 100% con la firma
+      const dia = parseInt(customClaveAcceso.slice(0, 2), 10);
+      const mes = parseInt(customClaveAcceso.slice(2, 4), 10);
+      const anio = parseInt(customClaveAcceso.slice(4, 8), 10);
+      if (!isNaN(dia) && !isNaN(mes) && !isNaN(anio)) {
+        fechaEmision = new Date(anio, mes - 1, dia);
+      }
+    } else {
+      claveAcceso = generarClaveAcceso({
+        fecha: fechaEmision,
+        ruc: taxProfile.ruc,
+        ambiente,
+        establecimiento: taxProfile.establecimiento,
+        puntoEmision: taxProfile.puntoEmision,
+        secuencial,
+      });
+    }
 
     // 2. Construir XML Oficial SRI v1.1.0
     const rawXml = buildFacturaXml({
@@ -48,26 +64,44 @@ export async function POST(req: NextRequest) {
       ivaRate: 15,
     });
 
-    // 3. Firmar Digitalmente con XAdES-BES (.p12)
+    // 3. Firmar Digitalmente con XAdES-BES (.p12 / .pem)
     const xml = signXmlXadesBes(rawXml);
 
     // 4. Enviar a Recepción del SRI (SOAP)
     let sriRecepcion = await enviarRecepcionSRI(xml, ambiente);
     let sriAutorizacion = null;
 
-    // Si fue recibida, consultar autorización
+    // Si fue recibida, esperar 1.5s y consultar autorización
     if (sriRecepcion.estado === 'RECIBIDA') {
+      await new Promise((resolve) => setTimeout(resolve, 1500));
       sriAutorizacion = await consultarAutorizacionSRI(claveAcceso, ambiente);
     }
 
+    const finalStatus =
+      sriAutorizacion?.estado === 'AUTORIZADO'
+        ? 'AUTORIZADO'
+        : sriRecepcion.estado === 'RECIBIDA'
+        ? (sriAutorizacion?.estado || 'RECIBIDA')
+        : 'DEVUELTA';
+
+    const errorMessage =
+      sriRecepcion.estado === 'DEVUELTA'
+        ? sriRecepcion.error
+        : sriAutorizacion?.estado === 'NO AUTORIZADO'
+        ? sriAutorizacion.error
+        : undefined;
+
     return NextResponse.json({
-      success: true,
+      success: finalStatus === 'AUTORIZADO' || finalStatus === 'RECIBIDA' || finalStatus === 'EN PROCESO',
       claveAcceso,
       secuencialCompleto: `${taxProfile.establecimiento}-${taxProfile.puntoEmision}-${String(secuencial).padStart(9, '0')}`,
       xml,
-      sriStatus: sriAutorizacion?.estado || sriRecepcion.estado,
+      sriStatus: finalStatus,
       numeroAutorizacion: sriAutorizacion?.numeroAutorizacion || claveAcceso,
       fechaAutorizacion: sriAutorizacion?.fechaAutorizacion || new Date().toISOString(),
+      error: errorMessage,
+      rawRecepcion: sriRecepcion,
+      rawAutorizacion: sriAutorizacion,
     });
   } catch (error: any) {
     console.error('Error en API Facturación SRI:', error);

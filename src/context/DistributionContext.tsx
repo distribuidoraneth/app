@@ -573,6 +573,8 @@ function generateUuid(): string {
         tax,
         total: totalAmount,
         claveAcceso,
+        ambiente: '1',
+        sriStatus: 'PENDING',
         status: 'emitida',
         issuedAt: new Date().toISOString(),
       };
@@ -580,7 +582,7 @@ function generateUuid(): string {
       newOrder.invoiceId = newInvoice.id;
       setInvoices((prev) => [newInvoice, ...prev]);
 
-      // Enviar a SRI en segundo plano (asíncrono)
+      // Enviar a SRI y sincronizar estado oficial
       fetch('/api/sri/facturar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -588,8 +590,30 @@ function generateUuid(): string {
           order: newOrder,
           client,
           secuencial: seqNumber,
+          claveAcceso,
         }),
-      }).catch((err) => console.warn('SRI background sync error:', err));
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && data.sriStatus) {
+            setInvoices((prev) =>
+              prev.map((inv) =>
+                inv.id === newInvoice.id
+                  ? {
+                      ...inv,
+                      claveAcceso: data.claveAcceso || inv.claveAcceso,
+                      sriStatus: data.sriStatus,
+                      sriAuthorizationNumber: data.numeroAutorizacion,
+                      sriAuthorizationDate: data.fechaAutorizacion,
+                      sriErrorMessage: data.error,
+                      xmlContent: data.xml,
+                    }
+                  : inv
+              )
+            );
+          }
+        })
+        .catch((err) => console.warn('SRI background sync error:', err));
     }
 
     setOrders((prev) => [newOrder, ...prev]);
@@ -733,6 +757,8 @@ function generateUuid(): string {
         tax,
         total: targetOrder.totalAmount,
         claveAcceso,
+        ambiente: '1',
+        sriStatus: 'PENDING',
         status: 'emitida',
         issuedAt: new Date().toISOString(),
       };
@@ -740,7 +766,7 @@ function generateUuid(): string {
       createdInvoiceId = newInvoice.id;
       setInvoices((prev) => [newInvoice, ...prev]);
 
-      // Enviar a SRI en segundo plano (asíncrono)
+      // Enviar a SRI y sincronizar estado oficial
       fetch('/api/sri/facturar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -748,8 +774,30 @@ function generateUuid(): string {
           order: targetOrder,
           client,
           secuencial: seqNumber,
+          claveAcceso,
         }),
-      }).catch((err) => console.warn('SRI background sync error on delivery:', err));
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && data.sriStatus) {
+            setInvoices((prev) =>
+              prev.map((inv) =>
+                inv.id === newInvoice.id
+                  ? {
+                      ...inv,
+                      claveAcceso: data.claveAcceso || inv.claveAcceso,
+                      sriStatus: data.sriStatus,
+                      sriAuthorizationNumber: data.numeroAutorizacion,
+                      sriAuthorizationDate: data.fechaAutorizacion,
+                      sriErrorMessage: data.error,
+                      xmlContent: data.xml,
+                    }
+                  : inv
+              )
+            );
+          }
+        })
+        .catch((err) => console.warn('SRI background sync error on delivery:', err));
     }
 
     setOrders((prev) =>
