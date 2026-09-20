@@ -181,3 +181,137 @@ export function buildFacturaXml(params: {
 
   return xml.trim();
 }
+
+export function buildNotaCreditoXml(params: {
+  claveAcceso: string;
+  secuencial: number;
+  fechaEmision: Date;
+  company: CompanyTaxProfile;
+  cliente: {
+    razonSocial: string;
+    identificacion: string;
+    tipoIdentificacion: '04' | '05' | '06' | '07';
+    direccion?: string;
+    telefono?: string;
+    email?: string;
+  };
+  facturaModificada: {
+    numero: string; // ej. "001-001-000000100"
+    fechaEmision: Date | string;
+    total: number;
+    subtotalSinImpuestos: number;
+    iva: number;
+  };
+  items: CartItem[];
+  motivo?: string;
+  ivaRate?: number;
+}): string {
+  const {
+    claveAcceso,
+    secuencial,
+    fechaEmision,
+    company,
+    cliente,
+    facturaModificada,
+    items,
+    motivo = 'ANULACION DE PEDIDO Y COMPROBANTE',
+    ivaRate = 15,
+  } = params;
+
+  const pad = (n: number | string, size: number) => String(n).padStart(size, '0');
+  const secuencialStr = pad(secuencial, 9);
+  const fechaStr = formatDateSRI(fechaEmision);
+
+  const fechaFacturaDate =
+    typeof facturaModificada.fechaEmision === 'string'
+      ? new Date(facturaModificada.fechaEmision)
+      : facturaModificada.fechaEmision;
+  const fechaFacturaStr = formatDateSRI(fechaFacturaDate);
+
+  const totalSinImpuestos = facturaModificada.subtotalSinImpuestos;
+  const valorModificacion = facturaModificada.total;
+  const totalIva = facturaModificada.iva;
+  const codigoPorcentajeIva = ivaRate === 15 ? '4' : '0';
+
+  let xml = `<?xml version="1.0" encoding="UTF-8"?>
+<notaCredito id="comprobante" version="1.1.0">
+  <infoTributaria>
+    <ambiente>${company.ambiente}</ambiente>
+    <tipoEmision>1</tipoEmision>
+    <razonSocial>${escapeXml(company.razonSocial)}</razonSocial>
+    <nombreComercial>${escapeXml(company.nombreComercial || company.razonSocial)}</nombreComercial>
+    <ruc>${escapeXml(company.ruc)}</ruc>
+    <claveAcceso>${claveAcceso}</claveAcceso>
+    <codDoc>04</codDoc>
+    <estab>${escapeXml(company.establecimiento)}</estab>
+    <ptoEmi>${escapeXml(company.puntoEmision)}</ptoEmi>
+    <secuencial>${secuencialStr}</secuencial>
+    <dirMatriz>${escapeXml(company.dirMatriz)}</dirMatriz>
+    ${company.regimenRimpe ? '<contribuyenteRimpe>CONTRIBUYENTE RÉGIMEN RIMPE</contribuyenteRimpe>' : ''}
+  </infoTributaria>
+  <infoNotaCredito>
+    <fechaEmision>${fechaStr}</fechaEmision>
+    <dirEstablecimiento>${escapeXml(company.dirEstablecimiento || company.dirMatriz)}</dirEstablecimiento>
+    <tipoIdentificacionComprador>${cliente.tipoIdentificacion}</tipoIdentificacionComprador>
+    <razonSocialComprador>${escapeXml(cliente.razonSocial)}</razonSocialComprador>
+    <identificacionComprador>${escapeXml(cliente.identificacion)}</identificacionComprador>
+    <obligadoContabilidad>${company.obligadoContabilidad}</obligadoContabilidad>
+    <codDocModificado>01</codDocModificado>
+    <numDocModificado>${escapeXml(facturaModificada.numero)}</numDocModificado>
+    <fechaEmisionDocSustento>${fechaFacturaStr}</fechaEmisionDocSustento>
+    <totalSinImpuestos>${totalSinImpuestos.toFixed(2)}</totalSinImpuestos>
+    <valorModificacion>${valorModificacion.toFixed(2)}</valorModificacion>
+    <moneda>DOLAR</moneda>
+    <totalConImpuestos>
+      <totalImpuesto>
+        <codigo>2</codigo>
+        <codigoPorcentaje>${codigoPorcentajeIva}</codigoPorcentaje>
+        <baseImponible>${totalSinImpuestos.toFixed(2)}</baseImponible>
+        <valor>${totalIva.toFixed(2)}</valor>
+      </totalImpuesto>
+    </totalConImpuestos>
+    <motivo>${escapeXml(motivo)}</motivo>
+  </infoNotaCredito>
+  <detalles>`;
+
+  items.forEach((item) => {
+    const descripcion = `${item.brand || 'Fructi'} ${item.size} ${item.container} - ${
+      item.flavorType === 'single' ? item.selectedFlavor : 'Surtido'
+    }`;
+    const cantidad = item.totalBottles || (item.quantityJavas * item.unitsPerJava);
+    const subtotalItemConIva = item.subtotal;
+    const baseImponibleItem =
+      ivaRate === 15 ? Number((subtotalItemConIva / 1.15).toFixed(2)) : subtotalItemConIva;
+    const ivaItem = Number((subtotalItemConIva - baseImponibleItem).toFixed(2));
+    const precioUnitarioSinIva = Number((baseImponibleItem / (cantidad || 1)).toFixed(4));
+
+    xml += `
+    <detalle>
+      <codigoInterno>${escapeXml(item.productOptionId)}</codigoInterno>
+      <descripcion>${escapeXml(descripcion)}</descripcion>
+      <cantidad>${cantidad.toFixed(2)}</cantidad>
+      <precioUnitario>${precioUnitarioSinIva.toFixed(4)}</precioUnitario>
+      <descuento>0.00</descuento>
+      <precioTotalSinImpuesto>${baseImponibleItem.toFixed(2)}</precioTotalSinImpuesto>
+      <impuestos>
+        <impuesto>
+          <codigo>2</codigo>
+          <codigoPorcentaje>${codigoPorcentajeIva}</codigoPorcentaje>
+          <tarifa>${ivaRate.toFixed(2)}</tarifa>
+          <baseImponible>${baseImponibleItem.toFixed(2)}</baseImponible>
+          <valor>${ivaItem.toFixed(2)}</valor>
+        </impuesto>
+      </impuestos>
+    </detalle>`;
+  });
+
+  xml += `
+  </detalles>
+  <infoAdicional>
+    <campoAdicional nombre="FacturaAfectada">${escapeXml(facturaModificada.numero)}</campoAdicional>
+    <campoAdicional nombre="Distribuidor">Distribuidora Aneth Oficial</campoAdicional>
+  </infoAdicional>
+</notaCredito>`;
+
+  return xml.trim();
+}

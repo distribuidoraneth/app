@@ -100,8 +100,9 @@ export function signXmlXadesBes(xmlString: string, options?: SigningOptions): st
     // 7. Estructura completa de la firma
     const fullSignature = `<ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:etsi="http://uri.etsi.org/01903/v1.3.2#" Id="${signatureId}">${signedInfoXml}<ds:SignatureValue>${signatureValue}</ds:SignatureValue>${keyInfoXml}<ds:Object><etsi:QualifyingProperties Target="#${signatureId}">${signedPropertiesXml}</etsi:QualifyingProperties></ds:Object></ds:Signature>`;
 
-    // Insertar la firma antes del cierre de </factura>
-    const signedXml = cleanXml.replace('</factura>', `${fullSignature}</factura>`);
+    // Insertar la firma antes del cierre de </factura> o </notaCredito>
+    const closingTag = cleanXml.includes('</notaCredito>') ? '</notaCredito>' : '</factura>';
+    const signedXml = cleanXml.replace(closingTag, `${fullSignature}${closingTag}`);
     return `<?xml version="1.0" encoding="UTF-8"?>\n${signedXml}`;
   } catch (error) {
     console.error('Error al firmar XML con XAdES-BES:', error);

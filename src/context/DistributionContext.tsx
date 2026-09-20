@@ -536,47 +536,61 @@ function generateUuid(): string {
       );
     });
 
-    // Auto-generate Invoice for all orders (Esquema Offline SRI)
-    const seqNumber = invoices.length + 100;
-    const invoiceNum = `001-001-${String(seqNumber).padStart(9, '0')}`;
-    const subtotal15 = Number((totalAmount / 1.15).toFixed(2));
-    const tax = Number((totalAmount - subtotal15).toFixed(2));
-    const claveAcceso = generarClaveAcceso({
-      fecha: new Date(),
-      ruc: DEFAULT_TAX_PROFILE.ruc,
-      ambiente: (DEFAULT_TAX_PROFILE.ambiente as '1' | '2') || '1',
-      establecimiento: DEFAULT_TAX_PROFILE.establecimiento || '001',
-      puntoEmision: DEFAULT_TAX_PROFILE.puntoEmision || '001',
-      secuencial: seqNumber,
-    });
+    // Auto-generate Invoice ONLY for orders that are delivered immediately (Autoventa)
+    // For Preventa, the invoice is generated automatically at the exact moment of dispatch/delivery
+    if (saleType === 'autoventa') {
+      const seqNumber = invoices.length + 100;
+      const invoiceNum = `001-001-${String(seqNumber).padStart(9, '0')}`;
+      const subtotal15 = Number((totalAmount / 1.15).toFixed(2));
+      const tax = Number((totalAmount - subtotal15).toFixed(2));
+      const claveAcceso = generarClaveAcceso({
+        fecha: new Date(),
+        ruc: DEFAULT_TAX_PROFILE.ruc,
+        ambiente: '1', // Ambiente de pruebas
+        establecimiento: DEFAULT_TAX_PROFILE.establecimiento || '001',
+        puntoEmision: DEFAULT_TAX_PROFILE.puntoEmision || '001',
+        secuencial: seqNumber,
+      });
 
-    const newInvoice: Invoice = {
-      id: `fac-${Date.now()}`,
-      invoiceNumber: invoiceNum,
-      orderId: newOrder.id,
-      clientId: client?.id || 'guest',
-      clientName: client?.fullName || 'Consumidor Final',
-      businessName: client?.businessName,
-      clientTaxId: client?.taxId || '9999999999999',
-      clientTaxIdType: client?.taxIdType || '07',
-      clientEmail: client?.email || '',
-      clientWhatsapp: client?.whatsappNumber || newOrder.whatsappNumber,
-      clientAddress: client?.addressReference || newOrder.addressReference,
-      items: [...items],
-      totalJavas,
-      totalUnits,
-      subtotal: subtotal15,
-      subtotal15,
-      subtotal0: 0,
-      tax,
-      total: totalAmount,
-      claveAcceso,
-      status: 'emitida',
-      issuedAt: new Date().toISOString(),
-    };
+      const newInvoice: Invoice = {
+        id: `fac-${Date.now()}`,
+        invoiceNumber: invoiceNum,
+        orderId: newOrder.id,
+        clientId: client?.id || 'guest',
+        clientName: client?.fullName || 'Consumidor Final',
+        businessName: client?.businessName || newOrder.businessName || 'Local Registrado',
+        clientTaxId: client?.taxId || '9999999999999',
+        clientTaxIdType: client?.taxIdType || '07',
+        clientEmail: client?.email || '',
+        clientWhatsapp: client?.whatsappNumber || newOrder.whatsappNumber,
+        clientAddress: client?.addressReference || newOrder.addressReference,
+        items: [...items],
+        totalJavas,
+        totalUnits,
+        subtotal: subtotal15,
+        subtotal15,
+        subtotal0: 0,
+        tax,
+        total: totalAmount,
+        claveAcceso,
+        status: 'emitida',
+        issuedAt: new Date().toISOString(),
+      };
 
-    newOrder.invoiceId = newInvoice.id;
-    setInvoices((prev) => [newInvoice, ...prev]);
+      newOrder.invoiceId = newInvoice.id;
+      setInvoices((prev) => [newInvoice, ...prev]);
+
+      // Enviar a SRI en segundo plano (asíncrono)
+      fetch('/api/sri/facturar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          order: newOrder,
+          client,
+          secuencial: seqNumber,
+        }),
+      }).catch((err) => console.warn('SRI background sync error:', err));
+    }
 
     setOrders((prev) => [newOrder, ...prev]);
     clearCart();
@@ -619,14 +633,51 @@ function generateUuid(): string {
       );
     }
 
-    // 3. Anular la factura asociada si existiera
-    setInvoices((prev) =>
-      prev.map((inv) =>
-        inv.orderId === orderId || inv.id === order.invoiceId
-          ? { ...inv, status: 'anulada' }
-          : inv
-      )
+    // 3. Opción Legal Automatizada SRI: Emisión de NOTA DE CRÉDITO ELECTRÓNICA (Tipo 04)
+    // Solo si el pedido ya fue facturado (Autoventa o Preventa ya despachada)
+    const linkedInvoice = invoices.find(
+      (inv) => inv.orderId === orderId || inv.id === order.invoiceId
     );
+
+    if (linkedInvoice && linkedInvoice.status !== 'anulada') {
+      const ncSeq = invoices.filter((i) => i.status === 'anulada').length + 1;
+      const creditNoteNumber = `001-001-${String(ncSeq).padStart(9, '0')}`;
+      const ncClaveAcceso = generarClaveAcceso({
+        fecha: new Date(),
+        tipoComprobante: '04', // Nota de Crédito
+        ruc: DEFAULT_TAX_PROFILE.ruc,
+        ambiente: '1', // Pruebas
+        establecimiento: DEFAULT_TAX_PROFILE.establecimiento || '001',
+        puntoEmision: DEFAULT_TAX_PROFILE.puntoEmision || '001',
+        secuencial: ncSeq,
+      });
+
+      // Anular factura en el sistema asociando la Nota de Crédito
+      setInvoices((prev) =>
+        prev.map((inv) =>
+          inv.id === linkedInvoice.id
+            ? {
+                ...inv,
+                status: 'anulada',
+                creditNoteId: `nc-${Date.now()}`,
+                creditNoteNumber,
+              }
+            : inv
+        )
+      );
+
+      // Transmisión de la Nota de Crédito electrónica al SRI (SOAP Offline)
+      fetch('/api/sri/nota-credito', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          invoice: linkedInvoice,
+          order,
+          secuencial: ncSeq,
+          motivo: 'ANULACION DE PEDIDO Y COMPROBANTE',
+        }),
+      }).catch((err) => console.warn('Error al transmitir Nota de Crédito al SRI:', err));
+    }
 
     // 4. Actualizar estado local del pedido a 'cancelled'
     setOrders((prev) =>
@@ -642,11 +693,75 @@ function generateUuid(): string {
   };
 
   const updateOrderStatus = (orderId: string, status: OrderStatus) => {
+    const targetOrder = orders.find((o) => o.id === orderId);
+    let createdInvoiceId: string | undefined = targetOrder?.invoiceId;
+
+    // Facturación automática al momento del Despacho/Entrega si no tenía factura previa (Preventa)
+    if (status === 'delivered' && targetOrder && !targetOrder.invoiceId) {
+      const client = clients.find((c) => c.id === targetOrder.clientId);
+      const seqNumber = invoices.length + 100;
+      const invoiceNum = `001-001-${String(seqNumber).padStart(9, '0')}`;
+      const subtotal15 = Number((targetOrder.totalAmount / 1.15).toFixed(2));
+      const tax = Number((targetOrder.totalAmount - subtotal15).toFixed(2));
+      const claveAcceso = generarClaveAcceso({
+        fecha: new Date(),
+        ruc: DEFAULT_TAX_PROFILE.ruc,
+        ambiente: '1', // Pruebas
+        establecimiento: DEFAULT_TAX_PROFILE.establecimiento || '001',
+        puntoEmision: DEFAULT_TAX_PROFILE.puntoEmision || '001',
+        secuencial: seqNumber,
+      });
+
+      const newInvoice: Invoice = {
+        id: `fac-${Date.now()}`,
+        invoiceNumber: invoiceNum,
+        orderId: targetOrder.id,
+        clientId: client?.id || 'guest',
+        clientName: client?.fullName || 'Consumidor Final',
+        businessName: client?.businessName || targetOrder.businessName || 'Local Registrado',
+        clientTaxId: client?.taxId || '9999999999999',
+        clientTaxIdType: client?.taxIdType || '07',
+        clientEmail: client?.email || '',
+        clientWhatsapp: client?.whatsappNumber || targetOrder.whatsappNumber,
+        clientAddress: client?.addressReference || targetOrder.addressReference,
+        items: [...targetOrder.items],
+        totalJavas: targetOrder.totalJavas,
+        totalUnits: targetOrder.totalUnits,
+        subtotal: subtotal15,
+        subtotal15,
+        subtotal0: 0,
+        tax,
+        total: targetOrder.totalAmount,
+        claveAcceso,
+        status: 'emitida',
+        issuedAt: new Date().toISOString(),
+      };
+
+      createdInvoiceId = newInvoice.id;
+      setInvoices((prev) => [newInvoice, ...prev]);
+
+      // Enviar a SRI en segundo plano (asíncrono)
+      fetch('/api/sri/facturar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          order: targetOrder,
+          client,
+          secuencial: seqNumber,
+        }),
+      }).catch((err) => console.warn('SRI background sync error on delivery:', err));
+    }
+
     setOrders((prev) =>
       prev.map((o) => {
         if (o.id === orderId) {
           const deliveredAt = status === 'delivered' ? new Date().toISOString() : o.deliveredAt;
-          return { ...o, status, deliveredAt };
+          return {
+            ...o,
+            status,
+            deliveredAt,
+            invoiceId: createdInvoiceId || o.invoiceId,
+          };
         }
         return o;
       })

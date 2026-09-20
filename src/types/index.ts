@@ -156,6 +156,8 @@ export interface Invoice {
   pdfDownloadUrl?: string;
   issuedAt: string;
   status: 'emitida' | 'pagada' | 'anulada';
+  creditNoteId?: string;
+  creditNoteNumber?: string;
 }
 
 export interface CompanyTaxProfile {
