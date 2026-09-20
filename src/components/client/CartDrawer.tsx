@@ -901,20 +901,13 @@ export function CartDrawer({
                 </div>
               </div>
             ) : (
-              <div className="flex justify-between items-end">
-                <div>
-                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
-                    Total Pedido:
-                  </span>
-                  <span className="text-2xl sm:text-3xl font-black font-mono text-blue-700 block mt-0.5">
-                    {formatCurrency(cartTotalAmount)}
-                  </span>
-                </div>
-                <div className="text-right pb-1">
-                  <span className="inline-flex items-center text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg">
-                    Pago completo
-                  </span>
-                </div>
+              <div>
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
+                  Total Pedido:
+                </span>
+                <span className="text-2xl sm:text-3xl font-black font-mono text-blue-700 block mt-0.5">
+                  {formatCurrency(cartTotalAmount)}
+                </span>
               </div>
             )}
 
