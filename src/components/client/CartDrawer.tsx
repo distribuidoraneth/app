@@ -43,6 +43,8 @@ import {
   ApplePencilIcon,
   AppleCheckmarkSealIcon,
   AppleLockIcon,
+  ApplePrinterIcon,
+  AppleReceiptIcon,
   renderFlavorThumbnail,
 } from '@/components/ui/AppleIcons';
 
@@ -350,30 +352,32 @@ export function CartDrawer({
           </div>
 
           <div className="flex flex-col items-center justify-center text-center min-w-0 px-1">
-            <div className="flex items-center justify-center space-x-2">
+            {createdOrderSummary ? (
               <h2 className="font-black text-base sm:text-lg text-slate-900 leading-tight">
-                {createdOrderSummary ? 'Comprobante' : 'Pedido'}
+                Comprobante
               </h2>
-              {createdOrderSummary ? (
-                <span className="font-mono text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200">
-                  {createdOrderSummary.orderNumber}
-                </span>
-              ) : (
-                <span className="font-mono text-[11px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
-                  Nuevo
-                </span>
-              )}
-            </div>
-            <p className="text-xs text-slate-600 font-medium flex items-center justify-center gap-1.5 mt-0.5 truncate max-w-full">
-              <span className="font-bold text-slate-800 truncate">
-                {activeClient?.businessName || activeClient?.fullName || 'Cliente'}
-              </span>
-              {activeClient?.taxId && (
-                <span className="font-mono text-slate-500 shrink-0">
-                  • {activeClient.taxId}
-                </span>
-              )}
-            </p>
+            ) : (
+              <>
+                <div className="flex items-center justify-center space-x-2">
+                  <h2 className="font-black text-base sm:text-lg text-slate-900 leading-tight">
+                    Pedido
+                  </h2>
+                  <span className="font-mono text-[11px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
+                    Nuevo
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 font-medium flex items-center justify-center gap-1.5 mt-0.5 truncate max-w-full">
+                  <span className="font-bold text-slate-800 truncate">
+                    {activeClient?.businessName || activeClient?.fullName || 'Cliente'}
+                  </span>
+                  {activeClient?.taxId && (
+                    <span className="font-mono text-slate-500 shrink-0">
+                      • {activeClient.taxId}
+                    </span>
+                  )}
+                </p>
+              </>
+            )}
           </div>
 
           <div className="flex items-center justify-end">
@@ -393,15 +397,13 @@ export function CartDrawer({
           {/* SUCCESS SCREEN */}
           {createdOrderSummary ? (
             <div className="space-y-5 text-center py-4">
-              <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-inner">
-                <CheckCircle2 className="w-10 h-10" />
+              <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto shadow-xs border border-emerald-100">
+                <AppleCheckmarkSealIcon size={34} className="text-emerald-600" />
               </div>
 
               <div className="space-y-1">
                 <span className="text-xs font-extrabold uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full">
-                  {createdOrderSummary.saleType === 'autoventa'
-                    ? 'Autoventa • Despachado al Instante'
-                    : 'Preventa • Pedido Programado'}
+                  {createdOrderSummary.saleType === 'autoventa' ? 'Autoventa' : 'Preventa'}
                 </span>
                 <h3 className="text-2xl font-black text-slate-900 pt-2 font-mono">
                   {createdOrderSummary.orderNumber}
@@ -456,7 +458,7 @@ export function CartDrawer({
                   className="w-full py-3.5 px-4 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/90 active:scale-98 text-emerald-900 rounded-2xl font-black text-sm flex items-center justify-center space-x-2 shadow-xs transition-all cursor-pointer"
                 >
                   <AppleWhatsAppIcon size={18} alt="WhatsApp" />
-                  <span>Enviar Comprobante por WhatsApp</span>
+                  <span>Enviar Comprobante</span>
                 </button>
 
                 <button
@@ -464,8 +466,8 @@ export function CartDrawer({
                   onClick={() => setShowThermalModal(true)}
                   className="w-full py-3.5 px-4 bg-blue-600 hover:bg-blue-700 active:scale-98 text-white rounded-2xl font-black text-sm flex items-center justify-center space-x-2 shadow-md transition-all cursor-pointer"
                 >
-                  <Printer className="w-4 h-4" />
-                  <span>Imprimir Recibo Térmico (Munbyn 58mm)</span>
+                  <ApplePrinterIcon size={18} className="text-white" />
+                  <span>Imprimir Recibo</span>
                 </button>
 
                 {createdOrderSummary.invoiceId && (
@@ -474,9 +476,8 @@ export function CartDrawer({
                     target="_blank"
                     className="w-full py-3.5 px-4 bg-slate-900 hover:bg-slate-800 active:scale-98 text-white rounded-2xl font-black text-sm flex items-center justify-center space-x-2 shadow-xs transition-all"
                   >
-                    <FileText className="w-4 h-4 text-blue-400" />
-                    <span>Ver / Descargar Factura Electrónica SRI (RIDE)</span>
-                    <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+                    <AppleReceiptIcon size={18} className="text-white" />
+                    <span>Ver Factura</span>
                   </Link>
                 )}
 

@@ -20,13 +20,32 @@ export function signXmlXadesBes(xmlString: string, options?: SigningOptions): st
     const keyPath = options?.keyPemPath || path.join(cwd, 'facturacion', 'key.pem');
     const certPath = options?.certPemPath || path.join(cwd, 'facturacion', 'cert.pem');
 
-    if (!fs.existsSync(keyPath) || !fs.existsSync(certPath)) {
-      console.warn('Archivos PEM no encontrados en facturacion/, retornando XML sin firmar para modo pruebas');
-      return xmlString;
+    let privateKey = process.env.SRI_KEY_PEM || process.env.SRI_PRIVATE_KEY || '';
+    if (privateKey && !privateKey.includes('-----BEGIN')) {
+      try {
+        privateKey = Buffer.from(privateKey, 'base64').toString('utf8');
+      } catch (_) {}
     }
 
-    const privateKey = fs.readFileSync(keyPath, 'utf8');
-    const certFull = fs.readFileSync(certPath, 'utf8');
+    let certFull = process.env.SRI_CERT_PEM || process.env.SRI_CERTIFICATE || '';
+    if (certFull && !certFull.includes('-----BEGIN')) {
+      try {
+        certFull = Buffer.from(certFull, 'base64').toString('utf8');
+      } catch (_) {}
+    }
+
+    if (!privateKey && fs.existsSync(keyPath)) {
+      privateKey = fs.readFileSync(keyPath, 'utf8');
+    }
+
+    if (!certFull && fs.existsSync(certPath)) {
+      certFull = fs.readFileSync(certPath, 'utf8');
+    }
+
+    if (!privateKey || !certFull) {
+      console.warn('Archivos PEM no encontrados en facturacion/ ni en variables de entorno, retornando XML sin firmar para modo pruebas');
+      return xmlString;
+    }
 
     // Extraer certificados individuales
     const certs = certFull

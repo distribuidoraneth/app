@@ -19,6 +19,8 @@ import {
   INITIAL_INVOICES,
 } from '@/lib/mockData';
 import { formatOrderNumber, generateOrderNumber } from '@/lib/utils/formatters';
+import { generarClaveAcceso } from '@/lib/sri/claveAcceso';
+import { DEFAULT_TAX_PROFILE } from '@/lib/sri/xmlBuilder';
 import {
   saveOrderToDb,
   saveClientToDb,
@@ -534,41 +536,47 @@ function generateUuid(): string {
       );
     });
 
-    // Auto-generate Invoice for Autoventa
-    if (saleType === 'autoventa') {
-      const invoiceNum = `001-001-${String(invoices.length + 100).padStart(9, '0')}`;
-      const subtotal15 = Number((totalAmount / 1.15).toFixed(2));
-      const tax = Number((totalAmount - subtotal15).toFixed(2));
-      const claveAcceso = `300820260118030138100011001001${String(invoices.length + 100).padStart(9, '0')}123456781`;
+    // Auto-generate Invoice for all orders (Esquema Offline SRI)
+    const seqNumber = invoices.length + 100;
+    const invoiceNum = `001-001-${String(seqNumber).padStart(9, '0')}`;
+    const subtotal15 = Number((totalAmount / 1.15).toFixed(2));
+    const tax = Number((totalAmount - subtotal15).toFixed(2));
+    const claveAcceso = generarClaveAcceso({
+      fecha: new Date(),
+      ruc: DEFAULT_TAX_PROFILE.ruc,
+      ambiente: (DEFAULT_TAX_PROFILE.ambiente as '1' | '2') || '1',
+      establecimiento: DEFAULT_TAX_PROFILE.establecimiento || '001',
+      puntoEmision: DEFAULT_TAX_PROFILE.puntoEmision || '001',
+      secuencial: seqNumber,
+    });
 
-      const newInvoice: Invoice = {
-        id: `fac-${Date.now()}`,
-        invoiceNumber: invoiceNum,
-        orderId: newOrder.id,
-        clientId: client?.id || 'guest',
-        clientName: client?.fullName || 'Consumidor Final',
-        businessName: client?.businessName,
-        clientTaxId: client?.taxId || '9999999999999',
-        clientTaxIdType: client?.taxIdType || '07',
-        clientEmail: client?.email || '',
-        clientWhatsapp: client?.whatsappNumber || newOrder.whatsappNumber,
-        clientAddress: client?.addressReference || newOrder.addressReference,
-        items: [...items],
-        totalJavas,
-        totalUnits,
-        subtotal: subtotal15,
-        subtotal15,
-        subtotal0: 0,
-        tax,
-        total: totalAmount,
-        claveAcceso,
-        status: 'emitida',
-        issuedAt: new Date().toISOString(),
-      };
+    const newInvoice: Invoice = {
+      id: `fac-${Date.now()}`,
+      invoiceNumber: invoiceNum,
+      orderId: newOrder.id,
+      clientId: client?.id || 'guest',
+      clientName: client?.fullName || 'Consumidor Final',
+      businessName: client?.businessName,
+      clientTaxId: client?.taxId || '9999999999999',
+      clientTaxIdType: client?.taxIdType || '07',
+      clientEmail: client?.email || '',
+      clientWhatsapp: client?.whatsappNumber || newOrder.whatsappNumber,
+      clientAddress: client?.addressReference || newOrder.addressReference,
+      items: [...items],
+      totalJavas,
+      totalUnits,
+      subtotal: subtotal15,
+      subtotal15,
+      subtotal0: 0,
+      tax,
+      total: totalAmount,
+      claveAcceso,
+      status: 'emitida',
+      issuedAt: new Date().toISOString(),
+    };
 
-      newOrder.invoiceId = newInvoice.id;
-      setInvoices((prev) => [newInvoice, ...prev]);
-    }
+    newOrder.invoiceId = newInvoice.id;
+    setInvoices((prev) => [newInvoice, ...prev]);
 
     setOrders((prev) => [newOrder, ...prev]);
     clearCart();
