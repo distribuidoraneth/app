@@ -340,45 +340,47 @@ export function CartDrawer({
     <div className="fixed inset-0 z-[9999] bg-slate-950/70 backdrop-blur-xs flex items-center justify-center sm:p-4 overflow-y-auto">
       <div className="w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-xl bg-white sm:rounded-3xl shadow-2xl flex flex-col justify-between overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
-        <div className="p-4 sm:p-5 bg-white border-b border-slate-200 flex items-center justify-between sticky top-0 z-20 shadow-2xs">
-          <div className="flex items-center space-x-3">
+        <div className="p-4 sm:p-5 bg-white border-b border-slate-200 grid grid-cols-[auto_1fr_auto] items-center gap-2 sticky top-0 z-20 shadow-2xs">
+          <div className="flex items-center justify-start">
             <button
               type="button"
               onClick={handleCloseAll}
-              className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 transition-all active:scale-95 flex items-center space-x-1"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 transition-all active:scale-95 flex items-center justify-center cursor-pointer"
+              aria-label="Volver"
             >
               <ChevronLeft className="w-5 h-5" />
-              <span className="text-xs font-black sm:hidden">Volver</span>
             </button>
-            <div>
-              <div className="flex items-center space-x-2">
-                <h2 className="font-black text-base sm:text-lg text-slate-900 leading-tight">
-                  {createdOrderSummary ? 'Comprobante' : 'Pedido'}
-                </h2>
-                {!createdOrderSummary && (
-                  <span className="font-mono text-xs font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
-                    #{nextOrderNumber}
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-slate-600 font-medium flex items-center gap-1.5 mt-0.5">
-                <span className="font-bold text-slate-800">
-                  {activeClient?.businessName || activeClient?.fullName || 'Cliente'}
-                </span>
-                {activeClient?.taxId && (
-                  <span className="font-mono text-slate-500">
-                    • {activeClient.taxId}
-                  </span>
-                )}
-              </p>
-            </div>
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex flex-col items-center justify-center text-center min-w-0 px-1">
+            <div className="flex items-center justify-center space-x-2">
+              <h2 className="font-black text-base sm:text-lg text-slate-900 leading-tight">
+                {createdOrderSummary ? 'Comprobante' : 'Pedido'}
+              </h2>
+              {!createdOrderSummary && (
+                <span className="font-mono text-xs font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
+                  #{nextOrderNumber}
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-slate-600 font-medium flex items-center justify-center gap-1.5 mt-0.5 truncate max-w-full">
+              <span className="font-bold text-slate-800 truncate">
+                {activeClient?.businessName || activeClient?.fullName || 'Cliente'}
+              </span>
+              {activeClient?.taxId && (
+                <span className="font-mono text-slate-500 shrink-0">
+                  • {activeClient.taxId}
+                </span>
+              )}
+            </p>
+          </div>
+
+          <div className="flex items-center justify-end">
             <button
               type="button"
               onClick={handleCloseAll}
-              className="p-2 rounded-xl text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer flex items-center justify-center"
+              aria-label="Cerrar"
             >
               <X className="w-5 h-5" />
             </button>
