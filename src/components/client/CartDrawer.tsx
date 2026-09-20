@@ -43,40 +43,9 @@ import {
   ApplePencilIcon,
   AppleCheckmarkSealIcon,
   AppleLockIcon,
+  renderFlavorThumbnail,
 } from '@/components/ui/AppleIcons';
 
-const FLAVOR_ASSET_URLS: Record<string, string> = {
-  'piña': '/flavors/pina.webp',
-  'pina': '/flavors/pina.webp',
-  'mora': '/flavors/mora.webp',
-  'mandarina': '/flavors/mandarina.webp',
-  'naranja': '/flavors/mandarina.webp',
-  'uva': '/flavors/uva.webp',
-  'tamarindo': '/flavors/tamarindo.webp',
-  'lima limón': '/flavors/lima-limon.webp',
-  'lima limon': '/flavors/lima-limon.webp',
-  'limón': '/flavors/lima-limon.webp',
-  'limon': '/flavors/lima-limon.webp',
-  'flor de jamaica': '/flavors/flor-de-jamaica.webp',
-  'jamaica': '/flavors/flor-de-jamaica.webp',
-};
-
-function renderFlavorThumbnail(flavorName: string, size = 18) {
-  const norm = flavorName.toLowerCase().trim();
-  const url = FLAVOR_ASSET_URLS[norm];
-  if (!url) return null;
-  return (
-    <img
-      src={url}
-      alt={flavorName}
-      width={size}
-      height={size}
-      className="object-contain inline-block shrink-0 select-none pointer-events-none drop-shadow-xs align-middle"
-      style={{ width: `${size}px`, height: `${size}px` }}
-      loading="eager"
-    />
-  );
-}
 
 interface CartDrawerProps {
   isOpen: boolean;

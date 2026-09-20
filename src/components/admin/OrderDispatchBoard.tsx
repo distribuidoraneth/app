@@ -417,7 +417,10 @@ export function OrderDispatchBoard() {
                       {formatCurrency(order.totalAmount)}
                     </div>
                     <div className="text-xs font-medium text-slate-400">
-                      {order.totalJavas} {order.totalJavas === 1 ? 'paquete' : 'paquetes'}
+                      {order.totalJavas > 0 && `${order.totalJavas} ${order.totalJavas === 1 ? 'paq' : 'paqs'}`}
+                      {order.totalJavas > 0 && (order.totalUnits || 0) > 0 && ' + '}
+                      {(order.totalUnits || 0) > 0 && `${order.totalUnits} ${(order.totalUnits || 0) === 1 ? 'und' : 'unds'}`}
+                      {order.totalJavas === 0 && (order.totalUnits || 0) === 0 && `${order.totalBottles || order.items.length} bots`}
                     </div>
                   </div>
                 </div>

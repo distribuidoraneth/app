@@ -260,43 +260,113 @@ export function InvoiceModal({ invoice, isOpen, onClose }: InvoiceModalProps) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-800">
-                {invoice.items.map((it, idx) => (
-                  <tr key={it.id || idx} className="hover:bg-slate-50/60">
-                    <td className="py-2.5 px-3 font-mono font-black text-slate-900">
-                      {it.quantityJavas > 0 && `${it.quantityJavas} jav`}
-                      {it.quantityJavas > 0 && it.quantityUnits > 0 && ' + '}
-                      {it.quantityUnits > 0 && `${it.quantityUnits} u`}
-                      {it.quantityJavas === 0 && it.quantityUnits === 0 && `${it.totalBottles} u`}
-                    </td>
-                    <td className="py-2.5 px-3">
-                      <span className="font-black text-slate-900 block">
-                        {it.beverageType} • {it.size} {it.container}
-                      </span>
-                      <span className="text-slate-500 text-[11px]">
-                        {it.totalBottles || (it.quantityJavas * it.unitsPerJava)} botellas totales
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-3 text-slate-700">
-                      {it.flavorType === 'single' ? (
-                        <span>{it.selectedFlavor}</span>
-                      ) : (
-                        <span className="text-blue-700 font-semibold">
-                          Surtido:{' '}
-                          {it.surtidoDetails &&
-                            Object.entries(it.surtidoDetails)
-                              .map(([fl, q]) => `${q} ${fl}`)
-                              .join(', ')}
-                        </span>
+                {invoice.items.map((it, idx) => {
+                  const hasJavas = it.quantityJavas > 0;
+                  const hasUnits = (it.quantityUnits || 0) > 0;
+                  const effectivePricePerUnit = it.pricePerUnit > 0
+                    ? it.pricePerUnit
+                    : Number(((it.pricePerJava || 0) / (it.unitsPerJava || 12)).toFixed(4));
+
+                  const packSubtotal = Number((it.quantityJavas * it.pricePerJava).toFixed(2));
+                  const unitSubtotal = hasJavas
+                    ? Number((it.subtotal - packSubtotal).toFixed(2))
+                    : Number(((it.quantityUnits || 0) * effectivePricePerUnit).toFixed(2));
+
+                  const packLabel = it.container === 'Vidrio' ? 'jav' : 'pack';
+
+                  return (
+                    <React.Fragment key={it.id || idx}>
+                      {/* Fila Paquete / Java */}
+                      {hasJavas && (
+                        <tr className="hover:bg-slate-50/60">
+                          <td className="py-2.5 px-3 font-mono font-black text-slate-900">
+                            {it.quantityJavas} {packLabel}
+                          </td>
+                          <td className="py-2.5 px-3">
+                            <span className="font-black text-slate-900 block">
+                              {it.brand || 'Fructi'} • {it.size} {it.container}
+                            </span>
+                            <span className="text-slate-500 text-[11px]">
+                              {it.quantityJavas * it.unitsPerJava} botellas ({it.unitsPerJava} und/paq)
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3 text-slate-700">
+                            {it.flavorType === 'single' ? (
+                              <span>{it.selectedFlavor}</span>
+                            ) : (
+                              <span className="text-blue-700 font-semibold">
+                                Surtido:{' '}
+                                {it.surtidoDetails &&
+                                  Object.entries(it.surtidoDetails)
+                                    .map(([fl, q]) => `${q} ${fl}`)
+                                    .join(', ')}
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-mono text-slate-700">
+                            {formatCurrency(it.pricePerJava)} / {packLabel}
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-mono font-black text-slate-900">
+                            {formatCurrency(packSubtotal)}
+                          </td>
+                        </tr>
                       )}
-                    </td>
-                    <td className="py-2.5 px-3 text-right font-mono text-slate-700">
-                      {formatCurrency(it.pricePerJava)} / jav
-                    </td>
-                    <td className="py-2.5 px-3 text-right font-mono font-black text-slate-900">
-                      {formatCurrency(it.subtotal)}
-                    </td>
-                  </tr>
-                ))}
+
+                      {/* Fila Unidad Suelta */}
+                      {hasUnits && (
+                        <tr className="hover:bg-slate-50/60">
+                          <td className="py-2.5 px-3 font-mono font-black text-amber-800">
+                            {it.quantityUnits} und
+                          </td>
+                          <td className="py-2.5 px-3">
+                            <span className="font-black text-slate-900 block">
+                              {it.brand || 'Fructi'} • {it.size} {it.container} (Unidad Suelta)
+                            </span>
+                            <span className="text-slate-500 text-[11px]">
+                              Botella individual
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3 text-slate-700">
+                            {it.flavorType === 'single' ? (
+                              <span>{it.selectedFlavor}</span>
+                            ) : (
+                              <span className="text-blue-700 font-semibold">Surtido</span>
+                            )}
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-mono text-slate-700">
+                            {formatCurrency(effectivePricePerUnit)} / und
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-mono font-black text-slate-900">
+                            {formatCurrency(unitSubtotal)}
+                          </td>
+                        </tr>
+                      )}
+
+                      {/* Fallback */}
+                      {!hasJavas && !hasUnits && (
+                        <tr className="hover:bg-slate-50/60">
+                          <td className="py-2.5 px-3 font-mono font-black text-slate-900">
+                            {it.totalBottles || 1} und
+                          </td>
+                          <td className="py-2.5 px-3">
+                            <span className="font-black text-slate-900 block">
+                              {it.beverageType} • {it.size} {it.container}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3 text-slate-700">
+                            {it.selectedFlavor || 'Surtido'}
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-mono text-slate-700">
+                            {formatCurrency(it.pricePerJava)}
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-mono font-black text-slate-900">
+                            {formatCurrency(it.subtotal)}
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
               </tbody>
             </table>
           </div>

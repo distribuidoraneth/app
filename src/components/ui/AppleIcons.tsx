@@ -1,4 +1,5 @@
 import React from 'react';
+import { FruitVectorIcon } from './FruitIcons';
 
 interface AppleIconProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   name:
@@ -645,3 +646,83 @@ export const AppleLockIcon: React.FC<{
     </svg>
   );
 };
+
+export const FLAVOR_ASSET_URLS: Record<string, string> = {
+  'piña': '/flavors/pina.webp',
+  'pina': '/flavors/pina.webp',
+  'mora': '/flavors/mora.webp',
+  'mandarina': '/flavors/mandarina.webp',
+  'naranja': '/flavors/mandarina.webp',
+  'uva': '/flavors/uva.webp',
+  'tamarindo': '/flavors/tamarindo.webp',
+  'lima limón': '/flavors/lima-limon.webp',
+  'lima limon': '/flavors/lima-limon.webp',
+  'limón': '/flavors/lima-limon.webp',
+  'limon': '/flavors/lima-limon.webp',
+  'flor de jamaica': '/flavors/flor-de-jamaica.webp',
+  'jamaica': '/flavors/flor-de-jamaica.webp',
+};
+
+export function renderFlavorThumbnail(flavorName?: string, size = 18, className = '') {
+  if (!flavorName) return null;
+  const norm = flavorName.toLowerCase().trim();
+  const url = FLAVOR_ASSET_URLS[norm];
+  if (url) {
+    return (
+      <img
+        src={url}
+        alt={flavorName}
+        width={size}
+        height={size}
+        className={`object-contain inline-block shrink-0 select-none pointer-events-none drop-shadow-xs align-middle ${className}`}
+        style={{ width: `${size}px`, height: `${size}px` }}
+        loading="eager"
+      />
+    );
+  }
+
+  if (norm.includes('sin gas')) {
+    return (
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="none"
+        className={`inline-block shrink-0 select-none drop-shadow-xs align-middle ${className}`}
+        style={{ width: `${size}px`, height: `${size}px` }}
+      >
+        <path d="M12 3C12 3 6 10 6 15C6 18.3 8.7 21 12 21C15.3 21 18 18.3 18 15C18 10 12 3 12 3Z" fill="#38bdf8" />
+        <ellipse cx="10" cy="14" rx="1.5" ry="3" fill="#e0f2fe" opacity="0.8" />
+      </svg>
+    );
+  }
+
+  if (norm.includes('con gas')) {
+    return (
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="none"
+        className={`inline-block shrink-0 select-none drop-shadow-xs align-middle ${className}`}
+        style={{ width: `${size}px`, height: `${size}px` }}
+      >
+        <path d="M12 3C12 3 6 10 6 15C6 18.3 8.7 21 12 21C15.3 21 18 18.3 18 15C18 10 12 3 12 3Z" fill="#0284c7" />
+        <circle cx="10" cy="16" r="1.5" fill="#ffffff" />
+        <circle cx="14" cy="13" r="1" fill="#ffffff" />
+        <circle cx="11" cy="10" r="0.8" fill="#ffffff" />
+      </svg>
+    );
+  }
+
+  return <FruitVectorIcon flavor={flavorName} size={size} className={className} />;
+}
+
+export const FlavorThumbnail: React.FC<{
+  flavor?: string;
+  size?: number;
+  className?: string;
+}> = ({ flavor, size = 18, className = '' }) => {
+  return renderFlavorThumbnail(flavor, size, className);
+};
+

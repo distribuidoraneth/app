@@ -22,6 +22,9 @@ import {
   AppleReceiptIcon,
   ApplePrinterIcon,
   ApplePhoneIcon,
+  AppleShippingBoxIcon,
+  AppleWaterBottleIcon,
+  renderFlavorThumbnail,
 } from '@/components/ui/AppleIcons';
 import {
   ArrowLeft,
@@ -229,7 +232,7 @@ export default function OrderDetailPage({
               </span>
             ) : (
               <span className="inline-flex items-center text-xs font-bold text-amber-700 bg-amber-50 px-3 py-1 rounded-full border border-amber-200/70">
-                <Clock className="w-3.5 h-3.5 mr-1" />
+                <AppleShippingBoxIcon size={14} className="mr-1 text-amber-700" />
                 Por Despachar
               </span>
             )}
@@ -240,18 +243,23 @@ export default function OrderDetailPage({
       <main className="max-w-3xl mx-auto px-4 py-4 space-y-4">
         {/* Card 1: Destino y Cliente */}
         <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-xs space-y-3">
-          <div className="border-b border-slate-100 pb-2.5">
+          <div className="border-b border-slate-100 pb-2.5 flex items-center justify-between">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
               Cliente y Ubicación
             </span>
+            {(client?.taxId || order.clientId) && (
+              <span className="font-mono text-xs font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+                {client?.taxId ? `C.I./RUC: ${client.taxId}` : ''}
+              </span>
+            )}
           </div>
 
           <div>
-            <h2 className="text-lg font-black text-slate-900">
+            <h2 className="text-lg sm:text-xl font-black text-slate-900 leading-snug">
               {order.businessName || order.clientName}
             </h2>
             {order.businessName && order.clientName && order.businessName !== order.clientName && (
-              <p className="text-sm text-slate-500 font-medium mt-0.5">{order.clientName}</p>
+              <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">{order.clientName}</p>
             )}
           </div>
 
@@ -263,6 +271,16 @@ export default function OrderDetailPage({
                   <span className="font-mono text-slate-800 font-medium">{order.whatsappNumber}</span>
                 </div>
                 <div className="flex items-center space-x-1.5 shrink-0">
+                  <a
+                    href={`https://wa.me/${order.whatsappNumber.replace(/[^0-9]/g, '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-8 h-8 rounded-xl bg-emerald-50 hover:bg-emerald-100 active:scale-95 text-emerald-700 flex items-center justify-center border border-emerald-200/60 transition-all cursor-pointer shadow-2xs"
+                    title="Enviar mensaje por WhatsApp"
+                    aria-label="WhatsApp"
+                  >
+                    <AppleWhatsAppIcon size={16} alt="WhatsApp" />
+                  </a>
                   <a
                     href={`tel:${order.whatsappNumber.replace(/[^0-9+]/g, '')}`}
                     className="w-8 h-8 rounded-xl bg-blue-50 hover:bg-blue-100 active:scale-95 text-blue-700 flex items-center justify-center border border-blue-200/60 transition-all cursor-pointer shadow-2xs"
@@ -304,44 +322,168 @@ export default function OrderDetailPage({
           </div>
         </div>
 
-        {/* Card 2: Detalle de Productos */}
+        {/* Card 2: Detalle de Productos con Desglose Comercial */}
         <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-xs space-y-3">
           <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              Productos ({order.totalJavas} paquetes)
+              Detalle de Productos
             </span>
-            <span className="text-xs sm:text-sm font-mono font-bold text-slate-500">
-              {order.items.length} ítems
-            </span>
+            <div className="text-xs font-mono font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200/60">
+              {order.totalJavas > 0 && `${order.totalJavas} ${order.totalJavas === 1 ? 'paquete' : 'paquetes'}`}
+              {order.totalJavas > 0 && (order.totalUnits || 0) > 0 && ' + '}
+              {(order.totalUnits || 0) > 0 && `${order.totalUnits} ${(order.totalUnits || 0) === 1 ? 'unidad' : 'unidades'}`}
+              {order.totalJavas === 0 && (order.totalUnits || 0) === 0 && `${order.items.length} productos`}
+              {order.totalBottles > 0 && (
+                <span className="text-slate-400 font-normal ml-1">
+                  ({order.totalBottles} botellas)
+                </span>
+              )}
+            </div>
           </div>
 
           <div className="divide-y divide-slate-100">
-            {order.items.map((item) => (
-              <div key={item.id} className="py-3 first:pt-0 last:pb-0 flex items-start justify-between gap-3">
-                <div className="space-y-0.5">
-                  <div className="text-sm font-bold text-slate-900">
-                    <span className="font-mono text-slate-500 mr-2">{item.quantityJavas}x</span>
-                    {formatItemTitle(item)}
-                  </div>
-                  {item.flavorType === 'surtido' && item.surtidoDetails && (
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Surtido:{' '}
-                      {Object.entries(item.surtidoDetails)
-                        .filter(([_, q]) => q > 0)
-                        .map(([f, q]) => `${q} ${f}`)
-                        .join(', ')}
-                    </p>
+            {order.items.map((item) => {
+              const hasJavas = item.quantityJavas > 0;
+              const hasUnits = (item.quantityUnits || 0) > 0;
+              const effectivePricePerUnit = item.pricePerUnit > 0
+                ? item.pricePerUnit
+                : Number(((item.pricePerJava || 0) / (item.unitsPerJava || 12)).toFixed(4));
+
+              const packSubtotal = Number((item.quantityJavas * item.pricePerJava).toFixed(2));
+              // El subtotal de las unidades se calcula restando el pack del subtotal del item
+              // garantizando exactitud contable al centavo con el total registrado de la venta
+              const unitSubtotal = hasJavas
+                ? Number((item.subtotal - packSubtotal).toFixed(2))
+                : Number(((item.quantityUnits || 0) * effectivePricePerUnit).toFixed(2));
+
+              return (
+                <React.Fragment key={item.id}>
+                  {/* Fila del Paquete / Java */}
+                  {hasJavas && (
+                    <div className="py-3.5 first:pt-0 last:pb-0 flex items-start justify-between gap-3">
+                      <div className="flex items-start space-x-3 min-w-0">
+                        {/* Contenedor con icono oficial Apple y micro-thumbnail del sabor */}
+                        <div className="relative shrink-0 mt-0.5">
+                          <div className="w-10 h-10 rounded-xl bg-blue-50/80 border border-blue-200/70 flex items-center justify-center text-blue-700 shadow-2xs">
+                            <AppleShippingBoxIcon size={20} className="text-blue-600" />
+                          </div>
+                          {item.flavorType !== 'surtido' && item.selectedFlavor && (
+                            <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-2xs border border-slate-200/80">
+                              {renderFlavorThumbnail(item.selectedFlavor, 15)}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="space-y-1 min-w-0">
+                          <div className="flex items-center flex-wrap gap-1.5">
+                            <span className="font-mono font-black text-xs sm:text-sm text-blue-700 bg-blue-50 border border-blue-200/80 px-2 py-0.5 rounded-lg shrink-0">
+                              {item.quantityJavas}x
+                            </span>
+                            <span className="text-sm sm:text-base font-bold text-slate-900 leading-tight">
+                              {item.brand || 'Fructi'} {item.container === 'Vidrio' ? 'Java' : 'Pack'} {item.size}
+                              {item.flavorType === 'single' && item.selectedFlavor ? ` • ${item.selectedFlavor}` : ''}
+                            </span>
+                            <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded-md shrink-0">
+                              {item.unitsPerJava} und/paq
+                            </span>
+                          </div>
+
+                          {item.flavorType === 'surtido' && item.surtidoDetails && (
+                            <div className="flex flex-wrap gap-1 pt-0.5">
+                              {Object.entries(item.surtidoDetails)
+                                .filter(([_, q]) => q > 0)
+                                .map(([fl, q]) => (
+                                  <span
+                                    key={fl}
+                                    className="bg-slate-50 border border-slate-200/90 text-slate-700 px-2 py-0.5 rounded-md text-xs font-semibold inline-flex items-center gap-1"
+                                  >
+                                    {renderFlavorThumbnail(fl, 14)}
+                                    <span>{q}x {fl}</span>
+                                  </span>
+                                ))}
+                            </div>
+                          )}
+
+                          <p className="text-xs text-slate-400 font-medium">
+                            {formatCurrency(item.pricePerJava)} c/paquete
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="text-right shrink-0">
+                        <span className="font-mono font-black text-sm sm:text-base text-slate-900 block">
+                          {formatCurrency(packSubtotal)}
+                        </span>
+                      </div>
+                    </div>
                   )}
-                  <p className="text-xs text-slate-400">
-                    {formatCurrency(item.pricePerJava)} c/paquete
-                  </p>
-                </div>
-                <span className="font-mono font-bold text-sm text-slate-900 shrink-0">
-                  {formatCurrency(item.subtotal)}
-                </span>
-              </div>
-            ))}
+
+                  {/* Fila de la Unidad Suelta */}
+                  {hasUnits && (
+                    <div className="py-3.5 first:pt-0 last:pb-0 flex items-start justify-between gap-3">
+                      <div className="flex items-start space-x-3 min-w-0">
+                        {/* Contenedor con icono de botella Apple y micro-thumbnail del sabor */}
+                        <div className="relative shrink-0 mt-0.5">
+                          <div className="w-10 h-10 rounded-xl bg-amber-50/80 border border-amber-200/70 flex items-center justify-center text-amber-700 shadow-2xs">
+                            <AppleWaterBottleIcon size={18} className="text-amber-600" />
+                          </div>
+                          {item.flavorType !== 'surtido' && item.selectedFlavor && (
+                            <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-2xs border border-slate-200/80">
+                              {renderFlavorThumbnail(item.selectedFlavor, 15)}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="space-y-1 min-w-0">
+                          <div className="flex items-center flex-wrap gap-1.5">
+                            <span className="font-mono font-black text-xs sm:text-sm text-amber-800 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-lg shrink-0">
+                              {item.quantityUnits}x
+                            </span>
+                            <span className="text-sm sm:text-base font-bold text-slate-900 leading-tight">
+                              {item.brand || 'Fructi'} {item.size} {item.container}
+                              {item.flavorType === 'single' && item.selectedFlavor ? ` • ${item.selectedFlavor}` : ''}
+                            </span>
+                            <span className="text-[10px] sm:text-[11px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-md shrink-0">
+                              Unidad Suelta
+                            </span>
+                          </div>
+
+                          <p className="text-xs text-slate-400 font-medium">
+                            {formatCurrency(effectivePricePerUnit)} c/unidad
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="text-right shrink-0">
+                        <span className="font-mono font-black text-sm sm:text-base text-slate-900 block">
+                          {formatCurrency(unitSubtotal)}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Fallback para órdenes históricas donde ambas cantidades fueran 0 */}
+                  {!hasJavas && !hasUnits && (
+                    <div className="py-3 first:pt-0 last:pb-0 flex items-start justify-between gap-3">
+                      <div className="space-y-0.5">
+                        <div className="text-sm font-bold text-slate-900">
+                          <span className="font-mono text-slate-500 mr-2">{item.totalBottles || 1}x</span>
+                          {formatItemTitle(item)}
+                        </div>
+                        <p className="text-xs text-slate-400">
+                          {formatCurrency(item.pricePerJava)} c/paquete
+                        </p>
+                      </div>
+                      <span className="font-mono font-bold text-sm text-slate-900 shrink-0">
+                        {formatCurrency(item.subtotal)}
+                      </span>
+                    </div>
+                  )}
+                </React.Fragment>
+              );
+            })}
           </div>
+
 
           {/* Desglose Tributario SRI Ecuador (IVA 15% incluido) */}
           <div className="border-t border-slate-200/80 pt-3 space-y-1.5 text-xs sm:text-sm">

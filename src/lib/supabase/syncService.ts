@@ -358,7 +358,7 @@ export async function saveOrderToDb(order: Order): Promise<{ success: boolean; d
       address_reference: cleanAddress(order.addressReference) || '',
       total_javas: order.totalJavas,
       total_units: order.totalUnits || 0,
-      total_bottles: order.totalBottles || (order.totalJavas * 12),
+      total_bottles: order.totalBottles || ((order.totalJavas * 12) + (order.totalUnits || 0)),
       total_amount: order.totalAmount,
       status: order.status,
       sale_type: order.saleType,
@@ -419,7 +419,7 @@ export async function saveOrderToDb(order: Order): Promise<{ success: boolean; d
         units_per_java: item.unitsPerJava,
         price_per_java: item.pricePerJava,
         price_per_unit: item.pricePerUnit || Number((item.pricePerJava / item.unitsPerJava).toFixed(4)),
-        total_bottles: item.totalBottles || (item.quantityJavas * item.unitsPerJava),
+        total_bottles: item.totalBottles || ((item.quantityJavas * item.unitsPerJava) + (item.quantityUnits || 0)),
         subtotal: item.subtotal,
       }));
 

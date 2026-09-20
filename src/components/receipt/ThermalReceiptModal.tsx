@@ -292,15 +292,19 @@ export function ThermalReceiptModal({
               <span className="w-11 text-right">TOTAL</span>
             </div>
 
-            {/* LISTA DE ITEMS */}
+            {/* LISTA DE ITEMS DESGLOSADOS */}
             <div className="space-y-1 text-[10px]">
               {order.items.map((it, idx) => {
-                const qtyLabel =
-                  it.quantityJavas > 0 && it.quantityUnits > 0
-                    ? `${it.quantityJavas}J+${it.quantityUnits}U`
-                    : it.quantityJavas > 0
-                    ? `${it.quantityJavas} JAV`
-                    : `${it.quantityUnits} UNI`;
+                const hasJavas = it.quantityJavas > 0;
+                const hasUnits = (it.quantityUnits || 0) > 0;
+                const effectivePricePerUnit = it.pricePerUnit > 0
+                  ? it.pricePerUnit
+                  : Number(((it.pricePerJava || 0) / (it.unitsPerJava || 12)).toFixed(4));
+
+                const packSubtotal = Number((it.quantityJavas * it.pricePerJava).toFixed(2));
+                const unitSubtotal = hasJavas
+                  ? Number((it.subtotal - packSubtotal).toFixed(2))
+                  : Number(((it.quantityUnits || 0) * effectivePricePerUnit).toFixed(2));
 
                 const flavorDesc =
                   it.flavorType === 'single'
@@ -311,26 +315,70 @@ export function ThermalReceiptModal({
                         .join(',')
                     : 'Surtido';
 
-                const unitPrice = it.quantityJavas > 0 ? it.pricePerJava : it.pricePerUnit;
+                const packType = it.container === 'Vidrio' ? 'JAV' : 'PAK';
 
                 return (
-                  <div key={idx} className="pb-0.5 border-b border-dashed border-slate-300">
-                    <div className="flex justify-between items-start">
-                      <span className="w-10 font-semibold">{qtyLabel}</span>
-                      <span className="flex-1 text-left px-1 font-semibold leading-tight">
-                        {formatItemTitle(it)}
-                      </span>
-                      <span className="w-10 text-right font-mono text-[9.5px]">
-                        ${unitPrice.toFixed(2)}
-                      </span>
-                      <span className="w-11 text-right font-bold font-mono text-[9.5px]">
-                        ${it.subtotal.toFixed(2)}
-                      </span>
-                    </div>
-                    <div className="pl-10 text-[9px] text-slate-700 leading-none">
-                      {it.size} {it.container} {it.flavorType === 'surtido' ? `• ${flavorDesc}` : ''} ({it.totalBottles} bots)
-                    </div>
-                  </div>
+                  <React.Fragment key={idx}>
+                    {/* Línea de Paquete / Java */}
+                    {hasJavas && (
+                      <div className="pb-0.5 border-b border-dashed border-slate-300">
+                        <div className="flex justify-between items-start">
+                          <span className="w-10 font-semibold">{it.quantityJavas} {packType}</span>
+                          <span className="flex-1 text-left px-1 font-semibold leading-tight">
+                            {it.brand || 'Fructi'} {it.container === 'Vidrio' ? 'Java' : 'Pack'} {it.size}
+                          </span>
+                          <span className="w-10 text-right font-mono text-[9.5px]">
+                            ${it.pricePerJava.toFixed(2)}
+                          </span>
+                          <span className="w-11 text-right font-bold font-mono text-[9.5px]">
+                            ${packSubtotal.toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="pl-10 text-[9px] text-slate-700 leading-none">
+                          {it.flavorType === 'surtido' ? `Surt: ${flavorDesc}` : it.selectedFlavor} ({it.quantityJavas * it.unitsPerJava} unds)
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Línea de Unidad Suelta */}
+                    {hasUnits && (
+                      <div className="pb-0.5 border-b border-dashed border-slate-300">
+                        <div className="flex justify-between items-start">
+                          <span className="w-10 font-semibold">{it.quantityUnits} UNI</span>
+                          <span className="flex-1 text-left px-1 font-semibold leading-tight">
+                            {it.brand || 'Fructi'} {it.size} {it.container} (Suelta)
+                          </span>
+                          <span className="w-10 text-right font-mono text-[9.5px]">
+                            ${effectivePricePerUnit.toFixed(2)}
+                          </span>
+                          <span className="w-11 text-right font-bold font-mono text-[9.5px]">
+                            ${unitSubtotal.toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="pl-10 text-[9px] text-slate-700 leading-none">
+                          {it.flavorType === 'single' ? it.selectedFlavor : 'Surtido'} (Unidad individual)
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Fallback para pedidos históricos */}
+                    {!hasJavas && !hasUnits && (
+                      <div className="pb-0.5 border-b border-dashed border-slate-300">
+                        <div className="flex justify-between items-start">
+                          <span className="w-10 font-semibold">{it.totalBottles || 1} UNI</span>
+                          <span className="flex-1 text-left px-1 font-semibold leading-tight">
+                            {formatItemTitle(it)}
+                          </span>
+                          <span className="w-10 text-right font-mono text-[9.5px]">
+                            ${it.pricePerJava.toFixed(2)}
+                          </span>
+                          <span className="w-11 text-right font-bold font-mono text-[9.5px]">
+                            ${it.subtotal.toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </React.Fragment>
                 );
               })}
             </div>

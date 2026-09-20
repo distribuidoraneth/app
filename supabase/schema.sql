@@ -162,7 +162,10 @@ CREATE TABLE IF NOT EXISTS public.order_items (
   subtotal NUMERIC(10,2) NOT NULL
 );
 
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS total_units INT DEFAULT 0;
 ALTER TABLE public.order_items ADD COLUMN IF NOT EXISTS brand VARCHAR(50) DEFAULT 'Fructi';
+ALTER TABLE public.order_items ADD COLUMN IF NOT EXISTS quantity_units INT DEFAULT 0;
+ALTER TABLE public.order_items ADD COLUMN IF NOT EXISTS price_per_unit NUMERIC(10,4) DEFAULT 0.0000;
 
 -- 6. Historial de Pagos y Abonos
 CREATE TABLE IF NOT EXISTS public.payments (

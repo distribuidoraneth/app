@@ -295,32 +295,96 @@ export default function PublicInvoicePage({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 text-slate-800">
-              {invoice.items.map((item, idx) => (
-                <tr key={idx} className="hover:bg-slate-50">
-                  <td className="py-3 pr-2 font-bold whitespace-nowrap">
-                    {item.quantityJavas > 0 && <span>{item.quantityJavas} jav</span>}
-                    {item.quantityJavas > 0 && item.quantityUnits > 0 && <span> + </span>}
-                    {item.quantityUnits > 0 && <span>{item.quantityUnits} u</span>}
-                  </td>
-                  <td className="py-3 px-2">
-                    <p className="font-bold text-slate-900">
-                      {item.beverageType} {item.size} ({item.container})
-                    </p>
-                    <p className="text-[11px] text-slate-500">
-                      {item.flavorType === 'surtido'
-                        ? `Surtido: ${Object.entries(item.surtidoDetails || {}).map(([f, q]) => `${q} ${f}`).join(', ')}`
-                        : `Sabor: ${item.selectedFlavor}`}
-                      {' • '}{item.totalBottles} botellas
-                    </p>
-                  </td>
-                  <td className="py-3 px-2 text-right font-mono font-medium">
-                    ${item.pricePerJava.toFixed(2)}/jav
-                  </td>
-                  <td className="py-3 pl-2 text-right font-mono font-bold text-slate-900">
-                    {formatCurrency(item.subtotal)}
-                  </td>
-                </tr>
-              ))}
+              {invoice.items.map((item, idx) => {
+                const hasJavas = item.quantityJavas > 0;
+                const hasUnits = (item.quantityUnits || 0) > 0;
+                const effectivePricePerUnit = item.pricePerUnit > 0
+                  ? item.pricePerUnit
+                  : Number(((item.pricePerJava || 0) / (item.unitsPerJava || 12)).toFixed(4));
+
+                const packSubtotal = Number((item.quantityJavas * item.pricePerJava).toFixed(2));
+                const unitSubtotal = hasJavas
+                  ? Number((item.subtotal - packSubtotal).toFixed(2))
+                  : Number(((item.quantityUnits || 0) * effectivePricePerUnit).toFixed(2));
+
+                const packLabel = item.container === 'Vidrio' ? 'jav' : 'pack';
+
+                return (
+                  <React.Fragment key={idx}>
+                    {/* Fila Paquete / Java */}
+                    {hasJavas && (
+                      <tr className="hover:bg-slate-50">
+                        <td className="py-3 pr-2 font-bold whitespace-nowrap">
+                          {item.quantityJavas} {packLabel}
+                        </td>
+                        <td className="py-3 px-2">
+                          <p className="font-bold text-slate-900">
+                            {item.brand || 'Fructi'} {item.size} ({item.container})
+                          </p>
+                          <p className="text-[11px] text-slate-500">
+                            {item.flavorType === 'surtido'
+                              ? `Surtido: ${Object.entries(item.surtidoDetails || {}).map(([f, q]) => `${q} ${f}`).join(', ')}`
+                              : `Sabor: ${item.selectedFlavor}`}
+                            {' • '}{item.quantityJavas * item.unitsPerJava} botellas ({item.unitsPerJava} und/paq)
+                          </p>
+                        </td>
+                        <td className="py-3 px-2 text-right font-mono font-medium">
+                          ${item.pricePerJava.toFixed(2)}/{packLabel}
+                        </td>
+                        <td className="py-3 pl-2 text-right font-mono font-bold text-slate-900">
+                          {formatCurrency(packSubtotal)}
+                        </td>
+                      </tr>
+                    )}
+
+                    {/* Fila Unidad Suelta */}
+                    {hasUnits && (
+                      <tr className="hover:bg-slate-50">
+                        <td className="py-3 pr-2 font-bold whitespace-nowrap text-amber-800">
+                          {item.quantityUnits} und
+                        </td>
+                        <td className="py-3 px-2">
+                          <p className="font-bold text-slate-900">
+                            {item.brand || 'Fructi'} {item.size} ({item.container}) - Unidad Suelta
+                          </p>
+                          <p className="text-[11px] text-slate-500">
+                            {item.flavorType === 'single' ? `Sabor: ${item.selectedFlavor}` : 'Surtido'} • Botella individual
+                          </p>
+                        </td>
+                        <td className="py-3 px-2 text-right font-mono font-medium">
+                          ${effectivePricePerUnit.toFixed(2)}/und
+                        </td>
+                        <td className="py-3 pl-2 text-right font-mono font-bold text-slate-900">
+                          {formatCurrency(unitSubtotal)}
+                        </td>
+                      </tr>
+                    )}
+
+                    {/* Fallback */}
+                    {!hasJavas && !hasUnits && (
+                      <tr className="hover:bg-slate-50">
+                        <td className="py-3 pr-2 font-bold whitespace-nowrap">
+                          {item.totalBottles || 1} und
+                        </td>
+                        <td className="py-3 px-2">
+                          <p className="font-bold text-slate-900">
+                            {item.beverageType} {item.size} ({item.container})
+                          </p>
+                          <p className="text-[11px] text-slate-500">
+                            {item.selectedFlavor || 'Surtido'}
+                          </p>
+                        </td>
+                        <td className="py-3 px-2 text-right font-mono font-medium">
+                          ${item.pricePerJava.toFixed(2)}
+                        </td>
+                        <td className="py-3 pl-2 text-right font-mono font-bold text-slate-900">
+                          {formatCurrency(item.subtotal)}
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                );
+              })}
             </tbody>
           </table>
         </div>
