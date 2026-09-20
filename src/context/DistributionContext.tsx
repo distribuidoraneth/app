@@ -28,6 +28,7 @@ import {
   getOrdersFromDb,
   getOrderByIdFromDb,
   updateClientDebtInDb,
+  updateOrderStatusInDb,
   GetOrdersOptions,
 } from '@/lib/supabase/syncService';
 
@@ -581,11 +582,9 @@ function generateUuid(): string {
   const cancelOrder = (orderId: string): boolean => {
     const order = orders.find((o) => o.id === orderId);
     if (!order) return false;
-    if (order.status === 'delivered') {
-      return false; // Cannot cancel delivered orders
-    }
+    if (order.status === 'cancelled') return false; // Ya está cancelado
 
-    // Restore stock
+    // 1. Reintegrar stock a inventario (paquetes y unidades)
     order.items.forEach((item) => {
       setCatalog((prev) =>
         prev.map((c) =>
@@ -596,9 +595,41 @@ function generateUuid(): string {
       );
     });
 
+    // 2. Descontar la deuda del cliente si este pedido tenía saldo pendiente
+    if (order.debtBalance > 0 && order.clientId) {
+      setClients((prev) =>
+        prev.map((c) => {
+          if (c.id === order.clientId) {
+            const adjustedDebt = Math.max(0, (c.currentDebt || 0) - order.debtBalance);
+            updateClientDebtInDb(c.id, adjustedDebt).catch((err) =>
+              console.warn('Error al sincronizar deuda al cancelar:', err)
+            );
+            return { ...c, currentDebt: adjustedDebt };
+          }
+          return c;
+        })
+      );
+    }
+
+    // 3. Anular la factura asociada si existiera
+    setInvoices((prev) =>
+      prev.map((inv) =>
+        inv.orderId === orderId || inv.id === order.invoiceId
+          ? { ...inv, status: 'anulada' }
+          : inv
+      )
+    );
+
+    // 4. Actualizar estado local del pedido a 'cancelled'
     setOrders((prev) =>
       prev.map((o) => (o.id === orderId ? { ...o, status: 'cancelled' } : o))
     );
+
+    // 5. Persistir estado en Supabase
+    updateOrderStatusInDb(order.id, 'cancelled').catch((err) =>
+      console.warn('Error al actualizar orden cancelada en Supabase:', err)
+    );
+
     return true;
   };
 
@@ -611,6 +642,9 @@ function generateUuid(): string {
         }
         return o;
       })
+    );
+    updateOrderStatusInDb(orderId, status).catch((err) =>
+      console.warn('Error al sincronizar estado de orden en Supabase:', err)
     );
   };
 

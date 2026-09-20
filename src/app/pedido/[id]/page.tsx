@@ -45,6 +45,7 @@ export default function OrderDetailPage({
     invoices,
     generateInvoice,
     updateOrderStatus,
+    cancelOrder,
     ensureOrderLoaded,
   } = useDistribution();
 
@@ -198,8 +199,15 @@ export default function OrderDetailPage({
 
   const isDelivered = order.status === 'delivered';
   const isPending = order.status === 'pending';
+  const isCancelled = order.status === 'cancelled';
   const subtotal15 = Number((order.totalAmount / 1.15).toFixed(2));
   const totalIva15 = Number((order.totalAmount - subtotal15).toFixed(2));
+
+  const handleCancelOrder = () => {
+    if (window.confirm('¿Deseas cancelar este pedido?')) {
+      cancelOrder(order.id);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#f8fafc] pb-24 text-slate-900">
@@ -225,7 +233,11 @@ export default function OrderDetailPage({
           </div>
 
           <div className="flex items-center">
-            {isDelivered ? (
+            {isCancelled ? (
+              <span className="inline-flex items-center text-xs font-bold text-rose-700 bg-rose-50 px-3 py-1 rounded-full border border-rose-200/70">
+                Cancelado
+              </span>
+            ) : isDelivered ? (
               <span className="inline-flex items-center text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200/70">
                 <AppleCheckmarkSealIcon size={14} className="mr-1 text-emerald-700" />
                 Entregado
@@ -496,66 +508,83 @@ export default function OrderDetailPage({
           </span>
 
           <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
-            {/* Toggle de Entrega */}
-            {isPending ? (
-              <button
-                type="button"
-                onClick={() => updateOrderStatus(order.id, 'delivered')}
-                className="col-span-2 py-3.5 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white rounded-xl text-xs sm:text-sm font-black flex items-center justify-center space-x-2 shadow-xs transition-all cursor-pointer"
-              >
-                <AppleCheckmarkSealIcon size={16} className="text-white" />
-                <span>Marcar como Entregado</span>
-              </button>
+            {isCancelled ? (
+              <div className="col-span-2 py-3.5 bg-rose-50 text-rose-700 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center space-x-2 border border-rose-200/70">
+                <span>Este pedido fue cancelado</span>
+              </div>
             ) : (
-              <button
-                type="button"
-                onClick={() => updateOrderStatus(order.id, 'pending')}
-                className="col-span-2 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center space-x-2 transition-all cursor-pointer"
-              >
-                <Clock className="w-4 h-4" />
-                <span>Cambiar a Por Despachar</span>
-              </button>
-            )}
+              <>
+                {/* Toggle de Entrega */}
+                {isPending ? (
+                  <button
+                    type="button"
+                    onClick={() => updateOrderStatus(order.id, 'delivered')}
+                    className="col-span-2 py-3.5 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white rounded-xl text-xs sm:text-sm font-black flex items-center justify-center space-x-2 shadow-xs transition-all cursor-pointer"
+                  >
+                    <AppleCheckmarkSealIcon size={16} className="text-white" />
+                    <span>Marcar como Entregado</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => updateOrderStatus(order.id, 'pending')}
+                    className="col-span-2 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center space-x-2 transition-all cursor-pointer"
+                  >
+                    <Clock className="w-4 h-4" />
+                    <span>Cambiar a Por Despachar</span>
+                  </button>
+                )}
 
-            {/* WhatsApp */}
-            <button
-              type="button"
-              onClick={handleShareWhatsApp}
-              className="py-3 px-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center space-x-1.5 border border-emerald-200/60 transition-colors cursor-pointer"
-            >
-              <AppleWhatsAppIcon size={18} alt="WhatsApp" />
-              <span>WhatsApp</span>
-            </button>
+                {/* WhatsApp */}
+                <button
+                  type="button"
+                  onClick={handleShareWhatsApp}
+                  className="py-3 px-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center space-x-1.5 border border-emerald-200/60 transition-colors cursor-pointer"
+                >
+                  <AppleWhatsAppIcon size={18} alt="WhatsApp" />
+                  <span>WhatsApp</span>
+                </button>
 
-            {/* Imprimir */}
-            <button
-              type="button"
-              onClick={() => setIsThermalModalOpen(true)}
-              className="py-3 px-3 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center space-x-2 border border-slate-200 transition-colors cursor-pointer"
-            >
-              <ApplePrinterIcon size={18} className="text-slate-700" />
-              <span>Imprimir</span>
-            </button>
+                {/* Imprimir */}
+                <button
+                  type="button"
+                  onClick={() => setIsThermalModalOpen(true)}
+                  className="py-3 px-3 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center space-x-2 border border-slate-200 transition-colors cursor-pointer"
+                >
+                  <ApplePrinterIcon size={18} className="text-slate-700" />
+                  <span>Imprimir</span>
+                </button>
 
-            {/* Factura */}
-            {invoice ? (
-              <button
-                type="button"
-                onClick={() => setSelectedInvoice(invoice)}
-                className="col-span-2 py-3 px-3 bg-blue-50 hover:bg-blue-100 text-blue-800 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center space-x-2 border border-blue-200/60 transition-colors cursor-pointer"
-              >
-                <AppleReceiptIcon size={18} className="text-blue-700" />
-                <span>Factura #{invoice.invoiceNumber}</span>
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={handleGenerateInvoice}
-                className="col-span-2 py-3 px-3 bg-blue-600 hover:bg-blue-700 active:scale-98 text-white rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center space-x-2 shadow-xs transition-all cursor-pointer"
-              >
-                <AppleReceiptIcon size={18} className="text-white" />
-                <span>Factura</span>
-              </button>
+                {/* Factura */}
+                {invoice ? (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedInvoice(invoice)}
+                    className="col-span-2 py-3 px-3 bg-blue-50 hover:bg-blue-100 text-blue-800 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center space-x-2 border border-blue-200/60 transition-colors cursor-pointer"
+                  >
+                    <AppleReceiptIcon size={18} className="text-blue-700" />
+                    <span>Factura #{invoice.invoiceNumber}</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleGenerateInvoice}
+                    className="col-span-2 py-3 px-3 bg-blue-600 hover:bg-blue-700 active:scale-98 text-white rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center space-x-2 shadow-xs transition-all cursor-pointer"
+                  >
+                    <AppleReceiptIcon size={18} className="text-white" />
+                    <span>Factura</span>
+                  </button>
+                )}
+
+                {/* Botón Cancelar Pedido */}
+                <button
+                  type="button"
+                  onClick={handleCancelOrder}
+                  className="col-span-2 py-2.5 text-rose-600 hover:text-rose-700 hover:bg-rose-50/70 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center space-x-1.5 transition-colors cursor-pointer border border-transparent hover:border-rose-200/60 mt-1"
+                >
+                  <span>Cancelar Pedido</span>
+                </button>
+              </>
             )}
           </div>
         </div>

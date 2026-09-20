@@ -3,7 +3,7 @@
  */
 
 import { supabase } from '@/lib/supabase/client';
-import { Client, JavaProductOption, Order } from '@/types';
+import { Client, JavaProductOption, Order, OrderStatus } from '@/types';
 import { INITIAL_CLIENTS, JAVA_PRODUCT_CATALOG } from '@/lib/mockData';
 import { cleanAddress } from '@/lib/utils/formatters';
 
@@ -431,6 +431,26 @@ export async function saveOrderToDb(order: Order): Promise<{ success: boolean; d
     }
 
     return { success: true, data: insertedOrder };
+  } catch (err: any) {
+    return { success: false, error: err?.message };
+  }
+}
+
+export async function updateOrderStatusInDb(
+  orderId: string,
+  status: OrderStatus
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { error } = await supabase
+      .from('orders')
+      .update({ status })
+      .or(`id.eq.${orderId},order_number.eq.${orderId}`);
+
+    if (error) {
+      console.warn('Advertencia al actualizar estado de orden en Supabase:', error.message);
+      return { success: false, error: error.message };
+    }
+    return { success: true };
   } catch (err: any) {
     return { success: false, error: err?.message };
   }

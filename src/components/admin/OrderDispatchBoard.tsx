@@ -45,7 +45,7 @@ export function OrderDispatchBoard() {
     isOrdersLoading,
   } = useDistribution();
 
-  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'delivered'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'delivered' | 'cancelled'>('all');
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [selectedOrderForThermal, setSelectedOrderForThermal] = useState<Order | null>(null);
 
@@ -87,6 +87,7 @@ export function OrderDispatchBoard() {
     // 1. Filtro de estado
     if (statusFilter === 'pending' && o.status !== 'pending') return false;
     if (statusFilter === 'delivered' && o.status !== 'delivered') return false;
+    if (statusFilter === 'cancelled' && o.status !== 'cancelled') return false;
 
     // 2. Filtro instantáneo local por texto si el usuario escribe
     if (searchQuery.trim()) {
@@ -310,13 +311,14 @@ export function OrderDispatchBoard() {
       <div className="w-full">
         <div
           role="tablist"
-          className="w-full grid grid-cols-3 p-1.5 bg-slate-200/80 border border-white/90 backdrop-blur-2xl rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.06)]"
+          className="w-full grid grid-cols-4 p-1.5 bg-slate-200/80 border border-white/90 backdrop-blur-2xl rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.06)]"
         >
           {(
             [
               { id: 'all', label: 'Todos' },
               { id: 'pending', label: 'Por Despachar' },
               { id: 'delivered', label: 'Entregados' },
+              { id: 'cancelled', label: 'Cancelados' },
             ] as const
           ).map((tab) => {
             const isActive = statusFilter === tab.id;
@@ -368,6 +370,7 @@ export function OrderDispatchBoard() {
           filteredOrders.map((order) => {
             const isDelivered = order.status === 'delivered';
             const isPending = order.status === 'pending';
+            const isCancelled = order.status === 'cancelled';
             const hasGps = Boolean(order.latitude && order.longitude);
 
             return (
@@ -383,7 +386,11 @@ export function OrderDispatchBoard() {
                   </span>
 
                   <div className="shrink-0">
-                    {isDelivered ? (
+                    {isCancelled ? (
+                      <span className="inline-flex items-center text-xs font-semibold text-rose-800 bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-200/70 shadow-2xs">
+                        Cancelado
+                      </span>
+                    ) : isDelivered ? (
                       <span className="inline-flex items-center text-xs font-semibold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200/70 shadow-2xs">
                         <AppleCheckmarkSealIcon size={14} className="mr-1 text-emerald-600 shrink-0" />
                         Entregado

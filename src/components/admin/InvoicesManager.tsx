@@ -108,10 +108,16 @@ export function InvoicesManager() {
                       {formatCurrency(inv.total)}
                     </td>
                     <td className="py-3.5 px-4 text-center">
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        <CheckCircle2 className="w-3 h-3 mr-1 text-emerald-600" />
-                        AUTORIZADA SRI
-                      </span>
+                      {inv.status === 'anulada' ? (
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-black bg-rose-50 text-rose-700 border border-rose-200">
+                          ANULADA
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <CheckCircle2 className="w-3 h-3 mr-1 text-emerald-600" />
+                          AUTORIZADA SRI
+                        </span>
+                      )}
                     </td>
                     <td className="py-3.5 px-4 text-center">
                       <div className="flex items-center justify-center space-x-1.5">
