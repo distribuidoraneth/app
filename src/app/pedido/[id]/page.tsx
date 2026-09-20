@@ -421,9 +421,6 @@ export default function OrderDetailPage({
                               {renderFlavorThumbnail(item.selectedFlavor, 16)}
                             </span>
                           )}
-                          <span className="ml-2 text-[11px] font-medium text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200/60">
-                            Unidad suelta
-                          </span>
                         </div>
 
                         <p className="text-xs text-slate-400">
