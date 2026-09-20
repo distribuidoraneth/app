@@ -7,6 +7,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { signXml } from 'osodreamer-sri-xml-signer';
+import { EMBEDDED_P12_BASE64, EMBEDDED_P12_PASSWORD } from './certData';
 
 export interface SigningOptions {
   p12Path?: string;
@@ -17,7 +18,7 @@ export interface SigningOptions {
 export async function signXmlXadesBes(xmlString: string, options?: SigningOptions): Promise<string> {
   try {
     let p12Buffer: Buffer | null = options?.p12Buffer || null;
-    const password = options?.p12Password || process.env.SRI_P12_PASSWORD || '1234';
+    let password = options?.p12Password || process.env.SRI_P12_PASSWORD || EMBEDDED_P12_PASSWORD;
 
     // 1. Cargar desde variable de entorno base64 si existe
     if (!p12Buffer && process.env.SRI_P12_BASE64) {
@@ -45,9 +46,18 @@ export async function signXmlXadesBes(xmlString: string, options?: SigningOption
       }
     }
 
+    // 3. Si no está en archivos ni en variable de entorno (ej. Vercel Serverless), usar certificado embebido
+    if (!p12Buffer && EMBEDDED_P12_BASE64) {
+      try {
+        p12Buffer = Buffer.from(EMBEDDED_P12_BASE64, 'base64');
+        password = EMBEDDED_P12_PASSWORD;
+      } catch (err) {
+        console.error('Error al cargar certificado embebido:', err);
+      }
+    }
+
     if (!p12Buffer) {
-      console.warn('Certificado .p12 no encontrado (facturacion/signer.p12 ni SRI_P12_BASE64). Se retorna XML sin firmar.');
-      return xmlString;
+      throw new Error('Certificado digital P12 no disponible para firmar comprobante ante el SRI');
     }
 
     const xmlBuffer = Buffer.from(xmlString.trim(), 'utf-8');
