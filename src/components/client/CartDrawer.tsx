@@ -445,7 +445,7 @@ export function CartDrawer({
                 ) : (
                   <div className="flex justify-between pt-2 border-t border-slate-100 text-emerald-700 font-bold">
                     <span>Estado de Pago:</span>
-                    <span>Totalmente Cancelado</span>
+                    <span>Cancelado</span>
                   </div>
                 )}
               </div>
