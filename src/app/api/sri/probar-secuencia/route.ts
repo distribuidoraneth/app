@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
       ivaRate: 15,
     });
 
-    const signedXml = signXmlXadesBes(rawXml);
+    const signedXml = await signXmlXadesBes(rawXml);
     const recepcion = await enviarRecepcionSRI(signedXml, ambiente as '1' | '2');
     let autorizacion = null;
 

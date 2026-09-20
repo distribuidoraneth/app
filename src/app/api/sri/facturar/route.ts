@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
     });
 
     // 3. Firmar Digitalmente con XAdES-BES (.p12 / .pem)
-    const xml = signXmlXadesBes(rawXml);
+    const xml = await signXmlXadesBes(rawXml);
 
     // 4. Enviar a Recepción del SRI (SOAP)
     let sriRecepcion = await enviarRecepcionSRI(xml, ambiente);
