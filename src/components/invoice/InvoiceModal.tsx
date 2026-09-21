@@ -140,38 +140,41 @@ export function InvoiceModal({ invoice, isOpen, onClose }: InvoiceModalProps) {
             </div>
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1.5 sm:space-x-2">
             <button
               type="button"
               onClick={handleDownloadXml}
-              className="flex items-center space-x-1 px-3 py-1.5 bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 rounded-xl text-xs font-bold transition-all"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200/80 active:scale-[0.97] text-slate-700 rounded-xl text-xs font-medium border border-slate-200/60 transition-all cursor-pointer"
               title="Descargar XML firmado SRI"
             >
-              <Code className="w-3.5 h-3.5 text-blue-600" />
-              <span className="hidden sm:inline">Descargar XML</span>
+              <Code className="w-3.5 h-3.5 text-slate-500" />
+              <span>XML</span>
             </button>
             <button
               type="button"
               onClick={handleShareWhatsApp}
-              className="flex items-center space-x-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 text-emerald-800 rounded-xl text-xs font-bold transition-all"
+              className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/15 active:scale-[0.97] border border-emerald-500/20 text-emerald-800 rounded-xl text-xs font-medium transition-all cursor-pointer"
+              title="Compartir por WhatsApp"
             >
-              <AppleWhatsAppIcon size={16} alt="WhatsApp" />
+              <AppleWhatsAppIcon size={15} alt="WhatsApp" />
               <span className="hidden sm:inline">WhatsApp</span>
             </button>
             <button
               type="button"
               onClick={handlePrint}
-              className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl text-xs font-bold transition-all"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#0071e3] hover:bg-[#0077ed] active:scale-[0.97] text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
+              title="Descargar PDF o Imprimir"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span>Imprimir / PDF</span>
+              <span>PDF</span>
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors"
+              className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 active:scale-95 rounded-xl transition-all ml-1 cursor-pointer"
+              title="Cerrar"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
           </div>
         </div>

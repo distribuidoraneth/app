@@ -11,11 +11,8 @@ import { generarClaveAcceso } from '@/lib/sri/claveAcceso';
 import { buildFacturaXml, DEFAULT_TAX_PROFILE } from '@/lib/sri/xmlBuilder';
 import {
   Printer,
-  Download,
   Code,
   ArrowLeft,
-  Copy,
-  Check,
   CheckCircle2,
   FileText,
   ShieldCheck,
@@ -24,6 +21,7 @@ import {
   AlertCircle,
   Clock,
   Info,
+  X,
 } from 'lucide-react';
 
 export default function PublicInvoicePage({
@@ -51,7 +49,6 @@ export default function PublicInvoicePage({
     });
   }, [invoice]);
 
-  const [copied, setCopied] = useState<boolean>(false);
   const [sriStatus, setSriStatus] = useState<string | null>(invoice?.sriStatus || null);
   const [sriAuthNum, setSriAuthNum] = useState<string | null>(invoice?.sriAuthorizationNumber || null);
   const [sriAuthDate, setSriAuthDate] = useState<string | null>(invoice?.sriAuthorizationDate || null);
@@ -196,14 +193,6 @@ export default function PublicInvoicePage({
     window.print();
   };
 
-  const handleCopyLink = () => {
-    if (typeof window !== 'undefined') {
-      navigator.clipboard.writeText(window.location.href);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
-    }
-  };
-
   const handleShareWhatsApp = () => {
     if (!invoice) return;
     const link = generateWhatsAppOrderLink({
@@ -295,90 +284,107 @@ export default function PublicInvoicePage({
 
   return (
     <div className="min-h-screen bg-[#f8fafc] py-6 sm:py-10 px-4 flex flex-col items-center print:bg-white print:p-0">
-      {/* Top action bar (hidden in print) */}
-      <div className="print:hidden w-full max-w-3xl bg-white p-4 rounded-2xl border border-slate-200 shadow-xs mb-6 flex flex-wrap items-center justify-between gap-3">
+      {/* Top action bar (hidden in print) - Apple Design glassmorphic toolbar */}
+      <div className="print:hidden w-full max-w-3xl bg-white/80 backdrop-blur-xl border border-slate-200/80 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.06)] rounded-2xl p-2 sm:px-3 sm:py-2 mb-5 flex items-center justify-between gap-2 transition-all">
+        {/* Volver */}
         <Link
           href="/"
-          className="text-xs text-slate-600 hover:text-slate-900 font-bold flex items-center space-x-1.5 px-3 py-2 rounded-xl hover:bg-slate-100 transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 rounded-xl hover:bg-slate-100/80 active:scale-[0.97] transition-all"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
-          <span>Volver al Portal</span>
+          <span>Volver</span>
         </Link>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={handleCopyLink}
-            className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition-colors border border-slate-200"
-          >
-            {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-slate-600" />}
-            <span>{copied ? '¡Enlace Copiado!' : 'Copiar Enlace'}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={handleDownloadXml}
-            className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-800 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition-colors border border-slate-300 shadow-xs"
-          >
-            <Code className="w-3.5 h-3.5 text-blue-600" />
-            <span>Descargar XML</span>
-          </button>
-
+        {/* Action Controls */}
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* Consultar SRI (Compact, subtle) */}
           <button
             type="button"
             onClick={handleConsultarSri}
             disabled={isCheckingSri}
-            className="px-3.5 py-2 bg-amber-50 hover:bg-amber-100 disabled:opacity-50 border border-amber-200 text-amber-900 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition-all shadow-xs cursor-pointer"
+            title="Consultar estado SRI en vivo"
+            className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200/80 active:scale-[0.97] text-slate-600 hover:text-slate-900 rounded-xl text-xs font-medium transition-all disabled:opacity-50 cursor-pointer"
           >
-            <RefreshCw className={`w-3.5 h-3.5 text-amber-600 ${isCheckingSri ? 'animate-spin' : ''}`} />
-            <span>{isCheckingSri ? 'Consultando...' : 'Consultar SRI en Vivo'}</span>
+            <RefreshCw className={`w-3.5 h-3.5 ${isCheckingSri ? 'animate-spin text-blue-600' : 'text-slate-500'}`} />
+            <span className="hidden sm:inline">{isCheckingSri ? 'Consultando...' : 'Consultar'}</span>
           </button>
 
+          {/* Reintentar en caso de devolución */}
           {(sriStatus === 'DEVUELTA' || sriStatus === 'NO AUTORIZADO') && (
             <button
               type="button"
               onClick={handleReintentarSri}
               disabled={isRetryingSri}
-              className="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 transition-all shadow-xs cursor-pointer"
+              title="Reintentar emisión SRI"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 active:scale-[0.97] text-white rounded-xl text-xs font-semibold shadow-xs transition-all disabled:opacity-50 cursor-pointer"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isRetryingSri ? 'animate-spin' : ''}`} />
-              <span>{isRetryingSri ? 'Reemitiendo...' : 'Reintentar Emisión SRI'}</span>
+              <span>{isRetryingSri ? 'Reemitiendo...' : 'Reintentar'}</span>
             </button>
           )}
 
+          {/* WhatsApp */}
           <button
             type="button"
             onClick={handleShareWhatsApp}
-            className="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 text-emerald-800 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition-all shadow-xs"
+            title="Compartir por WhatsApp"
+            className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/15 active:scale-[0.97] border border-emerald-500/20 text-emerald-800 rounded-xl text-xs font-medium transition-all cursor-pointer"
           >
-            <AppleWhatsAppIcon size={16} alt="WhatsApp" />
-            <span>WhatsApp</span>
+            <AppleWhatsAppIcon size={15} alt="WhatsApp" />
+            <span className="hidden sm:inline">WhatsApp</span>
           </button>
 
+          {/* XML */}
+          <button
+            type="button"
+            onClick={handleDownloadXml}
+            title="Descargar archivo XML oficial"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200/80 active:scale-[0.97] text-slate-700 rounded-xl text-xs font-medium border border-slate-200/60 transition-all cursor-pointer"
+          >
+            <Code className="w-3.5 h-3.5 text-slate-500" />
+            <span>XML</span>
+          </button>
+
+          {/* PDF */}
           <button
             type="button"
             onClick={handlePrint}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl text-xs font-extrabold flex items-center space-x-1.5 transition-all shadow-xs"
+            title="Imprimir o guardar como PDF"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#0071e3] hover:bg-[#0077ed] active:scale-[0.97] text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
           >
             <Printer className="w-3.5 h-3.5" />
-            <span>Descargar PDF / Imprimir</span>
+            <span>PDF</span>
           </button>
         </div>
       </div>
 
       {/* Alerta de resultado SRI en vivo */}
       {sriFeedback && (
-        <div className="print:hidden w-full max-w-3xl mb-4 p-3 bg-blue-50 border border-blue-200 text-blue-900 rounded-2xl text-xs flex items-center justify-between shadow-xs">
+        <div
+          className={`print:hidden w-full max-w-3xl mb-4 p-3 rounded-2xl text-xs flex items-center justify-between shadow-xs transition-all ${
+            sriFeedback.includes('AUTORIZAD')
+              ? 'bg-emerald-50/90 border border-emerald-200/80 text-emerald-900'
+              : sriFeedback.includes('DEVUELTA') || sriFeedback.includes('Error')
+              ? 'bg-rose-50/90 border border-rose-200/80 text-rose-900'
+              : 'bg-blue-50/90 border border-blue-200/80 text-blue-900'
+          }`}
+        >
           <div className="flex items-center space-x-2">
-            <Info className="w-4 h-4 text-blue-600 shrink-0" />
-            <span className="font-semibold">{sriFeedback}</span>
+            {sriFeedback.includes('AUTORIZAD') ? (
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            ) : sriFeedback.includes('DEVUELTA') || sriFeedback.includes('Error') ? (
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+            ) : (
+              <Info className="w-4 h-4 text-blue-600 shrink-0" />
+            )}
+            <span className="font-medium">{sriFeedback}</span>
           </div>
           <button
             type="button"
             onClick={() => setSriFeedback(null)}
-            className="text-blue-500 hover:text-blue-700 font-black text-sm ml-2 cursor-pointer"
+            className="w-5 h-5 rounded-full flex items-center justify-center hover:bg-black/5 text-slate-400 hover:text-slate-700 transition-colors ml-2 cursor-pointer"
           >
-            ×
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
       )}
