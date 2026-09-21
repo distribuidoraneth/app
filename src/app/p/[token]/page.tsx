@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState, use } from 'react';
+import Link from 'next/link';
 import { useDistribution } from '@/context/DistributionContext';
 import { BeverageOrderPasarela } from '@/components/order/BeverageOrderPasarela';
 import { CartDrawer } from '@/components/client/CartDrawer';
-import { InvoiceModal } from '@/components/invoice/InvoiceModal';
 import { formatCurrency, formatDate, cleanAddress } from '@/lib/utils/formatters';
 import { Invoice } from '@/types';
 import { AnethFullLogo } from '@/components/ui/AnethLogo';
@@ -50,7 +50,6 @@ export default function ClientExperiencePage({
 
   const [activeTab, setActiveTab] = useState<'order' | 'history'>('order');
   const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
-  const [activeInvoice, setActiveInvoice] = useState<Invoice | null>(null);
 
   const clientOrders = orders.filter((o) => o.clientId === client?.id || o.whatsappNumber === client?.whatsappNumber);
   const clientInvoices = invoices.filter((i) => i.clientId === client?.id);
@@ -277,14 +276,13 @@ export default function ClientExperiencePage({
 
                       <div className="flex items-center space-x-2">
                         {orderInvoice ? (
-                          <button
-                            type="button"
-                            onClick={() => setActiveInvoice(orderInvoice)}
+                          <Link
+                            href={`/factura/${orderInvoice.invoiceNumber}`}
                             className="px-3.5 py-2 bg-blue-50 hover:bg-blue-100 active:scale-95 text-blue-800 border border-blue-200 rounded-xl text-xs sm:text-sm font-black flex items-center space-x-1.5 transition-all shadow-2xs cursor-pointer"
                           >
                             <FileText className="w-3.5 h-3.5 text-blue-600" />
                             <span>Factura #{orderInvoice.invoiceNumber}</span>
-                          </button>
+                          </Link>
                         ) : order.status === 'delivered' ? (
                           <span className="text-xs text-slate-400 font-medium">
                             Factura en proceso
@@ -345,13 +343,6 @@ export default function ClientExperiencePage({
         isOpen={isCartOpen}
         onClose={() => setIsCartOpen(false)}
         clientId={client?.id}
-      />
-
-      {/* Invoice Modal */}
-      <InvoiceModal
-        invoice={activeInvoice}
-        isOpen={!!activeInvoice}
-        onClose={() => setActiveInvoice(null)}
       />
     </div>
   );

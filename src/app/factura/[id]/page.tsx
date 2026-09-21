@@ -13,6 +13,7 @@ import {
   generateWhatsAppOrderLink,
 } from '@/lib/utils/formatters';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { AnethFullLogo } from '@/components/ui/AnethLogo';
 import { AppleWhatsAppIcon } from '@/components/ui/AppleIcons';
 import { SriBarcodeSVG } from '@/components/ui/SriBarcodeSVG';
@@ -36,6 +37,7 @@ export default function PublicInvoicePage({
   params: Promise<{ id: string }>;
 }) {
   const resolvedParams = use(params);
+  const router = useRouter();
   const { invoices } = useDistribution();
 
   const invoice =
@@ -227,6 +229,14 @@ export default function PublicInvoicePage({
     }
   };
 
+  const handleVolver = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      router.back();
+    } else {
+      router.push('/admin');
+    }
+  };
+
   const handlePrint = () => {
     window.print();
   };
@@ -321,32 +331,21 @@ export default function PublicInvoicePage({
   }
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] py-6 sm:py-10 px-4 flex flex-col items-center print:bg-white print:p-0">
+    <div className="min-h-screen bg-[#f8fafc] py-3 sm:py-8 px-2 sm:px-4 flex flex-col items-center print:bg-white print:p-0">
       {/* Top action bar (hidden in print) - Apple Design glassmorphic toolbar */}
-      <div className="print:hidden w-full max-w-3xl bg-white/80 backdrop-blur-xl border border-slate-200/80 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.06)] rounded-2xl p-2 sm:px-3 sm:py-2 mb-5 flex items-center justify-between gap-2 transition-all">
+      <div className="print:hidden w-full max-w-3xl bg-white/85 backdrop-blur-xl border border-slate-200/80 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] rounded-2xl px-2.5 py-2 sm:px-3 sm:py-2 mb-3 sm:mb-4 flex items-center justify-between gap-1.5 transition-all">
         {/* Volver */}
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 rounded-xl hover:bg-slate-100/80 active:scale-[0.97] transition-all"
+        <button
+          type="button"
+          onClick={handleVolver}
+          className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900 rounded-xl hover:bg-slate-100/80 active:scale-[0.97] transition-all cursor-pointer shrink-0"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>Volver</span>
-        </Link>
+        </button>
 
         {/* Action Controls */}
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          {/* Consultar SRI (Compact, subtle) */}
-          <button
-            type="button"
-            onClick={handleConsultarSri}
-            disabled={isCheckingSri}
-            title="Consultar estado SRI en vivo"
-            className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200/80 active:scale-[0.97] text-slate-600 hover:text-slate-900 rounded-xl text-xs font-medium transition-all disabled:opacity-50 cursor-pointer"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isCheckingSri ? 'animate-spin text-blue-600' : 'text-slate-500'}`} />
-            <span className="hidden sm:inline">{isCheckingSri ? 'Consultando...' : 'Consultar'}</span>
-          </button>
-
+        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
           {/* Reintentar en caso de devolución */}
           {(sriStatus === 'DEVUELTA' || sriStatus === 'NO AUTORIZADO') && (
             <button
@@ -354,19 +353,31 @@ export default function PublicInvoicePage({
               onClick={handleReintentarSri}
               disabled={isRetryingSri}
               title="Reintentar emisión SRI"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 active:scale-[0.97] text-white rounded-xl text-xs font-semibold shadow-xs transition-all disabled:opacity-50 cursor-pointer"
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-rose-600 hover:bg-rose-700 active:scale-[0.97] text-white rounded-xl text-xs font-semibold shadow-xs transition-all disabled:opacity-50 cursor-pointer"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isRetryingSri ? 'animate-spin' : ''}`} />
-              <span>{isRetryingSri ? 'Reemitiendo...' : 'Reintentar'}</span>
+              <span className="hidden xs:inline">{isRetryingSri ? 'Reemitiendo...' : 'Reintentar'}</span>
             </button>
           )}
+
+          {/* Consultar SRI (Compact, subtle) */}
+          <button
+            type="button"
+            onClick={handleConsultarSri}
+            disabled={isCheckingSri}
+            title="Consultar estado SRI en vivo"
+            className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200/80 active:scale-[0.97] text-slate-700 hover:text-slate-900 rounded-xl text-xs font-medium transition-all disabled:opacity-50 cursor-pointer"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isCheckingSri ? 'animate-spin text-blue-600' : 'text-slate-500'}`} />
+            <span className="hidden sm:inline">{isCheckingSri ? 'Consultando...' : 'Consultar'}</span>
+          </button>
 
           {/* WhatsApp */}
           <button
             type="button"
             onClick={handleShareWhatsApp}
             title="Compartir por WhatsApp"
-            className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/15 active:scale-[0.97] border border-emerald-500/20 text-emerald-800 rounded-xl text-xs font-medium transition-all cursor-pointer"
+            className="inline-flex items-center gap-1 px-2 sm:px-2.5 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/15 active:scale-[0.97] border border-emerald-500/20 text-emerald-800 rounded-xl text-xs font-medium transition-all cursor-pointer"
           >
             <AppleWhatsAppIcon size={15} alt="WhatsApp" />
             <span className="hidden sm:inline">WhatsApp</span>
@@ -377,7 +388,7 @@ export default function PublicInvoicePage({
             type="button"
             onClick={handleDownloadXml}
             title="Descargar archivo XML oficial"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200/80 active:scale-[0.97] text-slate-700 rounded-xl text-xs font-medium border border-slate-200/60 transition-all cursor-pointer"
+            className="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 bg-slate-100 hover:bg-slate-200/80 active:scale-[0.97] text-slate-700 rounded-xl text-xs font-semibold border border-slate-200/60 transition-all cursor-pointer"
           >
             <Code className="w-3.5 h-3.5 text-slate-500" />
             <span>XML</span>
@@ -388,7 +399,7 @@ export default function PublicInvoicePage({
             type="button"
             onClick={handlePrint}
             title="Imprimir o guardar como PDF"
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#0071e3] hover:bg-[#0077ed] active:scale-[0.97] text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
+            className="inline-flex items-center gap-1 px-3 sm:px-3.5 py-1.5 bg-[#0071e3] hover:bg-[#0077ed] active:scale-[0.97] text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
           >
             <Printer className="w-3.5 h-3.5" />
             <span>PDF</span>
@@ -430,21 +441,21 @@ export default function PublicInvoicePage({
       {/* Official SRI Printable RIDE */}
       <div
         id="invoice-printable-area"
-        className="w-full max-w-3xl bg-white rounded-3xl shadow-xl border border-slate-200 p-6 sm:p-8 space-y-4 text-slate-800 print:shadow-none print:border-none print:p-0 print:m-0 print:rounded-none"
+        className="w-full max-w-3xl bg-white rounded-2xl sm:rounded-3xl shadow-xl border border-slate-200 p-3.5 sm:p-8 space-y-3.5 sm:space-y-4 text-slate-800 print:shadow-none print:border-none print:p-0 print:m-0 print:rounded-none"
       >
         {/* Top Header Section: Left (Emisor Box) & Right (SRI Factura Box) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-stretch">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 items-stretch">
           {/* Columna Izquierda: Logo + Cuadro Emisor */}
-          <div className="flex flex-col justify-between space-y-3">
+          <div className="flex flex-col justify-between space-y-2.5 sm:space-y-3">
             {/* Logo */}
             <div className="py-1 px-0.5">
               <AnethFullLogo size="md" showSubtitle={true} subtitleText="DISTRIBUIDORA" />
             </div>
 
             {/* Cuadro Oficial Emisor */}
-            <div className="border border-slate-300 rounded-2xl p-4 space-y-2 text-xs text-slate-800 bg-white flex-1 flex flex-col justify-center">
+            <div className="border border-slate-300 rounded-2xl p-3.5 sm:p-4 space-y-1.5 sm:space-y-2 text-xs text-slate-800 bg-white flex-1 flex flex-col justify-center">
               <div>
-                <h2 className="font-extrabold text-slate-900 text-sm tracking-tight uppercase">
+                <h2 className="font-extrabold text-slate-900 text-xs sm:text-sm tracking-tight uppercase">
                   {DEFAULT_TAX_PROFILE.razonSocial}
                 </h2>
                 <p className="font-semibold text-slate-900 mt-0.5">
@@ -479,13 +490,13 @@ export default function PublicInvoicePage({
           </div>
 
           {/* Columna Derecha: Cuadro Oficial SRI */}
-          <div className="border border-slate-300 rounded-2xl p-4 text-xs text-slate-800 bg-white flex flex-col justify-between space-y-3">
+          <div className="border border-slate-300 rounded-2xl p-3.5 sm:p-4 text-xs text-slate-800 bg-white flex flex-col justify-between space-y-2.5 sm:space-y-3">
             <div className="space-y-1.5">
-              <p className="text-sm font-bold text-slate-900">
+              <p className="text-xs sm:text-sm font-bold text-slate-900">
                 <span className="text-slate-600 font-normal">R.U.C.: </span>
                 {DEFAULT_TAX_PROFILE.ruc}
               </p>
-              <h1 className="text-base font-black text-slate-900 tracking-tight">
+              <h1 className="text-sm sm:text-base font-black text-slate-900 tracking-tight">
                 FACTURA
               </h1>
               <p className="font-mono font-bold text-xs text-slate-900 whitespace-nowrap">
@@ -496,7 +507,7 @@ export default function PublicInvoicePage({
                 <span className="text-[10px] text-slate-500 font-extrabold uppercase tracking-wider block">
                   NÚMERO DE AUTORIZACIÓN
                 </span>
-                <span className="font-mono text-[11px] text-slate-900 font-bold block break-all leading-tight">
+                <span className="font-mono text-[10.5px] sm:text-[11px] text-slate-900 font-bold block break-all leading-tight">
                   {sriAuthNum || claveAcceso}
                 </span>
               </div>
@@ -524,10 +535,10 @@ export default function PublicInvoicePage({
               <span className="text-[10px] text-slate-500 font-extrabold uppercase tracking-wider block mb-1">
                 CLAVE DE ACCESO
               </span>
-              <div className="w-full bg-white py-0.5">
-                <SriBarcodeSVG value={claveAcceso} className="w-full h-11" />
+              <div className="w-full bg-white py-0.5 overflow-hidden">
+                <SriBarcodeSVG value={claveAcceso} className="w-full h-10 sm:h-11" />
               </div>
-              <span className="font-mono text-[10px] text-slate-900 font-medium block text-center tracking-tight select-all mt-0.5">
+              <span className="font-mono text-[9.5px] sm:text-[10px] text-slate-900 font-medium block text-center tracking-tight select-all mt-0.5 break-all">
                 {claveAcceso}
               </span>
             </div>
@@ -535,8 +546,8 @@ export default function PublicInvoicePage({
         </div>
 
         {/* Cuadro Comprador / Cliente (Oficial SRI) */}
-        <div className="border border-slate-300 rounded-2xl p-4 text-xs text-slate-800 bg-white">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
+        <div className="border border-slate-300 rounded-2xl p-3.5 sm:p-4 text-xs text-slate-800 bg-white">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 sm:gap-y-2">
             <div className="sm:col-span-2">
               <span className="font-bold text-slate-900">Razón Social / Nombres y Apellidos:</span>{' '}
               <span className="font-medium text-slate-900">{invoice.clientName}</span>
@@ -557,37 +568,37 @@ export default function PublicInvoicePage({
         </div>
 
         {/* Tabla de Productos / Ítems (Oficial SRI con acento azul de marca) */}
-        <div className="border border-slate-300 rounded-2xl overflow-hidden bg-white">
-          <table className="w-full text-xs text-left border-collapse">
+        <div className="border border-slate-300 rounded-2xl overflow-x-auto bg-white print:overflow-visible scrollbar-thin">
+          <table className="w-full min-w-[500px] sm:min-w-0 text-xs text-left border-collapse">
             <thead>
-              <tr className="bg-blue-50/70 border-b border-blue-200/80 text-blue-950 text-[10.5px] font-bold tracking-tight">
-                <th className="py-2.5 px-3 border-r border-blue-200/60 w-28">Cod. Principal</th>
-                <th className="py-2.5 px-2.5 border-r border-blue-200/60 text-right w-16">Cantidad</th>
-                <th className="py-2.5 px-3 border-r border-blue-200/60">Descripción</th>
-                <th className="py-2.5 px-2.5 border-r border-blue-200/60 text-right w-24">Precio Unitario</th>
-                <th className="py-2.5 px-2 border-r border-blue-200/60 text-right w-16">Descuento</th>
-                <th className="py-2.5 px-3 text-right w-24">Precio Total</th>
+              <tr className="bg-blue-50/70 border-b border-blue-200/80 text-blue-950 text-[10px] sm:text-[10.5px] font-bold tracking-tight">
+                <th className="py-2 sm:py-2.5 px-2.5 sm:px-3 border-r border-blue-200/60 w-24 sm:w-28">Cod. Principal</th>
+                <th className="py-2 sm:py-2.5 px-2 border-r border-blue-200/60 text-right w-14 sm:w-16">Cantidad</th>
+                <th className="py-2 sm:py-2.5 px-2.5 sm:px-3 border-r border-blue-200/60">Descripción</th>
+                <th className="py-2 sm:py-2.5 px-2 border-r border-blue-200/60 text-right w-20 sm:w-24">Precio Unitario</th>
+                <th className="py-2 sm:py-2.5 px-2 border-r border-blue-200/60 text-right w-14 sm:w-16">Descuento</th>
+                <th className="py-2 sm:py-2.5 px-2.5 sm:px-3 text-right w-20 sm:w-24">Precio Total</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 text-slate-800">
               {facturaLines.map((line, idx) => (
                 <tr key={idx} className="hover:bg-slate-50/50">
-                  <td className="py-2 px-3 border-r border-slate-200 font-mono text-[11px] font-semibold text-slate-800">
+                  <td className="py-1.5 sm:py-2 px-2.5 sm:px-3 border-r border-slate-200 font-mono text-[10.5px] sm:text-[11px] font-semibold text-slate-800">
                     {line.codigoPrincipal}
                   </td>
-                  <td className="py-2 px-2.5 border-r border-slate-200 text-right font-mono text-[11px]">
+                  <td className="py-1.5 sm:py-2 px-2 border-r border-slate-200 text-right font-mono text-[10.5px] sm:text-[11px]">
                     {line.cantidad.toFixed(2)}
                   </td>
-                  <td className="py-2 px-3 border-r border-slate-200 text-slate-900">
+                  <td className="py-1.5 sm:py-2 px-2.5 sm:px-3 border-r border-slate-200 text-slate-900">
                     <span className="font-medium text-slate-900 block">{line.descripcion}</span>
                   </td>
-                  <td className="py-2 px-2.5 border-r border-slate-200 text-right font-mono text-[11px]">
+                  <td className="py-1.5 sm:py-2 px-2 border-r border-slate-200 text-right font-mono text-[10.5px] sm:text-[11px]">
                     {line.precioUnitarioSinIva.toFixed(4)}
                   </td>
-                  <td className="py-2 px-2 border-r border-slate-200 text-right font-mono text-[11px] text-slate-500">
+                  <td className="py-1.5 sm:py-2 px-2 border-r border-slate-200 text-right font-mono text-[10.5px] sm:text-[11px] text-slate-500">
                     0.00
                   </td>
-                  <td className="py-2 px-3 text-right font-mono font-semibold text-slate-900 text-[11px]">
+                  <td className="py-1.5 sm:py-2 px-2.5 sm:px-3 text-right font-mono font-semibold text-slate-900 text-[10.5px] sm:text-[11px]">
                     {line.precioTotalSinImpuesto.toFixed(2)}
                   </td>
                 </tr>
@@ -597,11 +608,11 @@ export default function PublicInvoicePage({
         </div>
 
         {/* Sección Inferior: Información Adicional + Formas de Pago (Izquierda) / Totales SRI (Derecha) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start pt-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 items-start pt-1">
           {/* Columna Izquierda */}
-          <div className="space-y-3">
+          <div className="space-y-2.5 sm:space-y-3">
             {/* Información Adicional */}
-            <div className="border border-slate-300 rounded-2xl p-3.5 text-xs space-y-1.5 bg-white">
+            <div className="border border-slate-300 rounded-2xl p-3 sm:p-3.5 text-xs space-y-1 sm:space-y-1.5 bg-white">
               <h4 className="font-bold text-blue-950 text-[11px] uppercase tracking-wide border-b border-blue-100 pb-1">
                 Información Adicional
               </h4>
@@ -615,7 +626,7 @@ export default function PublicInvoicePage({
                 {invoice.clientAddress && (
                   <p><strong className="text-slate-900">Dirección:</strong> {invoice.clientAddress}</p>
                 )}
-                <p><strong className="text-slate-900">Distribuidor:</strong> Distribuidora Aneth Oficial</p>
+                <p><strong className="text-slate-900">Distribuidor:</strong> Distribuidora Aneth</p>
               </div>
             </div>
 

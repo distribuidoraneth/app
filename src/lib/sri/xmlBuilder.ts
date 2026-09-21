@@ -185,7 +185,7 @@ export function buildFacturaXml(params: {
   }
 
   xml += `
-    <campoAdicional nombre="Distribuidor">Distribuidora Aneth Oficial</campoAdicional>
+    <campoAdicional nombre="Distribuidor">Distribuidora Aneth</campoAdicional>
   </infoAdicional>
 </factura>`;
 
@@ -311,7 +311,7 @@ export function buildNotaCreditoXml(params: {
   </detalles>
   <infoAdicional>
     <campoAdicional nombre="FacturaAfectada">${escapeXml(facturaModificada.numero)}</campoAdicional>
-    <campoAdicional nombre="Distribuidor">Distribuidora Aneth Oficial</campoAdicional>
+    <campoAdicional nombre="Distribuidor">Distribuidora Aneth</campoAdicional>
   </infoAdicional>
 </notaCredito>`;
 

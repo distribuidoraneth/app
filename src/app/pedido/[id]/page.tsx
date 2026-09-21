@@ -13,7 +13,6 @@ import {
   getGoogleMapsNavigationUrl,
   cleanAddress,
 } from '@/lib/utils/formatters';
-import { InvoiceModal } from '@/components/invoice/InvoiceModal';
 import { ThermalReceiptModal } from '@/components/receipt/ThermalReceiptModal';
 import { Order } from '@/types';
 import {
@@ -49,7 +48,6 @@ export default function OrderDetailPage({
     ensureOrderLoaded,
   } = useDistribution();
 
-  const [selectedInvoice, setSelectedInvoice] = useState<any | null>(null);
   const [isThermalModalOpen, setIsThermalModalOpen] = useState(false);
 
   const rawId = useMemo(() => decodeURIComponent(resolvedParams.id), [resolvedParams.id]);
@@ -193,7 +191,7 @@ export default function OrderDetailPage({
   const handleGenerateInvoice = () => {
     const inv = generateInvoice(order.id);
     if (inv) {
-      setSelectedInvoice(inv);
+      router.push(`/factura/${inv.invoiceNumber}`);
     }
   };
 
@@ -559,8 +557,8 @@ export default function OrderDetailPage({
                 {invoice ? (
                   <button
                     type="button"
-                    onClick={() => setSelectedInvoice(invoice)}
-                    className="col-span-2 py-3 px-3 bg-blue-50 hover:bg-blue-100 text-blue-800 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center space-x-2 border border-blue-200/60 transition-colors cursor-pointer"
+                    onClick={() => router.push(`/factura/${invoice.invoiceNumber}`)}
+                    className="col-span-2 py-3 px-3 bg-blue-50 hover:bg-blue-100 active:scale-[0.98] text-blue-800 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center space-x-2 border border-blue-200/60 transition-all cursor-pointer shadow-2xs"
                   >
                     <AppleReceiptIcon size={18} className="text-blue-700" />
                     <span>Factura #{invoice.invoiceNumber}</span>
@@ -569,10 +567,10 @@ export default function OrderDetailPage({
                   <button
                     type="button"
                     onClick={handleGenerateInvoice}
-                    className="col-span-2 py-3 px-3 bg-blue-600 hover:bg-blue-700 active:scale-98 text-white rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center space-x-2 shadow-xs transition-all cursor-pointer"
+                    className="col-span-2 py-3 px-3 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center space-x-2 shadow-xs transition-all cursor-pointer"
                   >
                     <AppleReceiptIcon size={18} className="text-white" />
-                    <span>Factura</span>
+                    <span>Generar Factura</span>
                   </button>
                 )}
 
@@ -580,7 +578,7 @@ export default function OrderDetailPage({
                 <button
                   type="button"
                   onClick={handleCancelOrder}
-                  className="col-span-2 py-2.5 text-rose-600 hover:text-rose-700 hover:bg-rose-50/70 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center space-x-1.5 transition-colors cursor-pointer border border-transparent hover:border-rose-200/60 mt-1"
+                  className="col-span-2 py-2.5 text-rose-600 hover:text-rose-700 hover:bg-rose-50/70 active:scale-[0.98] rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center space-x-1.5 transition-all cursor-pointer border border-transparent hover:border-rose-200/60 mt-1"
                 >
                   <span>Cancelar Pedido</span>
                 </button>
@@ -590,13 +588,7 @@ export default function OrderDetailPage({
         </div>
       </main>
 
-      {/* Modales necesarios para Factura y Recibo Térmico */}
-      <InvoiceModal
-        invoice={selectedInvoice}
-        isOpen={!!selectedInvoice}
-        onClose={() => setSelectedInvoice(null)}
-      />
-
+      {/* Recibo Térmico (Munbyn 58mm) */}
       <ThermalReceiptModal
         isOpen={isThermalModalOpen}
         onClose={() => setIsThermalModalOpen(false)}
