@@ -17,7 +17,7 @@ import {
 import { Order, Invoice } from '@/types';
 import { InvoiceModal } from '@/components/invoice/InvoiceModal';
 import { ThermalReceiptModal } from '@/components/receipt/ThermalReceiptModal';
-import { AppleMapPinIcon, AppleWhatsAppIcon, AppleCheckmarkSealIcon, AppleShippingBoxIcon, AppleCalendarIcon } from '@/components/ui/AppleIcons';
+import { AppleMapPinIcon, AppleWhatsAppIcon, AppleCheckmarkSealIcon, AppleShippingBoxIcon, AppleCalendarIcon, ApplePrinterIcon } from '@/components/ui/AppleIcons';
 import {
   Clock,
   XCircle,
@@ -475,6 +475,16 @@ export function OrderDispatchBoard() {
                         <AppleWhatsAppIcon size={16} alt="Enviar mensaje por WhatsApp" />
                       </button>
                     )}
+
+                    {/* Botón Recibo Térmico */}
+                    <button
+                      type="button"
+                      onClick={() => setSelectedOrderForThermal(order)}
+                      className="w-8 h-8 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200/80 transition-all active:scale-95 cursor-pointer flex items-center justify-center shadow-2xs"
+                      title="Ver / Imprimir Recibo"
+                    >
+                      <ApplePrinterIcon size={16} className="text-blue-700" />
+                    </button>
 
                     {/* Botón Rápido de Entrega (solo si pendiente) */}
                     {isPending && (

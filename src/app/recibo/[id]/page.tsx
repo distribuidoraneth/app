@@ -1,6 +1,6 @@
 'use client';
 
-import React, { use, useState, useEffect } from 'react';
+import React, { use, useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDistribution } from '@/context/DistributionContext';
 import { getOrderByIdFromDb, getInvoiceByIdOrNumberFromDb } from '@/lib/supabase/syncService';
@@ -18,20 +18,105 @@ export default function PublicReciboPage({
   const router = useRouter();
   const { orders, invoices, clients } = useDistribution();
 
-  const orderFromContext = orders.find(
-    (o) => o.orderNumber === resolvedParams.id || o.id === resolvedParams.id
+  const cleanId = useMemo(
+    () => decodeURIComponent(resolvedParams.id || '').trim(),
+    [resolvedParams.id]
   );
 
-  const [order, setOrder] = useState<Order | null>(orderFromContext || null);
-  const [invoice, setInvoice] = useState<Invoice | null>(null);
-  const [client, setClient] = useState<Client | null>(null);
-  const [loading, setLoading] = useState(!orderFromContext);
+  // 1. Buscar en contexto
+  const orderFromContext = useMemo(() => {
+    return (
+      orders.find(
+        (o) =>
+          o.orderNumber === cleanId ||
+          o.id === cleanId ||
+          o.invoiceNumber === cleanId ||
+          o.invoiceId === cleanId
+      ) || null
+    );
+  }, [orders, cleanId]);
+
+  // 2. Caché local síncrona en useState (0ms latencia)
+  const [localData] = useState<{
+    order: Order | null;
+    invoice: Invoice | null;
+    client: Client | null;
+  }>(() => {
+    if (typeof window === 'undefined') return { order: null, invoice: null, client: null };
+    try {
+      const saved = localStorage.getItem('distribuidora_aneth_oficial_v12');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        let ord: Order | null = null;
+        let inv: Invoice | null = null;
+        let cli: Client | null = null;
+
+        if (Array.isArray(parsed.orders)) {
+          ord =
+            parsed.orders.find(
+              (o: Order) =>
+                o.orderNumber === cleanId ||
+                o.id === cleanId ||
+                o.invoiceNumber === cleanId ||
+                o.invoiceId === cleanId
+            ) || null;
+        }
+
+        if (Array.isArray(parsed.invoices)) {
+          inv =
+            parsed.invoices.find(
+              (i: Invoice) =>
+                i.invoiceNumber === cleanId ||
+                i.id === cleanId ||
+                (ord && (i.orderId === ord.id || i.orderNumber === ord.orderNumber))
+            ) || null;
+
+          if (!ord && inv?.orderId && Array.isArray(parsed.orders)) {
+            ord = parsed.orders.find((o: Order) => o.id === inv?.orderId) || null;
+          }
+        }
+
+        if (ord && Array.isArray(parsed.clients)) {
+          cli = parsed.clients.find((c: Client) => c.id === ord?.clientId) || null;
+        }
+
+        return { order: ord, invoice: inv, client: cli };
+      }
+    } catch {}
+    return { order: null, invoice: null, client: null };
+  });
+
+  const initialOrder = orderFromContext || localData.order;
+  const [order, setOrder] = useState<Order | null>(initialOrder);
+  const [invoice, setInvoice] = useState<Invoice | null>(() => {
+    if (initialOrder) {
+      const inv = invoices.find(
+        (i) =>
+          i.orderId === initialOrder.id ||
+          i.id === initialOrder.invoiceId ||
+          i.invoiceNumber === initialOrder.invoiceNumber
+      );
+      if (inv) return inv;
+    }
+    return localData.invoice;
+  });
+  const [client, setClient] = useState<Client | null>(() => {
+    if (initialOrder) {
+      const cli = clients.find((c) => c.id === initialOrder.clientId);
+      if (cli) return cli;
+    }
+    return localData.client;
+  });
+  const [loading, setLoading] = useState<boolean>(!initialOrder);
 
   useEffect(() => {
     if (orderFromContext) {
       setOrder(orderFromContext);
       const inv = invoices.find(
-        (i) => i.orderId === orderFromContext.id || i.id === orderFromContext.invoiceId
+        (i) =>
+          i.orderId === orderFromContext.id ||
+          i.id === orderFromContext.invoiceId ||
+          i.invoiceNumber === orderFromContext.invoiceNumber
       );
       if (inv) setInvoice(inv);
       const cli = clients.find((c) => c.id === orderFromContext.clientId);
@@ -40,10 +125,18 @@ export default function PublicReciboPage({
       return;
     }
 
+    if (localData.order) {
+      setOrder(localData.order);
+      if (localData.invoice) setInvoice(localData.invoice);
+      if (localData.client) setClient(localData.client);
+      setLoading(false);
+      return;
+    }
+
     let isMounted = true;
     setLoading(true);
 
-    getOrderByIdFromDb(resolvedParams.id)
+    getOrderByIdFromDb(cleanId)
       .then(async (fetchedOrder) => {
         if (!isMounted) return;
         if (fetchedOrder) {
@@ -51,14 +144,32 @@ export default function PublicReciboPage({
           const cli = clients.find((c) => c.id === fetchedOrder.clientId);
           if (cli) setClient(cli);
 
-          // Buscar factura asociada si existe
-          const invId = fetchedOrder.invoiceId || fetchedOrder.id || fetchedOrder.orderNumber;
+          const invId =
+            fetchedOrder.invoiceId ||
+            fetchedOrder.invoiceNumber ||
+            fetchedOrder.orderNumber ||
+            fetchedOrder.id;
           try {
             const fetchedInv = await getInvoiceByIdOrNumberFromDb(invId);
             if (isMounted && fetchedInv) setInvoice(fetchedInv);
           } catch (_) {}
+          setLoading(false);
+        } else {
+          // Si cleanId era un número de factura, buscar primero la factura y luego su orden
+          try {
+            const fetchedInv = await getInvoiceByIdOrNumberFromDb(cleanId);
+            if (isMounted && fetchedInv) {
+              setInvoice(fetchedInv);
+              const ord = await getOrderByIdFromDb(fetchedInv.orderId || fetchedInv.orderNumber || '');
+              if (isMounted && ord) {
+                setOrder(ord);
+                const cli = clients.find((c) => c.id === ord.clientId);
+                if (cli) setClient(cli);
+              }
+            }
+          } catch (_) {}
+          setLoading(false);
         }
-        setLoading(false);
       })
       .catch(() => {
         if (isMounted) setLoading(false);
@@ -67,7 +178,7 @@ export default function PublicReciboPage({
     return () => {
       isMounted = false;
     };
-  }, [resolvedParams.id, orderFromContext, invoices, clients]);
+  }, [cleanId, orderFromContext, localData, invoices, clients]);
 
   if (loading) {
     return (

@@ -27,9 +27,10 @@ import {
   getInvoiceByIdOrNumberFromDb,
   saveInvoiceToDb,
   updateCompanySecuencialInDb,
+  reconstructInvoiceFromOrder,
 } from '@/lib/supabase/syncService';
 import { downloadInvoicePdf } from '@/lib/utils/pdfGenerator';
-import { Invoice } from '@/types';
+import { Invoice, Order } from '@/types';
 import {
   Printer,
   FileDown,
@@ -53,29 +54,92 @@ export default function PublicInvoicePage({
   const router = useRouter();
   const { invoices, orders, currentSecuencial } = useDistribution();
 
-  const invoiceFromContext = invoices.find(
-    (i) =>
-      i.invoiceNumber === resolvedParams.id ||
-      i.id === resolvedParams.id ||
-      i.orderId === resolvedParams.id
+  const cleanId = useMemo(
+    () => decodeURIComponent(resolvedParams.id || '').trim(),
+    [resolvedParams.id]
   );
 
+  // 1. Buscar en facturas cargadas en el contexto
+  const invoiceFromContext = useMemo(() => {
+    return (
+      invoices.find(
+        (i) =>
+          i.invoiceNumber === cleanId ||
+          i.id === cleanId ||
+          i.orderId === cleanId ||
+          i.orderNumber === cleanId ||
+          i.claveAcceso === cleanId
+      ) || null
+    );
+  }, [invoices, cleanId]);
+
+  // 2. Buscar en órdenes cargadas en el contexto
+  const orderFromContext = useMemo(() => {
+    return (
+      orders.find(
+        (o) =>
+          o.id === cleanId ||
+          o.orderNumber === cleanId ||
+          o.invoiceId === cleanId ||
+          o.invoiceNumber === cleanId
+      ) || null
+    );
+  }, [orders, cleanId]);
+
+  // 3. Caché local síncrona en useState (0 ms de espera, sin trabas ni parpadeos)
+  const [localInvoice] = useState<Invoice | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const stored = localStorage.getItem('distribuidora_aneth_oficial_v12');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed.invoices)) {
+          const found = parsed.invoices.find(
+            (i: Invoice) =>
+              i.invoiceNumber === cleanId ||
+              i.id === cleanId ||
+              i.orderId === cleanId ||
+              i.orderNumber === cleanId ||
+              i.claveAcceso === cleanId
+          );
+          if (found) return found;
+        }
+        if (Array.isArray(parsed.orders)) {
+          const foundOrder = parsed.orders.find(
+            (o: Order) =>
+              o.id === cleanId ||
+              o.orderNumber === cleanId ||
+              o.invoiceId === cleanId ||
+              o.invoiceNumber === cleanId
+          );
+          if (foundOrder) {
+            return reconstructInvoiceFromOrder(foundOrder);
+          }
+        }
+      }
+    } catch {}
+    return null;
+  });
+
   const [dbInvoice, setDbInvoice] = useState<Invoice | null>(null);
-  const [isLoadingDb, setIsLoadingDb] = useState<boolean>(!invoiceFromContext);
+  const initialAvailable = Boolean(invoiceFromContext || localInvoice || orderFromContext);
+  const [isLoadingDb, setIsLoadingDb] = useState<boolean>(!initialAvailable);
 
   React.useEffect(() => {
-    if (invoiceFromContext) {
+    if (invoiceFromContext || localInvoice) {
       setIsLoadingDb(false);
       return;
     }
 
     let isMounted = true;
-    setIsLoadingDb(true);
+    setIsLoadingDb(!orderFromContext);
 
-    getInvoiceByIdOrNumberFromDb(resolvedParams.id)
+    getInvoiceByIdOrNumberFromDb(cleanId)
       .then((inv) => {
         if (isMounted) {
-          setDbInvoice(inv);
+          if (inv) {
+            setDbInvoice(inv);
+          }
           setIsLoadingDb(false);
         }
       })
@@ -87,9 +151,13 @@ export default function PublicInvoicePage({
     return () => {
       isMounted = false;
     };
-  }, [invoiceFromContext, resolvedParams.id]);
+  }, [invoiceFromContext, localInvoice, orderFromContext, cleanId]);
 
-  const invoice = invoiceFromContext || dbInvoice;
+  const invoice =
+    invoiceFromContext ||
+    localInvoice ||
+    dbInvoice ||
+    (orderFromContext ? reconstructInvoiceFromOrder(orderFromContext) : null);
 
   const claveAcceso = useMemo(() => {
     if (invoice?.claveAcceso) return invoice.claveAcceso;

@@ -150,10 +150,70 @@ export function recordUsedInvoiceSequence(seq: number): void {
 }
 
 export function DistributionProvider({ children }: { children: React.ReactNode }) {
-  const [clients, setClients] = useState<Client[]>([]);
-  const [catalog, setCatalog] = useState<JavaProductOption[]>(JAVA_PRODUCT_CATALOG);
-  const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS);
-  const [invoices, setInvoices] = useState<Invoice[]>(INITIAL_INVOICES);
+  const [clients, setClients] = useState<Client[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed.clients)) return parsed.clients;
+        }
+      } catch {}
+    }
+    return [];
+  });
+
+  const [catalog, setCatalog] = useState<JavaProductOption[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed.catalog) && parsed.catalog.length > 0) return parsed.catalog;
+        }
+      } catch {}
+    }
+    return JAVA_PRODUCT_CATALOG;
+  });
+
+  const [orders, setOrders] = useState<Order[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed.orders)) {
+            const now = new Date();
+            return parsed.orders.filter((o: Order) => {
+              if (o.status === 'pending') return true;
+              if (!o.createdAt) return false;
+              const d = new Date(o.createdAt);
+              return (
+                d.getFullYear() === now.getFullYear() &&
+                d.getMonth() === now.getMonth() &&
+                d.getDate() === now.getDate()
+              );
+            });
+          }
+        }
+      } catch {}
+    }
+    return INITIAL_ORDERS;
+  });
+
+  const [invoices, setInvoices] = useState<Invoice[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed.invoices)) return parsed.invoices;
+        }
+      } catch {}
+    }
+    return INITIAL_INVOICES;
+  });
+
   const [currentSecuencial, setCurrentSecuencial] = useState<number>(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -721,6 +781,20 @@ function generateUuid(): string {
       newOrder.invoiceNumber = newInvoice.invoiceNumber;
       setInvoices((prev) => [newInvoice, ...prev]);
 
+      if (typeof window !== 'undefined') {
+        try {
+          const rawLocal = localStorage.getItem(STORAGE_KEY);
+          const parsed = rawLocal ? JSON.parse(rawLocal) : {};
+          localStorage.setItem(
+            STORAGE_KEY,
+            JSON.stringify({
+              ...parsed,
+              invoices: [newInvoice, ...(parsed.invoices || [])],
+            })
+          );
+        } catch {}
+      }
+
       // Guardar inmediatamente en Supabase
       saveInvoiceToDb(newInvoice).catch((err) =>
         console.warn('Error al guardar factura en Supabase:', err)
@@ -762,6 +836,20 @@ function generateUuid(): string {
 
     setOrders((prev) => [newOrder, ...prev]);
     clearCart();
+
+    if (typeof window !== 'undefined') {
+      try {
+        const rawLocal = localStorage.getItem(STORAGE_KEY);
+        const parsed = rawLocal ? JSON.parse(rawLocal) : {};
+        localStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify({
+            ...parsed,
+            orders: [newOrder, ...(parsed.orders || [])],
+          })
+        );
+      } catch {}
+    }
 
     // Async save to Supabase
     saveOrderToDb(newOrder).catch((err) => console.warn('Sync DB error:', err));

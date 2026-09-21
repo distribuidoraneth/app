@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { Order, Client, Invoice } from '@/types';
 import { formatCurrency } from '@/lib/utils/formatters';
 import { DEFAULT_TAX_PROFILE } from '@/lib/sri/xmlBuilder';
+import { JAVA_PRODUCT_CATALOG } from '@/lib/mockData';
 import { PoplQRCodeSVG } from '@/components/ui/PoplQRCodeSVG';
 import { AnethReceiptLogo } from './AnethReceiptLogo';
 import { Printer, ArrowLeft } from 'lucide-react';
@@ -143,18 +144,26 @@ export function ThermalReceiptModal({
   const subtotal15 = Number((order.totalAmount / 1.15).toFixed(2));
   const tax15 = Number((order.totalAmount - subtotal15).toFixed(2));
 
-  // Formato sutil de línea: Fructi 500 ml Piña (solo se añade 'Vidrio' si no es plástico)
+  // Formato sutil de línea cruzado con catálogo oficial: Fructi 3.0 Litros Piña / Fructi 300 ml Piña
   const formatReceiptItemName = (it: any) => {
-    const brand = it.brand || 'Fructi';
-    const size = it.size ? ` ${it.size}` : '';
-    const glass = it.container === 'Vidrio' ? ' Vidrio' : '';
+    const cat = it.productOptionId
+      ? JAVA_PRODUCT_CATALOG.find((c) => c.id === it.productOptionId)
+      : null;
+    const brand = cat?.brand || it.brand || 'Fructi';
+    let size = cat?.size || it.size || '';
+    if (it.productOptionId?.includes('3000') || it.productOptionId?.includes('3.0')) {
+      size = '3.0 Litros';
+    }
+    const container = cat?.container || it.container;
+    const glass = container === 'Vidrio' ? ' Vidrio' : '';
+    const sizeStr = size ? ` ${size}` : '';
     const flavor =
       it.flavorType === 'surtido'
         ? ' Surtido'
         : it.selectedFlavor
         ? ` ${it.selectedFlavor}`
         : '';
-    return `${brand}${size}${glass}${flavor}`.trim();
+    return `${brand}${sizeStr}${glass}${flavor}`.trim();
   };
 
   const modalContent = (
@@ -374,10 +383,19 @@ export function ThermalReceiptModal({
                 ? it.pricePerUnit
                 : Number(((it.pricePerJava || 0) / (it.unitsPerJava || 12)).toFixed(4));
 
-              const packSubtotal = Number((it.quantityJavas * it.pricePerJava).toFixed(2));
-              const unitSubtotal = hasJavas
-                ? Number((it.subtotal - packSubtotal).toFixed(2))
-                : Number(((it.quantityUnits || 0) * effectivePricePerUnit).toFixed(2));
+              const packSubtotal = Math.max(0, Number((it.quantityJavas * it.pricePerJava).toFixed(2)));
+              let unitSubtotal = Math.max(
+                0,
+                Number(((it.quantityUnits || 0) * effectivePricePerUnit).toFixed(2))
+              );
+
+              if (it.subtotal > 0 && hasJavas && hasUnits) {
+                const sum = Number((packSubtotal + unitSubtotal).toFixed(2));
+                const diff = Number((it.subtotal - sum).toFixed(2));
+                if (Math.abs(diff) <= 0.05) {
+                  unitSubtotal = Math.max(0, Number((unitSubtotal + diff).toFixed(2)));
+                }
+              }
 
               const packType = it.container === 'Vidrio' ? 'JAV' : 'PAQ';
               const itemName = formatReceiptItemName(it);

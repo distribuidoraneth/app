@@ -69,7 +69,8 @@ export async function getClientsFromDb(): Promise<Client[] | null> {
   }
 }
 
-function isValidUuid(id: string): boolean {
+function isValidUuid(id?: string | null): boolean {
+  if (!id || typeof id !== 'string') return false;
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
 }
 
@@ -435,7 +436,7 @@ export async function saveOrderToDb(order: Order): Promise<{ success: boolean; d
     if (insertedOrder && order.items && order.items.length > 0) {
       const itemsToInsert = order.items.map((item) => ({
         order_id: insertedOrder.id,
-        product_option_id: item.productOptionId && item.productOptionId.startsWith('opt-') ? null : item.productOptionId,
+        product_option_id: item.productOptionId || null,
         brand: item.brand || 'Fructi',
         beverage_type: item.beverageType,
         container: item.container,
@@ -452,9 +453,12 @@ export async function saveOrderToDb(order: Order): Promise<{ success: boolean; d
         subtotal: item.subtotal,
       }));
 
-      const { error: itemsErr } = await supabase.from('order_items').insert(itemsToInsert);
-      if (itemsErr && itemsErr.code === '42703') {
-        const fallbackItems = itemsToInsert.map(({ brand, ...rest }: any) => rest);
+      let { error: itemsErr } = await supabase.from('order_items').insert(itemsToInsert);
+      if (itemsErr && (itemsErr.code === '42703' || itemsErr.code === '23503')) {
+        const fallbackItems = itemsToInsert.map(({ brand, product_option_id, ...rest }: any) => ({
+          ...rest,
+          product_option_id: itemsErr?.code === '23503' ? null : product_option_id,
+        }));
         await supabase.from('order_items').insert(fallbackItems);
       }
     }
@@ -486,23 +490,80 @@ export async function updateOrderStatusInDb(
 }
 
 function mapDbInvoice(i: any): Invoice {
-  const items: CartItem[] = (i.invoice_items || []).map((it: any) => ({
-    id: it.id,
-    productOptionId: it.item_code || 'opt-generic',
-    brand: it.description?.includes('Forest') ? 'Forest' : 'Fructi',
-    beverageType: it.description?.includes('Agua') ? 'Aguas' : 'Colas',
-    container: 'Plástico',
-    size: '500 ml',
-    flavorType: 'single',
-    selectedFlavor: it.description?.split('-')?.[1]?.trim() || 'General',
-    quantityJavas: Number(it.quantity_javas || 0),
-    quantityUnits: Number(it.quantity_units || 0),
-    unitsPerJava: 12,
-    pricePerJava: Number((Number(it.unit_price) * 12).toFixed(2)),
-    pricePerUnit: Number(it.unit_price),
-    totalBottles: Number(it.total_quantity),
-    subtotal: Number(it.subtotal),
-  }));
+  const items: CartItem[] = (i.invoice_items || []).map((it: any) => {
+    // Cross-reference with official product catalog
+    const cat = it.item_code
+      ? JAVA_PRODUCT_CATALOG.find((c) => c.id === it.item_code)
+      : null;
+
+    let brand = cat?.brand || (it.description?.includes('Forest') ? 'Forest' : 'Fructi');
+    let beverageType =
+      cat?.beverageType ||
+      (it.description?.includes('Agua')
+        ? 'Aguas'
+        : it.description?.includes('Té')
+        ? 'Tés'
+        : 'Colas');
+    let container =
+      cat?.container ||
+      (it.description?.toLowerCase().includes('vid') ? 'Vidrio' : 'Plástico');
+
+    let size = cat?.size;
+    if (!size) {
+      if (it.description?.includes('3.0') || it.description?.includes('3 Litros') || it.item_code?.includes('3000')) {
+        size = '3.0 Litros';
+      } else if (it.description?.includes('1.5') || it.description?.includes('1.5 Litros') || it.item_code?.includes('1500')) {
+        size = '1.5 Litros';
+      } else if (it.description?.includes('1 Litro') || it.description?.includes('1000') || it.item_code?.includes('1000')) {
+        size = '1 Litro';
+      } else if (it.description?.includes('600') || it.item_code?.includes('600')) {
+        size = '600 ml';
+      } else if (it.description?.includes('550') || it.item_code?.includes('550')) {
+        size = '550 ml';
+      } else if (it.description?.includes('500') || it.item_code?.includes('500')) {
+        size = '500 ml';
+      } else if (it.description?.includes('300') || it.item_code?.includes('300')) {
+        size = '300 ml';
+      } else {
+        size = '500 ml';
+      }
+    }
+
+    const isVidrio = container.toLowerCase().includes('vid');
+    const unitsPerJava =
+      cat?.unitsPerJava ||
+      (isVidrio ? 24 : size.includes('3.0') || size.includes('3L') ? 6 : 12);
+
+    const pricePerUnit = Number(it.unit_price) || cat?.pricePerUnit || 0;
+    const pricePerJava =
+      cat?.pricePerJava || Number((pricePerUnit * unitsPerJava).toFixed(2));
+
+    let selectedFlavor = 'Original';
+    if (it.description) {
+      const parts = it.description.split('-');
+      if (parts.length > 1) {
+        selectedFlavor = parts[1].replace(/\(.*\)/, '').trim();
+      }
+    }
+
+    return {
+      id: it.id,
+      productOptionId: it.item_code || cat?.id || 'opt-generic',
+      brand,
+      beverageType,
+      container,
+      size,
+      flavorType: 'single',
+      selectedFlavor,
+      quantityJavas: Math.max(0, Number(it.quantity_javas || 0)),
+      quantityUnits: Math.max(0, Number(it.quantity_units || 0)),
+      unitsPerJava,
+      pricePerJava,
+      pricePerUnit,
+      totalBottles: Math.max(0, Number(it.total_quantity || 0)),
+      subtotal: Math.max(0, Number(it.subtotal || 0)),
+    };
+  });
 
   return {
     id: i.id,
@@ -538,13 +599,24 @@ function mapDbInvoice(i: any): Invoice {
   };
 }
 
-function reconstructInvoiceFromOrder(order: Order): Invoice {
+export function reconstructInvoiceFromOrder(order: Order): Invoice {
   const facturaLines = expandCartItemsToFacturaLines(order.items, 15);
   const subtotal15 = Number(facturaLines.reduce((s, l) => s + l.precioTotalSinImpuesto, 0).toFixed(2));
   const tax15 = Number(facturaLines.reduce((s, l) => s + l.iva, 0).toFixed(2));
-  const seqMatch = order.orderNumber?.match(/(\d{3,9})/);
-  const seqNumber = seqMatch ? parseInt(seqMatch[1].slice(-4), 10) || 1 : 1;
-  const invoiceNum = `001-001-${String(seqNumber).padStart(9, '0')}`;
+
+  let invoiceNum = order.invoiceNumber;
+  let seqNumber = 120;
+  if (invoiceNum && invoiceNum.includes('001-001-')) {
+    const parsed = parseInt(invoiceNum.replace(/\D/g, '').slice(-9), 10);
+    if (!isNaN(parsed) && parsed > 0) {
+      seqNumber = parsed;
+    }
+  } else {
+    const numDigits = order.orderNumber?.replace(/\D/g, '') || '';
+    const lastDigits = parseInt(numDigits.slice(-4), 10);
+    seqNumber = !isNaN(lastDigits) && lastDigits >= 120 ? lastDigits : 120;
+    invoiceNum = `001-001-${String(seqNumber).padStart(9, '0')}`;
+  }
 
   const claveAcceso = generarClaveAcceso({
     fecha: order.createdAt ? new Date(order.createdAt) : new Date(),
@@ -556,7 +628,7 @@ function reconstructInvoiceFromOrder(order: Order): Invoice {
   });
 
   const reconstructedInvoice: Invoice = {
-    id: generateUuid(),
+    id: order.invoiceId && isValidUuid(order.invoiceId) ? order.invoiceId : generateUuid(),
     invoiceNumber: invoiceNum,
     orderId: order.id,
     orderNumber: order.orderNumber,
@@ -581,11 +653,6 @@ function reconstructInvoiceFromOrder(order: Order): Invoice {
     status: order.paymentStatus === 'paid' ? 'pagada' : 'emitida',
     issuedAt: order.deliveredAt || order.createdAt || new Date().toISOString(),
   };
-
-  // Guardar en segundo plano para que ya quede en la base de datos
-  saveInvoiceToDb(reconstructedInvoice).catch((e) =>
-    console.warn('Error al auto-persistir factura reconstruida en Supabase:', e)
-  );
 
   return reconstructedInvoice;
 }
@@ -645,25 +712,48 @@ export async function saveInvoiceToDb(
     // Guardar los renglones / items de la factura
     if (invoice.items && invoice.items.length > 0 && effectiveInvoiceId) {
       const itemsToInsert = invoice.items.map((it) => {
+        const cat = it.productOptionId
+          ? JAVA_PRODUCT_CATALOG.find((c) => c.id === it.productOptionId)
+          : null;
+        const brand = cat?.brand || it.brand || 'Fructi';
+        const container = cat?.container || it.container || 'Plástico';
+        let size = cat?.size || it.size || '500 ml';
+        if (it.productOptionId?.includes('3000') || it.productOptionId?.includes('3.0')) {
+          size = '3.0 Litros';
+        }
+        const isVidrio = container.toLowerCase().includes('vid');
+        const unitsPerJava =
+          cat?.unitsPerJava ||
+          it.unitsPerJava ||
+          (isVidrio ? 24 : size.includes('3.0') || size.includes('3L') ? 6 : 12);
+        const pricePerJava = it.pricePerJava > 0 ? itemPrice(it.pricePerJava) : (cat?.pricePerJava || 0);
+        function itemPrice(p: any) { return Number(p) || 0; }
+        const pricePerUnit =
+          it.pricePerUnit > 0
+            ? it.pricePerUnit
+            : cat?.pricePerUnit || Number(((pricePerJava || 0) / unitsPerJava).toFixed(4));
+
         const itemSubtotal =
-          it.subtotal ||
-          it.quantityJavas * it.pricePerJava +
-            (it.quantityUnits || 0) * (it.pricePerUnit || 0);
+          it.subtotal > 0
+            ? it.subtotal
+            : it.quantityJavas * pricePerJava + (it.quantityUnits || 0) * pricePerUnit;
         const itemTotal = Number((itemSubtotal * 1.15).toFixed(2));
         const totalQty =
-          it.quantityJavas * (it.unitsPerJava || 12) + (it.quantityUnits || 0);
+          it.quantityJavas * unitsPerJava + (it.quantityUnits || 0);
+
+        const itemCode = it.productOptionId || cat?.id || 'PROD';
+        const description = `${brand} ${container} ${size} - ${
+          it.selectedFlavor || it.flavorType || 'Original'
+        }`;
+
         return {
           invoice_id: effectiveInvoiceId,
-          item_code: it.productOptionId || 'PROD',
-          description: `${it.brand || 'Fructi'} ${it.beverageType} ${it.container} ${it.size} - ${
-            it.selectedFlavor || it.flavorType
-          }`,
+          item_code: itemCode,
+          description,
           quantity_javas: it.quantityJavas || 0,
           quantity_units: it.quantityUnits || 0,
           total_quantity: totalQty,
-          unit_price:
-            it.pricePerUnit ||
-            Number((it.pricePerJava / (it.unitsPerJava || 12)).toFixed(4)),
+          unit_price: pricePerUnit,
           discount: 0,
           iva_rate: 15,
           subtotal: Number(itemSubtotal.toFixed(2)),
@@ -723,6 +813,41 @@ export async function getInvoiceByIdOrNumberFromDb(
   try {
     const clean = decodeURIComponent(idOrNumber).trim();
     if (!clean) return null;
+
+    // 0. Comprobar caché local síncrona si está disponible en el navegador (0ms latencia)
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('distribuidora_aneth_oficial_v12');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed.invoices)) {
+            const foundInv = parsed.invoices.find(
+              (i: Invoice) =>
+                i.invoiceNumber === clean ||
+                i.id === clean ||
+                i.orderId === clean ||
+                i.orderNumber === clean ||
+                i.claveAcceso === clean
+            );
+            if (foundInv) return foundInv;
+          }
+          if (Array.isArray(parsed.orders)) {
+            const foundOrder = parsed.orders.find(
+              (o: Order) =>
+                o.orderNumber === clean ||
+                o.id === clean ||
+                o.invoiceId === clean ||
+                o.invoiceNumber === clean
+            );
+            if (foundOrder) {
+              return reconstructInvoiceFromOrder(foundOrder);
+            }
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
 
     // 1. Buscar en la tabla 'invoices' de Supabase
     let query = supabase.from('invoices').select('*, invoice_items(*), orders(order_number)');

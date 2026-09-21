@@ -679,6 +679,14 @@ export function AdminDashboard() {
                                 Ver RIDE
                               </button>
                               <Link
+                                href={`/recibo/${inv.invoiceNumber}`}
+                                target="_blank"
+                                className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-lg text-xs font-bold transition-colors"
+                                title="Ver recibo térmico"
+                              >
+                                Recibo
+                              </Link>
+                              <Link
                                 href={`/factura/${inv.invoiceNumber}`}
                                 target="_blank"
                                 className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-bold transition-colors"

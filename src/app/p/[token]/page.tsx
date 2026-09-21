@@ -21,7 +21,7 @@ import {
   Sparkles,
   ArrowRight,
 } from 'lucide-react';
-import { AppleMapPinIcon, AppleCartIcon } from '@/components/ui/AppleIcons';
+import { AppleMapPinIcon, AppleCartIcon, ApplePrinterIcon } from '@/components/ui/AppleIcons';
 
 export default function ClientExperiencePage({
   params,
@@ -355,7 +355,7 @@ export default function ClientExperiencePage({
                         {orderInvoice ? (
                           <Link
                             href={`/factura/${orderInvoice.invoiceNumber}`}
-                            className="px-3.5 py-2 bg-blue-50 hover:bg-blue-100 active:scale-95 text-blue-800 border border-blue-200 rounded-xl text-xs sm:text-sm font-black flex items-center space-x-1.5 transition-all shadow-2xs cursor-pointer"
+                            className="px-3 py-2 bg-blue-50 hover:bg-blue-100 active:scale-95 text-blue-800 border border-blue-200 rounded-xl text-xs sm:text-sm font-black flex items-center space-x-1.5 transition-all shadow-2xs cursor-pointer"
                           >
                             <FileText className="w-3.5 h-3.5 text-blue-600" />
                             <span>Factura #{orderInvoice.invoiceNumber}</span>
@@ -365,6 +365,15 @@ export default function ClientExperiencePage({
                             Factura en proceso
                           </span>
                         ) : null}
+
+                        <Link
+                          href={`/recibo/${order.orderNumber}`}
+                          className="px-3 py-2 bg-slate-50 hover:bg-slate-100 active:scale-95 text-slate-700 border border-slate-200 rounded-xl text-xs sm:text-sm font-bold flex items-center space-x-1.5 transition-all shadow-2xs cursor-pointer"
+                          title="Ver o imprimir recibo de entrega"
+                        >
+                          <ApplePrinterIcon size={14} className="text-slate-600" />
+                          <span>Recibo</span>
+                        </Link>
 
                         {order.status === 'pending' && (
                           <button
