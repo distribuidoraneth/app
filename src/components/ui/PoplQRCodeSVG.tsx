@@ -2,13 +2,17 @@
 
 import React, { useMemo } from 'react';
 import QRCode from 'qrcode';
+import { PATH_ISOTYPE_TOP, PATH_ISOTYPE_SWOOSH } from '@/components/ui/AnethLogo';
 
-interface PoplQRCodeSVGProps {
+export interface PoplQRCodeSVGProps {
   value: string;
   size?: number;
   color?: string;
   bgColor?: string;
   className?: string;
+  showIsotypeLogo?: boolean;
+  isotypeVariant?: 'color' | 'monochrome';
+  id?: string;
 }
 
 export const PoplQRCodeSVG: React.FC<PoplQRCodeSVGProps> = ({
@@ -17,11 +21,15 @@ export const PoplQRCodeSVG: React.FC<PoplQRCodeSVGProps> = ({
   color = '#000000',
   bgColor = '#ffffff',
   className = '',
+  showIsotypeLogo = false,
+  isotypeVariant = 'color',
+  id,
 }) => {
   const qrData = useMemo(() => {
     try {
+      // Usar nivel 'H' (30% de redundancia) cuando se integra el logotipo central
       const qr = QRCode.create(value || 'ANETH-DISTRIBUCIONES', {
-        errorCorrectionLevel: 'M',
+        errorCorrectionLevel: showIsotypeLogo ? 'H' : 'M',
       });
       return {
         size: qr.modules.size,
@@ -30,13 +38,15 @@ export const PoplQRCodeSVG: React.FC<PoplQRCodeSVGProps> = ({
     } catch {
       return null;
     }
-  }, [value]);
+  }, [value, showIsotypeLogo]);
 
   if (!qrData) return null;
 
   const matrixSize = qrData.size;
   const moduleSize = 10;
   const svgSize = matrixSize * moduleSize;
+  const centerCoord = Math.floor(matrixSize / 2);
+  const clearRadius = showIsotypeLogo ? 3 : 0; // Despeja 7x7 módulos centrales para la silueta del isotipo
 
   // Determinar si una celda pertenece a los patrones de posición de las 3 esquinas (7x7)
   const isFinderPattern = (r: number, c: number) => {
@@ -46,11 +56,21 @@ export const PoplQRCodeSVG: React.FC<PoplQRCodeSVGProps> = ({
     return false;
   };
 
+  // Determinar si una celda cae dentro de la zona despejada para el isotipo
+  const isInCenterClearance = (r: number, c: number) => {
+    if (!showIsotypeLogo) return false;
+    return (
+      Math.abs(r - centerCoord) <= clearRadius &&
+      Math.abs(c - centerCoord) <= clearRadius
+    );
+  };
+
   const dots: React.ReactNode[] = [];
 
   for (let r = 0; r < matrixSize; r++) {
     for (let c = 0; c < matrixSize; c++) {
       if (isFinderPattern(r, c)) continue;
+      if (isInCenterClearance(r, c)) continue;
 
       if (qrData.getModule(r, c)) {
         const cx = c * moduleSize + moduleSize / 2;
@@ -107,17 +127,41 @@ export const PoplQRCodeSVG: React.FC<PoplQRCodeSVGProps> = ({
     renderFinder(0, (matrixSize - 7) * moduleSize, 'finder-bl'),
   ];
 
+  // Cálculo del Isotipo "A" centrado como silueta matemática pura (sin círculos ni cajas envolventes)
+  const centerPixelX = centerCoord * moduleSize + moduleSize / 2;
+  const centerPixelY = centerCoord * moduleSize + moduleSize / 2;
+  // El viewBox del Isotipo es 809 x 615. Escalado para ocupar armónicamente la zona central despejada (~48px de ancho)
+  const targetWidth = 48;
+  const targetHeight = (targetWidth * 615) / 809;
+  const scale = targetWidth / 809;
+  const offsetX = centerPixelX - targetWidth / 2;
+  const offsetY = centerPixelY - targetHeight / 2;
+
+  const topColor = isotypeVariant === 'monochrome' ? color : '#0f172a';
+  const swooshColor = isotypeVariant === 'monochrome' ? color : '#0071e3';
+
   return (
     <svg
+      id={id}
+      xmlns="http://www.w3.org/2000/svg"
       viewBox={`0 0 ${svgSize} ${svgSize}`}
       width={size}
       height={size}
       className={className}
       style={{ background: bgColor }}
+      shapeRendering="geometricPrecision"
     >
       <rect width={svgSize} height={svgSize} fill={bgColor} />
       {dots}
       {finders}
+
+      {/* Silueta pura del Isotipo "A" centrada directamente sobre el código (Sin marcos circulares ni cajas) */}
+      {showIsotypeLogo && (
+        <g transform={`translate(${offsetX}, ${offsetY}) scale(${scale})`}>
+          <path d={PATH_ISOTYPE_TOP} fill={topColor} fillRule="evenodd" />
+          <path d={PATH_ISOTYPE_SWOOSH} fill={swooshColor} fillRule="evenodd" />
+        </g>
+      )}
     </svg>
   );
 };

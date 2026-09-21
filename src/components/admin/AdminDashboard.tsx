@@ -369,42 +369,51 @@ export function AdminDashboard() {
               {clients.map((client) => (
                 <div
                   key={client.id}
-                  className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs flex flex-col justify-between space-y-4 hover:border-blue-300 transition-all"
+                  onClick={() => window.open(`/p/${client.qrToken}`, '_blank')}
+                  className="group bg-white p-5 rounded-3xl border border-slate-200/90 shadow-[0_2px_12px_-3px_rgba(0,0,0,0.04)] hover:shadow-md hover:border-blue-400 active:scale-[0.99] transition-all cursor-pointer flex flex-col justify-between space-y-4"
+                  title="Clic para abrir el Portal del Cliente"
                 >
-                  <div className="space-y-2">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <span className="text-xs font-black uppercase tracking-wider text-blue-700 bg-blue-50 px-2 py-0.5 rounded">
-                          {client.gender}
-                        </span>
-                        <h3 className="font-extrabold text-base sm:text-lg text-slate-900 mt-1">
+                  <div className="space-y-3">
+                    {/* Cabecera: Nombre de negocio y acciones */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-black text-base sm:text-lg text-slate-900 leading-tight group-hover:text-blue-600 transition-colors truncate">
                           {client.businessName || client.fullName}
                         </h3>
                         {client.businessName && client.businessName.trim().toLowerCase() !== client.fullName.trim().toLowerCase() && (
-                          <p className="text-xs sm:text-sm text-slate-500">{client.fullName}</p>
+                          <p className="text-xs sm:text-sm text-slate-500 font-medium truncate mt-0.5">{client.fullName}</p>
                         )}
                       </div>
-                      <div className="flex items-center space-x-1.5">
+                      <div className="flex items-center space-x-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
                         <button
                           type="button"
-                          onClick={() => setEditingClient(client)}
-                          className="p-2.5 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-600 rounded-xl transition-colors cursor-pointer flex items-center justify-center"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingClient(client);
+                          }}
+                          className="p-2.5 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-600 rounded-xl transition-colors cursor-pointer flex items-center justify-center active:scale-95"
                           title="Modificar / Editar Cliente"
                         >
                           <ApplePencilIcon size={16} />
                         </button>
                         <button
                           type="button"
-                          onClick={() => setSelectedQRClient(client)}
-                          className="p-2.5 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-600 rounded-xl transition-colors cursor-pointer flex items-center justify-center"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedQRClient(client);
+                          }}
+                          className="p-2.5 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-600 rounded-xl transition-colors cursor-pointer flex items-center justify-center active:scale-95"
                           title="Ver Código QR"
                         >
                           <AppleQrCodeIcon size={18} />
                         </button>
                         <button
                           type="button"
-                          onClick={() => setClientToDelete(client)}
-                          className="p-2.5 bg-slate-100 hover:bg-rose-50 text-rose-500 hover:text-rose-600 rounded-xl transition-colors cursor-pointer flex items-center justify-center"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setClientToDelete(client);
+                          }}
+                          className="p-2.5 bg-slate-100 hover:bg-rose-50 text-rose-500 hover:text-rose-600 rounded-xl transition-colors cursor-pointer flex items-center justify-center active:scale-95"
                           title="Eliminar Cliente"
                         >
                           <AppleTrashIcon size={16} />
@@ -412,14 +421,16 @@ export function AdminDashboard() {
                       </div>
                     </div>
 
-                    <div className="text-xs sm:text-sm text-slate-600 space-y-2 pt-1">
+                    {/* Datos de contacto y fiscales */}
+                    <div className="text-xs sm:text-sm text-slate-600 space-y-2 pt-0.5">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="font-mono font-medium text-xs sm:text-sm text-slate-700">
+                        <span className="font-mono font-bold text-xs sm:text-sm text-slate-800">
                           {client.whatsappNumber}
                         </span>
-                        <div className="flex items-center space-x-1.5 shrink-0">
+                        <div className="flex items-center space-x-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
                           <a
                             href={`tel:${client.whatsappNumber.replace(/\D/g, '')}`}
+                            onClick={(e) => e.stopPropagation()}
                             className="px-2.5 py-1.5 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-600 rounded-xl text-xs font-bold transition-colors inline-flex items-center space-x-1 cursor-pointer active:scale-95"
                             title="Llamar directamente"
                           >
@@ -433,6 +444,7 @@ export function AdminDashboard() {
                               if (digits.startsWith('0')) return '593' + digits.slice(1);
                               return '593' + digits;
                             })()}`}
+                            onClick={(e) => e.stopPropagation()}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-xl text-xs font-bold transition-colors inline-flex items-center space-x-1 cursor-pointer active:scale-95"
@@ -443,6 +455,7 @@ export function AdminDashboard() {
                           </a>
                         </div>
                       </div>
+
                       {client.taxId && (
                         <p className="text-xs text-slate-600 font-mono">
                           <span className="font-bold text-slate-700">
@@ -451,23 +464,25 @@ export function AdminDashboard() {
                           {client.taxId}
                         </p>
                       )}
+
+                      {/* Dirección enlazada directamente al mapa */}
                       {cleanAddress(client.addressReference) && (
-                        <div className="flex items-start justify-between text-slate-500 text-xs pt-0.5">
-                          <p className="flex items-start">
-                            <AppleMapPinIcon size={14} className="mr-1 opacity-60 shrink-0 mt-0.5" alt="Ubicación" />
-                            <span>{cleanAddress(client.addressReference)}</span>
-                          </p>
-                          {typeof client.latitude === 'number' && typeof client.longitude === 'number' && !isNaN(client.latitude) && !isNaN(client.longitude) && (
-                            <a
-                              href={`https://www.google.com/maps/search/?api=1&query=${client.latitude},${client.longitude}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center text-blue-600 hover:text-blue-800 font-bold shrink-0 ml-1.5 p-1 rounded-md hover:bg-blue-50 transition-colors"
-                              title="Abrir ubicación en Google Maps"
-                            >
-                              <ExternalLink className="w-4 h-4" />
-                            </a>
-                          )}
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const mapUrl =
+                              typeof client.latitude === 'number' && typeof client.longitude === 'number' && !isNaN(client.latitude) && !isNaN(client.longitude)
+                                ? `https://www.google.com/maps/search/?api=1&query=${client.latitude},${client.longitude}`
+                                : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(client.addressReference)}`;
+                            window.open(mapUrl, '_blank');
+                          }}
+                          className="flex items-start text-slate-500 hover:text-blue-600 text-xs pt-0.5 cursor-pointer group/addr transition-colors"
+                          title="Abrir ubicación en Google Maps"
+                        >
+                          <AppleMapPinIcon size={14} className="mr-1.5 opacity-60 group-hover/addr:opacity-100 group-hover/addr:text-blue-600 shrink-0 mt-0.5 transition-colors" alt="Ubicación" />
+                          <span className="group-hover/addr:underline line-clamp-2 leading-tight">
+                            {cleanAddress(client.addressReference)}
+                          </span>
                         </div>
                       )}
                     </div>
@@ -483,14 +498,12 @@ export function AdminDashboard() {
                     )}
                   </div>
 
-                  <div className="pt-3 border-t border-slate-100 flex items-center justify-end">
-                    <Link
-                      href={`/p/${client.qrToken}`}
-                      target="_blank"
-                      className="w-full sm:w-auto px-5 py-2.5 bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white rounded-xl text-xs sm:text-sm font-black transition-all text-center flex items-center justify-center cursor-pointer active:scale-95 shadow-2xs hover:shadow-xs"
-                    >
-                      Abrir Portal
-                    </Link>
+                  {/* Pie de tarjeta sutil: Enlace al portal con micro-interacción al hacer hover */}
+                  <div className="pt-2.5 border-t border-slate-100/80 flex items-center justify-between text-[11px] text-slate-400 font-mono">
+                    <span className="truncate">/p/{client.qrToken}</span>
+                    <span className="text-blue-600 font-sans font-bold text-xs opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all flex items-center gap-0.5">
+                      Ver portal &rarr;
+                    </span>
                   </div>
                 </div>
               ))}
