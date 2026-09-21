@@ -32,14 +32,18 @@ export interface InvoicePageSlice {
 }
 
 /**
- * Paginación exclusiva para PDF e impresión A4:
- * - Si tiene hasta 8 ítems: 1 sola página completa con totales.
- * - Si tiene más de 8 ítems:
- *   - Página 1: Encabezado oficial SRI + Cuadro cliente + Primeros 13 ítems + Aviso de continuación.
- *   - Página 2: Encabezado de continuación + Tabla de ítems con headers + Totales e Info.
+ * Paginación equilibrada exclusiva para PDF e impresión A4:
+ * - Hasta 13 ítems: 1 sola página completa con totales (sin saltos innecesarios).
+ * - De 14 a 46 ítems (cubre todo el catálogo de productos): Exactamente 2 páginas perfectamente balanceadas.
+ *   Los totales equivalen a ~6 filas; por eso la página 1 lleva ligeramente más ítems que la página 2,
+ *   logrando que ambas hojas tengan exactamente la misma altura visual y cero espacios muertos.
+ * - Más de 46 ítems: 3 o más páginas con distribución continua.
  */
 export function paginateFacturaLines(lines: FacturaLine[]): InvoicePageSlice[] {
-  if (lines.length <= 8) {
+  const total = lines.length;
+
+  // Caso 1: 1 sola página completa con totales
+  if (total <= 13) {
     return [
       {
         pageIndex: 0,
@@ -52,21 +56,48 @@ export function paginateFacturaLines(lines: FacturaLine[]): InvoicePageSlice[] {
     ];
   }
 
-  const pages: InvoicePageSlice[] = [];
-  const PAGE_1_MAX = 13;
-  const PAGE_N_MAX = 15;
+  // Caso 2: 2 páginas balanceadas (14 a 46 ítems)
+  if (total <= 46) {
+    // Equilibrar altura visual: page1Count ≈ (total + 6) / 2
+    let page1Count = Math.round((total + 6) / 2);
+    page1Count = Math.max(10, Math.min(24, page1Count));
 
-  const page1Items = lines.slice(0, PAGE_1_MAX);
-  let remaining = lines.slice(PAGE_1_MAX);
+    return [
+      {
+        pageIndex: 0,
+        pageNum: 1,
+        totalPages: 2,
+        lines: lines.slice(0, page1Count),
+        isFirst: true,
+        isLast: false,
+      },
+      {
+        pageIndex: 1,
+        pageNum: 2,
+        totalPages: 2,
+        lines: lines.slice(page1Count),
+        isFirst: false,
+        isLast: true,
+      },
+    ];
+  }
+
+  // Caso 3: Facturas masivas (> 46 ítems)
+  const pages: InvoicePageSlice[] = [];
+  const P1_MAX = 22;
+  const PN_MAX = 24;
+
+  const p1Items = lines.slice(0, P1_MAX);
+  let remaining = lines.slice(P1_MAX);
 
   const subPages: FacturaLine[][] = [];
   while (remaining.length > 0) {
-    if (remaining.length <= PAGE_N_MAX) {
+    if (remaining.length <= PN_MAX) {
       subPages.push(remaining);
       break;
     } else {
-      subPages.push(remaining.slice(0, 18));
-      remaining = remaining.slice(18);
+      subPages.push(remaining.slice(0, PN_MAX));
+      remaining = remaining.slice(PN_MAX);
     }
   }
 
@@ -76,7 +107,7 @@ export function paginateFacturaLines(lines: FacturaLine[]): InvoicePageSlice[] {
     pageIndex: 0,
     pageNum: 1,
     totalPages,
-    lines: page1Items,
+    lines: p1Items,
     isFirst: true,
     isLast: false,
   });
@@ -110,7 +141,7 @@ export const InvoiceRideDocument: React.FC<InvoiceRideDocumentProps> = ({
     <>
       {/* ========================================================================= */}
       {/* 1. VISTA WEB / MÓVIL (En pantalla): UNA SOLA TARJETA CONTINUA Y ELEGANTE  */}
-      {/* Permite scroll natural sin cortes artificiales ni separadores en pantalla  */}
+      {/* Scroll natural, sin cortes ni separadores en pantalla                     */}
       {/* ========================================================================= */}
       <div
         data-prevent-detector="true"
@@ -243,33 +274,33 @@ export const InvoiceRideDocument: React.FC<InvoiceRideDocumentProps> = ({
           <table className="w-full min-w-[500px] sm:min-w-0 text-xs text-left border-collapse">
             <thead>
               <tr className="bg-blue-50/70 border-b border-blue-200/80 text-blue-950 text-[10px] sm:text-[10.5px] font-bold tracking-tight">
-                <th className="py-2 sm:py-2.5 px-2.5 sm:px-3 border-r border-blue-200/60 w-24 sm:w-28">Cod. Principal</th>
-                <th className="py-2 sm:py-2.5 px-2 border-r border-blue-200/60 text-right w-14 sm:w-16">Cantidad</th>
-                <th className="py-2 sm:py-2.5 px-2.5 sm:px-3 border-r border-blue-200/60">Descripción</th>
-                <th className="py-2 sm:py-2.5 px-2 border-r border-blue-200/60 text-right w-20 sm:w-24">Precio Unitario</th>
-                <th className="py-2 sm:py-2.5 px-2 border-r border-blue-200/60 text-right w-14 sm:w-16">Descuento</th>
-                <th className="py-2 sm:py-2.5 px-2.5 sm:px-3 text-right w-20 sm:w-24">Precio Total</th>
+                <th className="py-2.5 px-3 border-r border-blue-200/60 w-24 sm:w-28">Cod. Principal</th>
+                <th className="py-2.5 px-2 border-r border-blue-200/60 text-right w-14 sm:w-16">Cantidad</th>
+                <th className="py-2.5 px-3 border-r border-blue-200/60">Descripción</th>
+                <th className="py-2.5 px-2.5 border-r border-blue-200/60 text-right w-20 sm:w-24">Precio Unitario</th>
+                <th className="py-2.5 px-2 border-r border-blue-200/60 text-right w-14 sm:w-16">Descuento</th>
+                <th className="py-2.5 px-3 text-right w-20 sm:w-24">Precio Total</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 text-slate-800">
               {facturaLines.map((line, idx) => (
                 <tr key={idx} className="hover:bg-slate-50/50">
-                  <td className="py-1.5 sm:py-2 px-2.5 sm:px-3 border-r border-slate-200 font-mono text-[10.5px] sm:text-[11px] font-semibold text-slate-800">
+                  <td className="py-2 px-3 border-r border-slate-200 font-mono text-[10.5px] sm:text-[11px] font-semibold text-slate-800 align-middle leading-normal">
                     {line.codigoPrincipal}
                   </td>
-                  <td className="py-1.5 sm:py-2 px-2 border-r border-slate-200 text-right font-mono text-[10.5px] sm:text-[11px]">
+                  <td className="py-2 px-2 border-r border-slate-200 text-right font-mono text-[10.5px] sm:text-[11px] align-middle leading-normal">
                     {line.cantidad.toFixed(2)}
                   </td>
-                  <td className="py-1.5 sm:py-2 px-2.5 sm:px-3 border-r border-slate-200 text-slate-900">
-                    <span className="font-medium text-slate-900 block">{line.descripcion}</span>
+                  <td className="py-2 px-3 border-r border-slate-200 text-slate-900 text-xs font-medium align-middle leading-normal">
+                    {line.descripcion}
                   </td>
-                  <td className="py-1.5 sm:py-2 px-2 border-r border-slate-200 text-right font-mono text-[10.5px] sm:text-[11px]">
+                  <td className="py-2 px-2.5 border-r border-slate-200 text-right font-mono text-[10.5px] sm:text-[11px] align-middle leading-normal">
                     {line.precioUnitarioSinIva.toFixed(4)}
                   </td>
-                  <td className="py-1.5 sm:py-2 px-2 border-r border-slate-200 text-right font-mono text-[10.5px] sm:text-[11px] text-slate-500">
+                  <td className="py-2 px-2 border-r border-slate-200 text-right font-mono text-[10.5px] sm:text-[11px] text-slate-500 align-middle leading-normal">
                     0.00
                   </td>
-                  <td className="py-1.5 sm:py-2 px-2.5 sm:px-3 text-right font-mono font-semibold text-slate-900 text-[10.5px] sm:text-[11px]">
+                  <td className="py-2 px-3 text-right font-mono font-semibold text-slate-900 text-[10.5px] sm:text-[11px] align-middle leading-normal">
                     {line.precioTotalSinImpuesto.toFixed(2)}
                   </td>
                 </tr>
@@ -405,8 +436,8 @@ export const InvoiceRideDocument: React.FC<InvoiceRideDocumentProps> = ({
       </div>
 
       {/* ========================================================================= */}
-      {/* 2. VISTA PDF / IMPRESIÓN (Paginada): Fuera de pantalla en web, activa para */}
-      {/* descargas PDF e impresión física con encabezados de continuación limpios  */}
+      {/* 2. VISTA PDF / IMPRESIÓN (Paginada): Oculta en pantalla, activa para PDF  */}
+      {/* Altura natural sin espacios forzados, texto legible 100% sin recortes      */}
       {/* ========================================================================= */}
       <div
         id="invoice-printable-area"
@@ -425,20 +456,20 @@ export const InvoiceRideDocument: React.FC<InvoiceRideDocumentProps> = ({
           <div
             key={pIdx}
             data-page-index={pIdx}
-            className="invoice-pdf-page w-full bg-white p-6 space-y-3.5 text-slate-800"
-            style={{ width: '794px', minHeight: '1080px', boxSizing: 'border-box' }}
+            className="invoice-pdf-page w-full bg-white p-6 space-y-3 text-slate-800"
+            style={{ width: '794px', boxSizing: 'border-box' }}
           >
             {/* PÁGINA 1: Encabezado Oficial Completo SRI */}
             {page.isFirst ? (
               <>
                 <div className="invoice-header-block grid grid-cols-2 gap-3.5 items-stretch">
                   {/* Columna Izquierda: Logo + Cuadro Emisor */}
-                  <div className="flex flex-col justify-between space-y-2.5">
-                    <div className="py-1 px-0.5">
+                  <div className="flex flex-col justify-between space-y-2">
+                    <div className="py-0.5 px-0.5">
                       <AnethFullLogo size="md" showSubtitle={true} subtitleText="DISTRIBUCIONES" />
                     </div>
 
-                    <div className="border border-slate-300 rounded-2xl p-3.5 space-y-1.5 text-xs text-slate-800 bg-white flex-1 flex flex-col justify-center">
+                    <div className="border border-slate-300 rounded-2xl p-3 space-y-1 text-xs text-slate-800 bg-white flex-1 flex flex-col justify-center">
                       <div>
                         <h2 className="font-extrabold text-slate-900 text-xs tracking-tight uppercase">
                           {DEFAULT_TAX_PROFILE.razonSocial}
@@ -452,7 +483,7 @@ export const InvoiceRideDocument: React.FC<InvoiceRideDocumentProps> = ({
                         </p>
                       </div>
 
-                      <div className="space-y-1 text-[11px] text-slate-700 pt-1 border-t border-slate-100">
+                      <div className="space-y-0.5 text-[11px] text-slate-700 pt-1 border-t border-slate-100">
                         <p>
                           <strong className="text-slate-900">Dirección Matriz:</strong>{' '}
                           {DEFAULT_TAX_PROFILE.dirMatriz}
@@ -475,8 +506,8 @@ export const InvoiceRideDocument: React.FC<InvoiceRideDocumentProps> = ({
                   </div>
 
                   {/* Columna Derecha: Cuadro Oficial SRI */}
-                  <div className="border border-slate-300 rounded-2xl p-3.5 text-xs text-slate-800 bg-white flex flex-col justify-between space-y-2.5">
-                    <div className="space-y-1">
+                  <div className="border border-slate-300 rounded-2xl p-3 text-xs text-slate-800 bg-white flex flex-col justify-between space-y-2">
+                    <div className="space-y-0.5">
                       <p className="text-xs font-bold text-slate-900">
                         <span className="text-slate-600 font-normal">R.U.C.: </span>
                         {DEFAULT_TAX_PROFILE.ruc}
@@ -516,7 +547,7 @@ export const InvoiceRideDocument: React.FC<InvoiceRideDocumentProps> = ({
                     </div>
 
                     {/* Código de barras y Clave de Acceso */}
-                    <div className="pt-1.5 border-t border-slate-200">
+                    <div className="pt-1 border-t border-slate-200">
                       <span className="text-[9.5px] text-slate-500 font-extrabold uppercase tracking-wider block mb-0.5">
                         CLAVE DE ACCESO
                       </span>
@@ -531,8 +562,8 @@ export const InvoiceRideDocument: React.FC<InvoiceRideDocumentProps> = ({
                 </div>
 
                 {/* Cuadro Comprador / Cliente (Oficial SRI) */}
-                <div className="invoice-buyer-block border border-slate-300 rounded-2xl p-3 text-xs text-slate-800 bg-white">
-                  <div className="grid grid-cols-2 gap-x-6 gap-y-1">
+                <div className="invoice-buyer-block border border-slate-300 rounded-2xl p-2.5 text-xs text-slate-800 bg-white">
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-0.5">
                     <div className="col-span-2">
                       <span className="font-bold text-slate-900">Razón Social / Nombres y Apellidos:</span>{' '}
                       <span className="font-medium text-slate-900">{invoice.clientName}</span>
@@ -554,7 +585,7 @@ export const InvoiceRideDocument: React.FC<InvoiceRideDocumentProps> = ({
               </>
             ) : (
               /* PÁGINAS SIGUIENTES (2+): Encabezado de Continuación con Estilo Oficial */
-              <div className="border border-slate-300 rounded-2xl p-3 bg-slate-50/70 flex items-center justify-between text-xs">
+              <div className="border border-slate-300 rounded-2xl p-2.5 bg-slate-50/70 flex items-center justify-between text-xs">
                 <div className="flex items-center space-x-3">
                   <AnethFullLogo size="sm" showSubtitle={false} />
                   <div>
@@ -585,38 +616,38 @@ export const InvoiceRideDocument: React.FC<InvoiceRideDocumentProps> = ({
               </div>
             )}
 
-            {/* TABLA DE PRODUCTOS / ÍTEMS (Con Header Oficial Completo) */}
+            {/* TABLA DE PRODUCTOS / ÍTEMS: Texto 100% legible sin recortes ni overflow */}
             <div className="invoice-table-block border border-slate-300 rounded-2xl overflow-hidden bg-white">
               <table className="w-full text-xs text-left border-collapse">
                 <thead>
                   <tr className="bg-blue-50/70 border-b border-blue-200/80 text-blue-950 text-[10px] font-bold tracking-tight">
-                    <th className="py-2 px-2.5 border-r border-blue-200/60 w-24">Cod. Principal</th>
-                    <th className="py-2 px-2 border-r border-blue-200/60 text-right w-14">Cantidad</th>
-                    <th className="py-2 px-2.5 border-r border-blue-200/60">Descripción</th>
-                    <th className="py-2 px-2 border-r border-blue-200/60 text-right w-20">Precio Unitario</th>
-                    <th className="py-2 px-2 border-r border-blue-200/60 text-right w-14">Descuento</th>
-                    <th className="py-2 px-2.5 text-right w-20">Precio Total</th>
+                    <th className="py-1.5 px-2.5 border-r border-blue-200/60 w-24">Cod. Principal</th>
+                    <th className="py-1.5 px-2 border-r border-blue-200/60 text-right w-14">Cantidad</th>
+                    <th className="py-1.5 px-2.5 border-r border-blue-200/60">Descripción</th>
+                    <th className="py-1.5 px-2 border-r border-blue-200/60 text-right w-20">Precio Unitario</th>
+                    <th className="py-1.5 px-2 border-r border-blue-200/60 text-right w-14">Descuento</th>
+                    <th className="py-1.5 px-2.5 text-right w-20">Precio Total</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 text-slate-800">
                   {page.lines.map((line, idx) => (
                     <tr key={idx} className="hover:bg-slate-50/50">
-                      <td className="py-1.5 px-2.5 border-r border-slate-200 font-mono text-[10.5px] font-semibold text-slate-800">
+                      <td className="py-1.5 px-2.5 border-r border-slate-200 font-mono text-[10.5px] font-semibold text-slate-800 leading-normal align-middle">
                         {line.codigoPrincipal}
                       </td>
-                      <td className="py-1.5 px-2 border-r border-slate-200 text-right font-mono text-[10.5px]">
+                      <td className="py-1.5 px-2 border-r border-slate-200 text-right font-mono text-[10.5px] leading-normal align-middle">
                         {line.cantidad.toFixed(2)}
                       </td>
-                      <td className="py-1.5 px-2.5 border-r border-slate-200 text-slate-900">
-                        <span className="font-medium text-slate-900 block truncate">{line.descripcion}</span>
+                      <td className="py-1.5 px-2.5 border-r border-slate-200 text-slate-900 text-[11px] font-medium leading-normal align-middle">
+                        {line.descripcion}
                       </td>
-                      <td className="py-1.5 px-2 border-r border-slate-200 text-right font-mono text-[10.5px]">
+                      <td className="py-1.5 px-2 border-r border-slate-200 text-right font-mono text-[10.5px] leading-normal align-middle">
                         {line.precioUnitarioSinIva.toFixed(4)}
                       </td>
-                      <td className="py-1.5 px-2 border-r border-slate-200 text-right font-mono text-[10.5px] text-slate-500">
+                      <td className="py-1.5 px-2 border-r border-slate-200 text-right font-mono text-[10.5px] text-slate-500 leading-normal align-middle">
                         0.00
                       </td>
-                      <td className="py-1.5 px-2.5 text-right font-mono font-semibold text-slate-900 text-[10.5px]">
+                      <td className="py-1.5 px-2.5 text-right font-mono font-semibold text-slate-900 text-[10.5px] leading-normal align-middle">
                         {line.precioTotalSinImpuesto.toFixed(2)}
                       </td>
                     </tr>
@@ -625,7 +656,7 @@ export const InvoiceRideDocument: React.FC<InvoiceRideDocumentProps> = ({
               </table>
 
               {!page.isLast && (
-                <div className="py-1.5 px-3 bg-slate-50/80 border-t border-slate-200 text-center font-bold text-[11px] text-slate-600 flex items-center justify-center space-x-2">
+                <div className="py-1 px-3 bg-slate-50/80 border-t border-slate-200 text-center font-bold text-[11px] text-slate-600 flex items-center justify-center space-x-2">
                   <span>Continúa en la página siguiente (Página {page.pageNum + 1} de {page.totalPages})</span>
                   <span>➔</span>
                 </div>
@@ -634,11 +665,11 @@ export const InvoiceRideDocument: React.FC<InvoiceRideDocumentProps> = ({
 
             {/* SECCIÓN INFERIOR: Totales SRI + Formas de Pago (ÚNICAMENTE en la Última Página) */}
             {page.isLast && (
-              <div className="grid grid-cols-2 gap-3.5 items-start pt-1">
+              <div className="grid grid-cols-2 gap-3 items-start pt-0.5">
                 {/* Columna Izquierda: Información Adicional + Formas de Pago */}
-                <div className="space-y-2.5">
-                  <div className="invoice-info-block border border-slate-300 rounded-2xl p-3 text-xs space-y-1 bg-white">
-                    <h4 className="font-bold text-blue-950 text-[10.5px] uppercase tracking-wide border-b border-blue-100 pb-1">
+                <div className="space-y-2">
+                  <div className="invoice-info-block border border-slate-300 rounded-2xl p-2.5 text-xs space-y-0.5 bg-white">
+                    <h4 className="font-bold text-blue-950 text-[10.5px] uppercase tracking-wide border-b border-blue-100 pb-0.5">
                       Información Adicional
                     </h4>
                     <div className="space-y-0.5 text-[10.5px] text-slate-700 pt-0.5">
@@ -665,10 +696,10 @@ export const InvoiceRideDocument: React.FC<InvoiceRideDocumentProps> = ({
                       </thead>
                       <tbody>
                         <tr>
-                          <td className="py-1.5 px-3 border-r border-slate-200 text-[10.5px] text-slate-800">
+                          <td className="py-1.5 px-3 border-r border-slate-200 text-[10.5px] text-slate-800 leading-normal">
                             20 - OTROS CON UTILIZACION DEL SISTEMA FINANCIERO
                           </td>
-                          <td className="py-1.5 px-3 text-right font-mono font-bold text-slate-900">
+                          <td className="py-1.5 px-3 text-right font-mono font-bold text-slate-900 leading-normal">
                             {formatCurrency(invoice.total)}
                           </td>
                         </tr>
@@ -682,66 +713,66 @@ export const InvoiceRideDocument: React.FC<InvoiceRideDocumentProps> = ({
                   <table className="w-full text-xs border-collapse">
                     <tbody className="divide-y divide-slate-200">
                       <tr>
-                        <td className="py-1 px-2.5 font-semibold text-slate-700 border-r border-slate-200 text-[10.5px]">
+                        <td className="py-1 px-2.5 font-semibold text-slate-700 border-r border-slate-200 text-[10.5px] leading-normal">
                           SUBTOTAL 15%
                         </td>
-                        <td className="py-1 px-2.5 text-right font-mono font-medium text-slate-900 w-24">
+                        <td className="py-1 px-2.5 text-right font-mono font-medium text-slate-900 w-24 leading-normal">
                           {subtotal15.toFixed(2)}
                         </td>
                       </tr>
                       <tr>
-                        <td className="py-1 px-2.5 font-semibold text-slate-700 border-r border-slate-200 text-[10.5px]">
+                        <td className="py-1 px-2.5 font-semibold text-slate-700 border-r border-slate-200 text-[10.5px] leading-normal">
                           SUBTOTAL 0%
                         </td>
-                        <td className="py-1 px-2.5 text-right font-mono text-slate-500 w-24">
+                        <td className="py-1 px-2.5 text-right font-mono text-slate-500 w-24 leading-normal">
                           0.00
                         </td>
                       </tr>
                       <tr>
-                        <td className="py-1 px-2.5 font-semibold text-slate-700 border-r border-slate-200 text-[10.5px]">
+                        <td className="py-1 px-2.5 font-semibold text-slate-700 border-r border-slate-200 text-[10.5px] leading-normal">
                           SUBTOTAL NO OBJETO DE IVA
                         </td>
-                        <td className="py-1 px-2.5 text-right font-mono text-slate-500 w-24">
+                        <td className="py-1 px-2.5 text-right font-mono text-slate-500 w-24 leading-normal">
                           0.00
                         </td>
                       </tr>
                       <tr>
-                        <td className="py-1 px-2.5 font-semibold text-slate-700 border-r border-slate-200 text-[10.5px]">
+                        <td className="py-1 px-2.5 font-semibold text-slate-700 border-r border-slate-200 text-[10.5px] leading-normal">
                           SUBTOTAL EXENTO DE IVA
                         </td>
-                        <td className="py-1 px-2.5 text-right font-mono text-slate-500 w-24">
+                        <td className="py-1 px-2.5 text-right font-mono text-slate-500 w-24 leading-normal">
                           0.00
                         </td>
                       </tr>
                       <tr>
-                        <td className="py-1 px-2.5 font-semibold text-slate-700 border-r border-slate-200 text-[10.5px]">
+                        <td className="py-1 px-2.5 font-semibold text-slate-700 border-r border-slate-200 text-[10.5px] leading-normal">
                           SUBTOTAL SIN IMPUESTOS
                         </td>
-                        <td className="py-1 px-2.5 text-right font-mono font-medium text-slate-900 w-24">
+                        <td className="py-1 px-2.5 text-right font-mono font-medium text-slate-900 w-24 leading-normal">
                           {subtotal15.toFixed(2)}
                         </td>
                       </tr>
                       <tr>
-                        <td className="py-1 px-2.5 font-semibold text-slate-700 border-r border-slate-200 text-[10.5px]">
+                        <td className="py-1 px-2.5 font-semibold text-slate-700 border-r border-slate-200 text-[10.5px] leading-normal">
                           TOTAL DESCUENTO
                         </td>
-                        <td className="py-1 px-2.5 text-right font-mono text-slate-500 w-24">
+                        <td className="py-1 px-2.5 text-right font-mono text-slate-500 w-24 leading-normal">
                           0.00
                         </td>
                       </tr>
                       <tr>
-                        <td className="py-1 px-2.5 font-semibold text-slate-700 border-r border-slate-200 text-[10.5px]">
+                        <td className="py-1 px-2.5 font-semibold text-slate-700 border-r border-slate-200 text-[10.5px] leading-normal">
                           IVA 15%
                         </td>
-                        <td className="py-1 px-2.5 text-right font-mono font-medium text-slate-900 w-24">
+                        <td className="py-1 px-2.5 text-right font-mono font-medium text-slate-900 w-24 leading-normal">
                           {totalIva15.toFixed(2)}
                         </td>
                       </tr>
                       <tr className="bg-blue-50/70 font-black text-slate-900 text-xs">
-                        <td className="py-2 px-2.5 text-blue-950 font-black border-r border-blue-200/80">
+                        <td className="py-1.5 px-2.5 text-blue-950 font-black border-r border-blue-200/80 leading-normal">
                           VALOR TOTAL
                         </td>
-                        <td className="py-2 px-2.5 text-right font-mono font-black text-blue-900 text-xs sm:text-sm w-24">
+                        <td className="py-1.5 px-2.5 text-right font-mono font-black text-blue-900 text-xs sm:text-sm w-24 leading-normal">
                           ${invoice.total.toFixed(2)}
                         </td>
                       </tr>
