@@ -326,6 +326,8 @@ export interface FacturaItemLine {
   unidadMedida: 'pack' | 'java' | 'und';
 }
 
+export type FacturaLine = FacturaItemLine;
+
 /**
  * Desglosa los ítems del carrito en líneas oficiales para SRI / RIDE.
  * - Si un ítem tiene tanto Packs como Unidades sueltas, se desglosa en 2 líneas discretas:
