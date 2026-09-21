@@ -58,13 +58,17 @@ export function ClientsManager() {
             </h1>
           </div>
 
-          <Link
-            href="/admin/clientes/nuevo"
+          <button
+            type="button"
+            onClick={() => {
+              setEditingClient(null);
+              setIsRegisterModalOpen(true);
+            }}
             className="px-3.5 sm:px-4 py-2 sm:py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl sm:rounded-2xl text-sm sm:text-base font-black shadow-md shadow-blue-600/25 hover:shadow-lg hover:shadow-blue-600/35 flex items-center space-x-2 transition-all self-start sm:self-auto cursor-pointer"
           >
             <ApplePersonBadgePlusIcon className="w-5 h-5 sm:w-[22px] sm:h-[22px] shrink-0" alt="Nuevo Local" />
             <span className="leading-none">Nuevo Local</span>
-          </Link>
+          </button>
         </div>
 
         {/* Buscador de Clientes */}
@@ -137,10 +141,10 @@ export function ClientsManager() {
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        router.push(`/admin/clientes/nuevo?id=${client.id}`);
+                        setEditingClient(client);
                       }}
                       className="p-2.5 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-600 rounded-xl transition-colors cursor-pointer flex items-center justify-center active:scale-95"
-                      title="Modificar / Editar Cliente"
+                      title="Modificar / Editar Local"
                     >
                       <ApplePencilIcon size={16} />
                     </button>

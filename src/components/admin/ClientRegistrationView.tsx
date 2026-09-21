@@ -317,7 +317,7 @@ export function ClientRegistrationView({ clientIdToEdit }: ClientRegistrationVie
           ...clientData,
         });
       } else {
-        addClient(clientData);
+        await addClient(clientData);
       }
 
       router.push('/admin/clientes');

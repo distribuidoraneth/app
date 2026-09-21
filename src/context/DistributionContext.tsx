@@ -64,7 +64,7 @@ interface DistributionContextType {
   cartTotalBottles: number;
 
   // Actions
-  addClient: (client: Omit<Client, 'id' | 'qrToken' | 'createdAt'>) => Client;
+  addClient: (client: Omit<Client, 'id' | 'qrToken' | 'createdAt'>) => Promise<Client>;
   updateClient: (client: Client) => void;
   deleteClient: (clientId: string) => Promise<boolean>;
   createOrder: (orderData: {
@@ -156,7 +156,14 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
         setCatalog(dbProducts);
       }
       if (dbClients !== null) {
-        setClients(dbClients);
+        setClients((prev) => {
+          const dbClientIds = new Set(dbClients.map((c) => c.id));
+          // Preservar clientes recién creados en los últimos 60 segundos (en vuelo / pendiente de sync)
+          const recentInFlight = prev.filter(
+            (c) => !dbClientIds.has(c.id) && c.createdAt && Date.now() - new Date(c.createdAt).getTime() < 60000
+          );
+          return [...dbClients, ...recentInFlight];
+        });
         setSelectedClientId((prev) =>
           dbClients.some((c) => c.id === prev) ? prev : (dbClients[0]?.id || '')
         );
@@ -340,7 +347,7 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
   const cartTotalBottles = cart.reduce((sum, item) => sum + (item.totalBottles || (item.quantityJavas * item.unitsPerJava)), 0);
 
   // Add Client
-  const addClient = (clientData: Omit<Client, 'id' | 'qrToken' | 'createdAt'>): Client => {
+  const addClient = async (clientData: Omit<Client, 'id' | 'qrToken' | 'createdAt'>): Promise<Client> => {
     const cleanTaxId = clientData.taxId?.trim().replace(/\D/g, '');
     const cleanPhone = clientData.whatsappNumber?.trim().replace(/\D/g, '');
 
@@ -377,10 +384,19 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
           }
         }
 
-        qrToken = `${cleanTaxId}-${branchTag}`;
+        let candidateToken = `${cleanTaxId}-${branchTag}`;
+        if (clients.some((c) => c.qrToken === candidateToken)) {
+          candidateToken = `${cleanTaxId}-${branchTag}-${existingWithSameTaxId.length + 1}`;
+        }
+        qrToken = candidateToken;
       }
     } else if (cleanPhone && cleanPhone.length >= 9) {
-      qrToken = cleanPhone.startsWith('593') ? cleanPhone.slice(3) : cleanPhone;
+      const phoneToken = cleanPhone.startsWith('593') ? cleanPhone.slice(3) : cleanPhone;
+      if (clients.some((c) => c.qrToken === phoneToken)) {
+        qrToken = `${phoneToken}-${Math.floor(100 + Math.random() * 900)}`;
+      } else {
+        qrToken = phoneToken;
+      }
     } else {
       const slug = (clientData.businessName || clientData.fullName)
         .toLowerCase()
@@ -413,10 +429,11 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
     setClients((prev) => [newClient, ...prev]);
     setSelectedClientId(newClient.id);
 
-    // Persist to Supabase in background
-    saveClientToDb(newClient).catch((err) => {
-      console.warn('Error saving client to Supabase:', err);
-    });
+    // Persistir a Supabase y esperar confirmación
+    const res = await saveClientToDb(newClient);
+    if (!res.success) {
+      console.warn('Advertencia al guardar cliente en Supabase:', res.error);
+    }
 
     return newClient;
   };

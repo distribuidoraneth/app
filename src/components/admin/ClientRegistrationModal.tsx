@@ -55,6 +55,7 @@ export function ClientRegistrationModal({
   const [clientTier, setClientTier] = useState<ClientTier>('normal');
   const [addressReference, setAddressReference] = useState<string>('');
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   // Query & Lock State
   const [isSearchingApi, setIsSearchingApi] = useState<boolean>(false);
@@ -290,7 +291,7 @@ export function ClientRegistrationModal({
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const newErrors: { [key: string]: string } = {};
 
@@ -309,10 +310,31 @@ export function ClientRegistrationModal({
     }
 
     const formattedPhone = phoneValidation.cleanDigits;
+    setIsSubmitting(true);
 
-    if (clientToEdit) {
-      const updated: Client = {
-        ...clientToEdit,
+    try {
+      if (clientToEdit) {
+        const updated: Client = {
+          ...clientToEdit,
+          fullName,
+          businessName: businessName.trim() || fullName,
+          gender,
+          clientTier,
+          whatsappNumber: formattedPhone,
+          latitude: coords.lat,
+          longitude: coords.lng,
+          addressReference: addressReference.trim(),
+          taxId: taxId.trim() || undefined,
+          taxIdType,
+          email: email.trim() || undefined,
+          birthDate: birthDate || undefined,
+        };
+        updateClient(updated);
+        onClose();
+        return;
+      }
+
+      const created = await addClient({
         fullName,
         businessName: businessName.trim() || fullName,
         gender,
@@ -324,44 +346,30 @@ export function ClientRegistrationModal({
         taxId: taxId.trim() || undefined,
         taxIdType,
         email: email.trim() || undefined,
+        creditLimit: 0,
         birthDate: birthDate || undefined,
-      };
-      updateClient(updated);
+      });
+
+      // Reset form
+      setFullName('');
+      setBusinessName('');
+      setWhatsappNumber('');
+      setBirthDate('');
+      setTaxId('');
+      setEmail('');
+      setClientTier('normal');
+      setAddressReference('');
+      setErrors({});
+      setApiFeedback(null);
+      setIsOfficialDataLocked(false);
+
       onClose();
-      return;
+      onClientCreated?.(created);
+    } catch (err: any) {
+      alert('Error al registrar el local: ' + (err?.message || 'Error de conexión'));
+    } finally {
+      setIsSubmitting(false);
     }
-
-    const created = addClient({
-      fullName,
-      businessName: businessName.trim() || fullName,
-      gender,
-      clientTier,
-      whatsappNumber: formattedPhone,
-      latitude: coords.lat,
-      longitude: coords.lng,
-      addressReference: addressReference.trim(),
-      taxId: taxId.trim() || undefined,
-      taxIdType,
-      email: email.trim() || undefined,
-      creditLimit: 0,
-      birthDate: birthDate || undefined,
-    });
-
-    // Reset form
-    setFullName('');
-    setBusinessName('');
-    setWhatsappNumber('');
-    setBirthDate('');
-    setTaxId('');
-    setEmail('');
-    setClientTier('normal');
-    setAddressReference('');
-    setErrors({});
-    setApiFeedback(null);
-    setIsOfficialDataLocked(false);
-
-    onClose();
-    onClientCreated?.(created);
   };
 
   return (
@@ -779,9 +787,11 @@ export function ClientRegistrationModal({
             </button>
             <button
               type="submit"
-              className="flex-1 sm:flex-none px-8 py-3.5 bg-blue-600 hover:bg-blue-700 active:scale-98 text-white rounded-2xl text-sm sm:text-base font-bold shadow-xs transition-all cursor-pointer text-center"
+              disabled={isSubmitting}
+              className="flex-1 sm:flex-none px-8 py-3.5 bg-blue-600 hover:bg-blue-700 active:scale-98 disabled:opacity-50 text-white rounded-2xl text-sm sm:text-base font-bold shadow-xs transition-all cursor-pointer text-center flex items-center justify-center space-x-2"
             >
-              {clientToEdit ? 'Guardar Cambios' : 'Guardar'}
+              {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
+              <span>{clientToEdit ? 'Guardar Cambios' : 'Guardar'}</span>
             </button>
           </div>
         </form>

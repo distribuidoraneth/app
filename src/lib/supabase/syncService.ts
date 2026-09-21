@@ -109,7 +109,18 @@ export async function saveClientToDb(client: Client): Promise<{ success: boolean
       created_at: client.createdAt || new Date().toISOString(),
     };
 
-    const { error } = await supabase.from('clients').upsert(clientRecord);
+    let { error } = await supabase.from('clients').upsert(clientRecord);
+    
+    // Si falla por duplicado de token (código 23505 de PostgreSQL), reintentar con sufijo único
+    if (error && (error.code === '23505' || error.message?.includes('duplicate key'))) {
+      const baseToken = client.qrToken.split('|')[0];
+      const uniqueSuffix = Math.floor(100 + Math.random() * 900);
+      const fallbackToken = `${baseToken}-${uniqueSuffix}|tier:${client.clientTier || 'normal'}`;
+      clientRecord.qr_token = fallbackToken;
+      const retry = await supabase.from('clients').upsert(clientRecord);
+      error = retry.error;
+    }
+
     if (error) {
       console.warn('Advertencia al guardar cliente en Supabase:', error.message);
       return { success: false, error: error.message };
