@@ -2,7 +2,13 @@
 
 import React, { useMemo } from 'react';
 import { Invoice } from '@/types';
-import { formatCurrency, formatUnitPrice, formatDate, generateWhatsAppOrderLink } from '@/lib/utils/formatters';
+import {
+  formatCurrency,
+  formatUnitPrice,
+  formatDate,
+  expandCartItemsToFacturaLines,
+  generateWhatsAppOrderLink,
+} from '@/lib/utils/formatters';
 import { QRCodeSVG } from 'qrcode.react';
 import { AnethFullLogo } from '@/components/ui/AnethLogo';
 import { AppleWhatsAppIcon } from '@/components/ui/AppleIcons';
@@ -116,12 +122,28 @@ export function InvoiceModal({ invoice, isOpen, onClose }: InvoiceModalProps) {
     document.body.removeChild(link);
   };
 
-  const subtotal15 = invoice.subtotal15 && invoice.subtotal15 < invoice.total
-    ? invoice.subtotal15
-    : Number((invoice.total / 1.15).toFixed(2));
-  const tax15 = invoice.tax && invoice.tax > 0
-    ? invoice.tax
-    : Number((invoice.total - subtotal15).toFixed(2));
+  const facturaLines = useMemo(() => {
+    if (!invoice?.items) return [];
+    return expandCartItemsToFacturaLines(invoice.items, 15);
+  }, [invoice?.items]);
+
+  const subtotal15 = useMemo(() => {
+    if (facturaLines.length > 0) {
+      return Number(facturaLines.reduce((s, l) => s + l.precioTotalSinImpuesto, 0).toFixed(2));
+    }
+    return invoice.subtotal15 && invoice.subtotal15 < invoice.total
+      ? invoice.subtotal15
+      : Number((invoice.total / 1.15).toFixed(2));
+  }, [facturaLines, invoice]);
+
+  const tax15 = useMemo(() => {
+    if (facturaLines.length > 0) {
+      return Number(facturaLines.reduce((s, l) => s + l.iva, 0).toFixed(2));
+    }
+    return invoice.tax && invoice.tax > 0
+      ? invoice.tax
+      : Number((invoice.total - subtotal15).toFixed(2));
+  }, [facturaLines, invoice, subtotal15]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs overflow-y-auto print:p-0 print:bg-white">
@@ -250,126 +272,42 @@ export function InvoiceModal({ invoice, isOpen, onClose }: InvoiceModalProps) {
             </div>
           </div>
 
-          {/* Items Table with Mixed Sales breakdown */}
+          {/* Items Table (Desglose Oficial SRI - Opción 1) */}
           <div className="overflow-x-auto border border-slate-200 rounded-2xl">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-slate-100 text-slate-700 font-black uppercase tracking-wider border-b border-slate-200">
-                  <th className="py-2.5 px-3">Cant.</th>
-                  <th className="py-2.5 px-3">Descripción</th>
-                  <th className="py-2.5 px-3">Detalle Sabor</th>
-                  <th className="py-2.5 px-3 text-right">P. Unitario</th>
-                  <th className="py-2.5 px-3 text-right">Total</th>
+                <tr className="bg-blue-50/70 border-b border-blue-200/80 text-blue-950 text-[10.5px] font-bold tracking-tight">
+                  <th className="py-2.5 px-3 border-r border-blue-200/60 w-28">Cod. Principal</th>
+                  <th className="py-2.5 px-2.5 border-r border-blue-200/60 text-right w-16">Cantidad</th>
+                  <th className="py-2.5 px-3 border-r border-blue-200/60">Descripción</th>
+                  <th className="py-2.5 px-2.5 border-r border-blue-200/60 text-right w-24">P. Unitario</th>
+                  <th className="py-2.5 px-2 border-r border-blue-200/60 text-right w-16">Descuento</th>
+                  <th className="py-2.5 px-3 text-right w-24">Precio Total</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-800">
-                {invoice.items.map((it, idx) => {
-                  const hasJavas = it.quantityJavas > 0;
-                  const hasUnits = (it.quantityUnits || 0) > 0;
-                  const effectivePricePerUnit = it.pricePerUnit > 0
-                    ? it.pricePerUnit
-                    : Number(((it.pricePerJava || 0) / (it.unitsPerJava || 12)).toFixed(4));
-
-                  const packSubtotal = Number((it.quantityJavas * it.pricePerJava).toFixed(2));
-                  const unitSubtotal = hasJavas
-                    ? Number((it.subtotal - packSubtotal).toFixed(2))
-                    : Number(((it.quantityUnits || 0) * effectivePricePerUnit).toFixed(2));
-
-                  const packLabel = it.container === 'Vidrio' ? 'jav' : 'pack';
-
-                  return (
-                    <React.Fragment key={it.id || idx}>
-                      {/* Fila Paquete / Java */}
-                      {hasJavas && (
-                        <tr className="hover:bg-slate-50/60">
-                          <td className="py-2.5 px-3 font-mono font-black text-slate-900">
-                            {it.quantityJavas} {packLabel}
-                          </td>
-                          <td className="py-2.5 px-3">
-                            <span className="font-black text-slate-900 block">
-                              {it.brand || 'Fructi'} • {it.size} {it.container}
-                            </span>
-                            <span className="text-slate-500 text-[11px]">
-                              {it.quantityJavas * it.unitsPerJava} botellas ({it.unitsPerJava} und/paq)
-                            </span>
-                          </td>
-                          <td className="py-2.5 px-3 text-slate-700">
-                            {it.flavorType === 'single' ? (
-                              <span>{it.selectedFlavor}</span>
-                            ) : (
-                              <span className="text-blue-700 font-semibold">
-                                Surtido:{' '}
-                                {it.surtidoDetails &&
-                                  Object.entries(it.surtidoDetails)
-                                    .map(([fl, q]) => `${q} ${fl}`)
-                                    .join(', ')}
-                              </span>
-                            )}
-                          </td>
-                          <td className="py-2.5 px-3 text-right font-mono text-slate-700">
-                            {formatCurrency(it.pricePerJava)} / {packLabel}
-                          </td>
-                          <td className="py-2.5 px-3 text-right font-mono font-black text-slate-900">
-                            {formatCurrency(packSubtotal)}
-                          </td>
-                        </tr>
-                      )}
-
-                      {/* Fila Unidad Suelta */}
-                      {hasUnits && (
-                        <tr className="hover:bg-slate-50/60">
-                          <td className="py-2.5 px-3 font-mono font-black text-amber-800">
-                            {it.quantityUnits} und
-                          </td>
-                          <td className="py-2.5 px-3">
-                            <span className="font-black text-slate-900 block">
-                              {it.brand || 'Fructi'} • {it.size} {it.container}
-                            </span>
-                            <span className="text-slate-500 text-[11px]">
-                              Botella individual
-                            </span>
-                          </td>
-                          <td className="py-2.5 px-3 text-slate-700">
-                            {it.flavorType === 'single' ? (
-                              <span>{it.selectedFlavor}</span>
-                            ) : (
-                              <span className="text-blue-700 font-semibold">Surtido</span>
-                            )}
-                          </td>
-                          <td className="py-2.5 px-3 text-right font-mono text-slate-700">
-                            {formatUnitPrice(effectivePricePerUnit)} / und
-                          </td>
-                          <td className="py-2.5 px-3 text-right font-mono font-black text-slate-900">
-                            {formatCurrency(unitSubtotal)}
-                          </td>
-                        </tr>
-                      )}
-
-                      {/* Fallback */}
-                      {!hasJavas && !hasUnits && (
-                        <tr className="hover:bg-slate-50/60">
-                          <td className="py-2.5 px-3 font-mono font-black text-slate-900">
-                            {it.totalBottles || 1} und
-                          </td>
-                          <td className="py-2.5 px-3">
-                            <span className="font-black text-slate-900 block">
-                              {it.beverageType} • {it.size} {it.container}
-                            </span>
-                          </td>
-                          <td className="py-2.5 px-3 text-slate-700">
-                            {it.selectedFlavor || 'Surtido'}
-                          </td>
-                          <td className="py-2.5 px-3 text-right font-mono text-slate-700">
-                            {formatCurrency(it.pricePerJava)}
-                          </td>
-                          <td className="py-2.5 px-3 text-right font-mono font-black text-slate-900">
-                            {formatCurrency(it.subtotal)}
-                          </td>
-                        </tr>
-                      )}
-                    </React.Fragment>
-                  );
-                })}
+                {facturaLines.map((line, idx) => (
+                  <tr key={idx} className="hover:bg-slate-50/60">
+                    <td className="py-2.5 px-3 border-r border-slate-100 font-mono text-[11px] font-semibold text-slate-800">
+                      {line.codigoPrincipal}
+                    </td>
+                    <td className="py-2.5 px-2.5 border-r border-slate-100 text-right font-mono text-[11px] font-bold text-slate-900">
+                      {line.cantidad.toFixed(2)}
+                    </td>
+                    <td className="py-2.5 px-3 border-r border-slate-100 text-slate-900">
+                      <span className="font-semibold text-slate-900 block">{line.descripcion}</span>
+                    </td>
+                    <td className="py-2.5 px-2.5 border-r border-slate-100 text-right font-mono text-[11px] text-slate-700">
+                      {line.precioUnitarioSinIva.toFixed(4)}
+                    </td>
+                    <td className="py-2.5 px-2 border-r border-slate-100 text-right font-mono text-[11px] text-slate-500">
+                      0.00
+                    </td>
+                    <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-900 text-[11px]">
+                      {line.precioTotalSinImpuesto.toFixed(2)}
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>

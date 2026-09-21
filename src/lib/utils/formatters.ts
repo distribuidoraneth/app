@@ -1,3 +1,5 @@
+import { CartItem } from '@/types';
+
 export function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('es-EC', {
     style: 'currency',
@@ -224,9 +226,30 @@ export function formatSriDateTime(dateInput: string | Date | number): string {
   }
 }
 
-export function formatProductSku(productOptionId?: string): string {
-  if (!productOptionId) return 'PROD-01';
-  const map: Record<string, string> = {
+export function formatProductSku(productOptionId?: string, unitType?: 'PAQ' | 'JAV' | 'UND'): string {
+  if (!productOptionId) return unitType ? `PROD-${unitType}` : 'PROD-01';
+
+  const cleanBase = productOptionId
+    .replace(/^opt-/, '')
+    .toUpperCase()
+    .replace(/[^A-Z0-9.-]/g, '');
+
+  if (unitType) {
+    const shortPrefixMap: Record<string, string> = {
+      'opt-colas-plastico-300': 'FRU-300',
+      'opt-colas-plastico-500': 'FRU-500',
+      'opt-colas-plastico-1500': 'FRU-1.5L',
+      'opt-colas-plastico-3000': 'FRU-3.0L',
+      'opt-colas-vidrio-300': 'FRU-300',
+      'opt-tes-plastico-550': 'TES-550',
+      'opt-agua-forest-600': 'AGUA-600',
+      'opt-agua-forest-1000': 'AGUA-1L',
+    };
+    const prefix = shortPrefixMap[productOptionId] || cleanBase;
+    return `${prefix}-${unitType}`;
+  }
+
+  const legacyMap: Record<string, string> = {
     'opt-colas-plastico-300': 'FRU-300-PLAS',
     'opt-colas-plastico-500': 'FRU-500-PLAS',
     'opt-colas-plastico-1500': 'FRU-1.5L-PLAS',
@@ -236,11 +259,188 @@ export function formatProductSku(productOptionId?: string): string {
     'opt-agua-forest-600': 'AGUA-600-PLAS',
     'opt-agua-forest-1000': 'AGUA-1L-PLAS',
   };
-  if (map[productOptionId]) return map[productOptionId];
-  return productOptionId
-    .replace(/^opt-/, '')
-    .toUpperCase()
-    .replace(/[^A-Z0-9.-]/g, '');
+  return legacyMap[productOptionId] || cleanBase;
+}
+
+export function formatInvoiceItemDescription(
+  item: {
+    brand?: string;
+    size?: string;
+    container?: string;
+    flavorType?: string;
+    selectedFlavor?: string;
+    unitsPerJava?: number;
+  },
+  type: 'pack' | 'unit'
+): string {
+  const brand = item.brand || 'Fructi';
+  const flavor = item.flavorType === 'surtido' ? 'Surtido' : (item.selectedFlavor || 'Original');
+  const isVidrio = (item.container || '').toLowerCase().includes('vid');
+  const packName = isVidrio ? 'Java' : 'Pack';
+  const unitsCount = item.unitsPerJava || (isVidrio ? 24 : 12);
+  const container = item.container || (isVidrio ? 'Vidrio' : 'Plástico');
+  const size = item.size || '';
+
+  const baseTitle = `${brand} ${size} ${container} - ${flavor}`.replace(/\s+/g, ' ').trim();
+
+  if (type === 'pack') {
+    return `${baseTitle} (${packName} x ${unitsCount})`;
+  } else {
+    return `${baseTitle} (Unidad suelta)`;
+  }
+}
+
+export interface FacturaItemLine {
+  codigoPrincipal: string;
+  descripcion: string;
+  cantidad: number;
+  precioUnitarioSinIva: number;
+  descuento: number;
+  precioTotalSinImpuesto: number;
+  iva: number;
+  subtotalConIva: number;
+  tipo: 'pack' | 'unit';
+  unidadMedida: 'pack' | 'java' | 'und';
+}
+
+/**
+ * Desglosa los ítems del carrito en líneas oficiales para SRI / RIDE.
+ * Opción 1:
+ * - Si un ítem tiene tanto Packs como Unidades sueltas, se desglosa en 2 líneas discretas:
+ *   1. Línea de Packs (SKU tipo FRU-500-PAQ / FRU-300-JAV, cant. en packs, precio unitario de pack).
+ *   2. Línea de Unidades (SKU tipo FRU-500-UND, cant. en unidades, precio unitario de botella).
+ * - Si solo tiene packs o solo tiene unidades sueltas, genera 1 sola línea limpia.
+ * - Garantiza suma matemática estricta sin descuadres de centavos.
+ */
+export function expandCartItemsToFacturaLines(
+  items: CartItem[],
+  ivaRate: number = 15
+): FacturaItemLine[] {
+  const lines: FacturaItemLine[] = [];
+
+  for (const item of items) {
+    const isVidrio = (item.container || '').toLowerCase().includes('vid');
+    const packSkuType = isVidrio ? 'JAV' : 'PAQ';
+    const packUnitMedida = isVidrio ? 'java' : 'pack';
+    const hasJavas = (item.quantityJavas || 0) > 0;
+    const hasUnits = (item.quantityUnits || 0) > 0;
+
+    // Caso 1: Mixto (Packs y Unidades sueltas en el mismo producto)
+    if (hasJavas && hasUnits) {
+      // Línea 1: Packs
+      const subtotalPacksConIva = Number((item.quantityJavas * (item.pricePerJava || 0)).toFixed(2));
+      const baseImponiblePack =
+        ivaRate > 0
+          ? Number((subtotalPacksConIva / (1 + ivaRate / 100)).toFixed(2))
+          : subtotalPacksConIva;
+      const ivaPack = Number((subtotalPacksConIva - baseImponiblePack).toFixed(2));
+      const pUnitPackSinIva = Number((baseImponiblePack / item.quantityJavas).toFixed(4));
+
+      lines.push({
+        codigoPrincipal: formatProductSku(item.productOptionId, packSkuType),
+        descripcion: formatInvoiceItemDescription(item, 'pack'),
+        cantidad: item.quantityJavas,
+        precioUnitarioSinIva: pUnitPackSinIva,
+        descuento: 0,
+        precioTotalSinImpuesto: baseImponiblePack,
+        iva: ivaPack,
+        subtotalConIva: subtotalPacksConIva,
+        tipo: 'pack',
+        unidadMedida: packUnitMedida,
+      });
+
+      // Línea 2: Unidades Sueltas
+      const subtotalUnitsConIva = Number((item.subtotal - subtotalPacksConIva).toFixed(2));
+      const baseImponibleUnits =
+        ivaRate > 0
+          ? Number((subtotalUnitsConIva / (1 + ivaRate / 100)).toFixed(2))
+          : subtotalUnitsConIva;
+      const ivaUnits = Number((subtotalUnitsConIva - baseImponibleUnits).toFixed(2));
+      const pUnitUndSinIva = Number((baseImponibleUnits / item.quantityUnits).toFixed(4));
+
+      lines.push({
+        codigoPrincipal: formatProductSku(item.productOptionId, 'UND'),
+        descripcion: formatInvoiceItemDescription(item, 'unit'),
+        cantidad: item.quantityUnits,
+        precioUnitarioSinIva: pUnitUndSinIva,
+        descuento: 0,
+        precioTotalSinImpuesto: baseImponibleUnits,
+        iva: ivaUnits,
+        subtotalConIva: subtotalUnitsConIva,
+        tipo: 'unit',
+        unidadMedida: 'und',
+      });
+    } else if (hasJavas) {
+      // Caso 2: Solo Packs / Javas
+      const subtotalConIva = Number(item.subtotal.toFixed(2));
+      const baseImponible =
+        ivaRate > 0
+          ? Number((subtotalConIva / (1 + ivaRate / 100)).toFixed(2))
+          : subtotalConIva;
+      const iva = Number((subtotalConIva - baseImponible).toFixed(2));
+      const pUnitSinIva = Number((baseImponible / item.quantityJavas).toFixed(4));
+
+      lines.push({
+        codigoPrincipal: formatProductSku(item.productOptionId, packSkuType),
+        descripcion: formatInvoiceItemDescription(item, 'pack'),
+        cantidad: item.quantityJavas,
+        precioUnitarioSinIva: pUnitSinIva,
+        descuento: 0,
+        precioTotalSinImpuesto: baseImponible,
+        iva,
+        subtotalConIva,
+        tipo: 'pack',
+        unidadMedida: packUnitMedida,
+      });
+    } else if (hasUnits) {
+      // Caso 3: Solo Unidades Sueltas
+      const subtotalConIva = Number(item.subtotal.toFixed(2));
+      const baseImponible =
+        ivaRate > 0
+          ? Number((subtotalConIva / (1 + ivaRate / 100)).toFixed(2))
+          : subtotalConIva;
+      const iva = Number((subtotalConIva - baseImponible).toFixed(2));
+      const pUnitSinIva = Number((baseImponible / item.quantityUnits).toFixed(4));
+
+      lines.push({
+        codigoPrincipal: formatProductSku(item.productOptionId, 'UND'),
+        descripcion: formatInvoiceItemDescription(item, 'unit'),
+        cantidad: item.quantityUnits,
+        precioUnitarioSinIva: pUnitSinIva,
+        descuento: 0,
+        precioTotalSinImpuesto: baseImponible,
+        iva,
+        subtotalConIva,
+        tipo: 'unit',
+        unidadMedida: 'und',
+      });
+    } else {
+      // Caso 4: Fallback (unidades sueltas por totalBottles o 1)
+      const cant = item.totalBottles && item.totalBottles > 0 ? item.totalBottles : 1;
+      const subtotalConIva = Number(item.subtotal.toFixed(2));
+      const baseImponible =
+        ivaRate > 0
+          ? Number((subtotalConIva / (1 + ivaRate / 100)).toFixed(2))
+          : subtotalConIva;
+      const iva = Number((subtotalConIva - baseImponible).toFixed(2));
+      const pUnitSinIva = Number((baseImponible / cant).toFixed(4));
+
+      lines.push({
+        codigoPrincipal: formatProductSku(item.productOptionId, 'UND'),
+        descripcion: formatInvoiceItemDescription(item, 'unit'),
+        cantidad: cant,
+        precioUnitarioSinIva: pUnitSinIva,
+        descuento: 0,
+        precioTotalSinImpuesto: baseImponible,
+        iva,
+        subtotalConIva,
+        tipo: 'unit',
+        unidadMedida: 'und',
+      });
+    }
+  }
+
+  return lines;
 }
 
 export function generateWhatsAppOrderLink(params: {

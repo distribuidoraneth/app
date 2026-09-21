@@ -9,6 +9,7 @@ import {
   formatSriDate,
   formatSriDateTime,
   formatProductSku,
+  expandCartItemsToFacturaLines,
   generateWhatsAppOrderLink,
 } from '@/lib/utils/formatters';
 import Link from 'next/link';
@@ -287,14 +288,28 @@ export default function PublicInvoicePage({
     );
   }
 
-  const subtotal15 =
-    invoice.subtotal15 && invoice.subtotal15 < invoice.total
+  const facturaLines = useMemo(() => {
+    if (!invoice?.items) return [];
+    return expandCartItemsToFacturaLines(invoice.items, 15);
+  }, [invoice?.items]);
+
+  const subtotal15 = useMemo(() => {
+    if (facturaLines.length > 0) {
+      return Number(facturaLines.reduce((s, l) => s + l.precioTotalSinImpuesto, 0).toFixed(2));
+    }
+    return invoice?.subtotal15 && invoice.subtotal15 < invoice.total
       ? invoice.subtotal15
-      : Number((invoice.total / 1.15).toFixed(2));
-  const tax15 =
-    invoice.tax && invoice.tax > 0
+      : Number(((invoice?.total || 0) / 1.15).toFixed(2));
+  }, [facturaLines, invoice]);
+
+  const tax15 = useMemo(() => {
+    if (facturaLines.length > 0) {
+      return Number(facturaLines.reduce((s, l) => s + l.iva, 0).toFixed(2));
+    }
+    return invoice?.tax && invoice.tax > 0
       ? invoice.tax
-      : Number((invoice.total - subtotal15).toFixed(2));
+      : Number(((invoice?.total || 0) - subtotal15).toFixed(2));
+  }, [facturaLines, invoice, subtotal15]);
 
   return (
     <div className="min-h-screen bg-[#f8fafc] py-6 sm:py-10 px-4 flex flex-col items-center print:bg-white print:p-0">
@@ -546,54 +561,28 @@ export default function PublicInvoicePage({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 text-slate-800">
-              {invoice.items.map((item, idx) => {
-                const cantidad = item.totalBottles && item.totalBottles > 0
-                  ? item.totalBottles
-                  : (item.quantityJavas || 0) * (item.unitsPerJava || 12) + (item.quantityUnits || 0);
-
-                const subtotalItem = Number(item.subtotal.toFixed(2));
-                const baseImponibleItem = Number((subtotalItem / 1.15).toFixed(2));
-                const precioUnitario = Number((baseImponibleItem / (cantidad || 1)).toFixed(4));
-                const codPrincipal = formatProductSku(item.productOptionId);
-
-                const packInfo = item.quantityJavas > 0
-                  ? `${item.quantityJavas} ${item.container === 'Vidrio' ? 'javas' : 'packs'}`
-                  : '';
-                const unitInfo = item.quantityUnits > 0 ? `${item.quantityUnits} unidades` : '';
-                const breakdown = [packInfo, unitInfo].filter(Boolean).join(' + ');
-
-                const nombreProducto = `${item.brand || 'Fructi'} ${item.size} ${item.container} - ${
-                  item.flavorType === 'surtido' ? 'Surtido' : item.selectedFlavor || 'Original'
-                }`;
-
-                return (
-                  <tr key={idx} className="hover:bg-slate-50/50">
-                    <td className="py-2 px-3 border-r border-slate-200 font-mono text-[11px] font-semibold text-slate-800">
-                      {codPrincipal}
-                    </td>
-                    <td className="py-2 px-2.5 border-r border-slate-200 text-right font-mono text-[11px]">
-                      {Number(cantidad).toFixed(2)}
-                    </td>
-                    <td className="py-2 px-3 border-r border-slate-200 text-slate-900">
-                      <span className="font-medium text-slate-900 block">{nombreProducto}</span>
-                      {breakdown && (
-                        <span className="text-[10px] text-slate-500 block mt-0.5 font-normal">
-                          Presentación: {breakdown}
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-2 px-2.5 border-r border-slate-200 text-right font-mono text-[11px]">
-                      {precioUnitario.toFixed(4)}
-                    </td>
-                    <td className="py-2 px-2 border-r border-slate-200 text-right font-mono text-[11px] text-slate-500">
-                      0.00
-                    </td>
-                    <td className="py-2 px-3 text-right font-mono font-semibold text-slate-900 text-[11px]">
-                      {baseImponibleItem.toFixed(2)}
-                    </td>
-                  </tr>
-                );
-              })}
+              {facturaLines.map((line, idx) => (
+                <tr key={idx} className="hover:bg-slate-50/50">
+                  <td className="py-2 px-3 border-r border-slate-200 font-mono text-[11px] font-semibold text-slate-800">
+                    {line.codigoPrincipal}
+                  </td>
+                  <td className="py-2 px-2.5 border-r border-slate-200 text-right font-mono text-[11px]">
+                    {line.cantidad.toFixed(2)}
+                  </td>
+                  <td className="py-2 px-3 border-r border-slate-200 text-slate-900">
+                    <span className="font-medium text-slate-900 block">{line.descripcion}</span>
+                  </td>
+                  <td className="py-2 px-2.5 border-r border-slate-200 text-right font-mono text-[11px]">
+                    {line.precioUnitarioSinIva.toFixed(4)}
+                  </td>
+                  <td className="py-2 px-2 border-r border-slate-200 text-right font-mono text-[11px] text-slate-500">
+                    0.00
+                  </td>
+                  <td className="py-2 px-3 text-right font-mono font-semibold text-slate-900 text-[11px]">
+                    {line.precioTotalSinImpuesto.toFixed(2)}
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>

@@ -18,7 +18,7 @@ import {
   INITIAL_ORDERS,
   INITIAL_INVOICES,
 } from '@/lib/mockData';
-import { formatOrderNumber, generateOrderNumber } from '@/lib/utils/formatters';
+import { formatOrderNumber, generateOrderNumber, expandCartItemsToFacturaLines } from '@/lib/utils/formatters';
 import { generarClaveAcceso } from '@/lib/sri/claveAcceso';
 import { DEFAULT_TAX_PROFILE } from '@/lib/sri/xmlBuilder';
 import {
@@ -549,8 +549,9 @@ function generateUuid(): string {
     if (saleType === 'autoventa') {
       const seqNumber = getNextInvoiceSequence(invoices);
       const invoiceNum = `001-001-${String(seqNumber).padStart(9, '0')}`;
-      const subtotal15 = Number((totalAmount / 1.15).toFixed(2));
-      const tax = Number((totalAmount - subtotal15).toFixed(2));
+      const facturaLines = expandCartItemsToFacturaLines(items, 15);
+      const subtotal15 = Number(facturaLines.reduce((s, l) => s + l.precioTotalSinImpuesto, 0).toFixed(2));
+      const tax = Number(facturaLines.reduce((s, l) => s + l.iva, 0).toFixed(2));
       const claveAcceso = generarClaveAcceso({
         fecha: new Date(),
         ruc: DEFAULT_TAX_PROFILE.ruc,
@@ -733,8 +734,9 @@ function generateUuid(): string {
       const client = clients.find((c) => c.id === targetOrder.clientId);
       const seqNumber = getNextInvoiceSequence(invoices);
       const invoiceNum = `001-001-${String(seqNumber).padStart(9, '0')}`;
-      const subtotal15 = Number((targetOrder.totalAmount / 1.15).toFixed(2));
-      const tax = Number((targetOrder.totalAmount - subtotal15).toFixed(2));
+      const facturaLines = expandCartItemsToFacturaLines(targetOrder.items, 15);
+      const subtotal15 = Number(facturaLines.reduce((s, l) => s + l.precioTotalSinImpuesto, 0).toFixed(2));
+      const tax = Number(facturaLines.reduce((s, l) => s + l.iva, 0).toFixed(2));
       const claveAcceso = generarClaveAcceso({
         fecha: new Date(),
         ruc: DEFAULT_TAX_PROFILE.ruc,
@@ -905,8 +907,9 @@ function generateUuid(): string {
     const existing = invoices.find((inv) => inv.orderId === orderId);
     if (existing) return existing;
 
-    const subtotal15 = Number((order.totalAmount / 1.15).toFixed(2));
-    const tax15 = Number((order.totalAmount - subtotal15).toFixed(2));
+    const facturaLines = expandCartItemsToFacturaLines(order.items, 15);
+    const subtotal15 = Number(facturaLines.reduce((s, l) => s + l.precioTotalSinImpuesto, 0).toFixed(2));
+    const tax15 = Number(facturaLines.reduce((s, l) => s + l.iva, 0).toFixed(2));
     const seqNumber = getNextInvoiceSequence(invoices);
     const invoiceNum = `001-001-${String(seqNumber).padStart(9, '0')}`;
     const newInvoice: Invoice = {

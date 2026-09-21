@@ -3,7 +3,7 @@
  */
 
 import { CartItem, CompanyTaxProfile } from '@/types';
-import { formatProductSku } from '@/lib/utils/formatters';
+import { formatProductSku, expandCartItemsToFacturaLines } from '@/lib/utils/formatters';
 
 export const DEFAULT_TAX_PROFILE: CompanyTaxProfile = {
   ruc: '1803013810001',
@@ -64,11 +64,14 @@ export function buildFacturaXml(params: {
   const secuencialStr = pad(secuencial, 9);
   const fechaStr = formatDateSRI(fechaEmision);
 
-  // Los precios de catálogo y subtotales en Distribuidora Aneth ya incluyen IVA (PVP).
-  // Por tanto, la Base Imponible y el IVA se calculan matemáticamente:
-  const importeTotal = Number(items.reduce((sum, i) => sum + i.subtotal, 0).toFixed(2));
-  const totalSinImpuestos = ivaRate === 15 ? Number((importeTotal / 1.15).toFixed(2)) : importeTotal;
-  const totalIva = Number((importeTotal - totalSinImpuestos).toFixed(2));
+  // Desglose oficial de ítems según Opción 1:
+  // Si un ítem tiene tanto Packs como Unidades sueltas, se desglosa en líneas discretas
+  // con SKUs estandarizados (ej: FRU-500-PAQ y FRU-500-UND) y sumas tributarias exactas.
+  const lines = expandCartItemsToFacturaLines(items, ivaRate);
+
+  const totalSinImpuestos = Number(lines.reduce((sum, l) => sum + l.precioTotalSinImpuesto, 0).toFixed(2));
+  const totalIva = Number(lines.reduce((sum, l) => sum + l.iva, 0).toFixed(2));
+  const importeTotal = Number((totalSinImpuestos + totalIva).toFixed(2));
 
   // Forma de pago SRI: 01 = Efectivo, 20 = Otros con utilización del sistema financiero
   const formaPagoSri = paymentMethod === 'cash' ? '01' : '20';
@@ -143,46 +146,22 @@ export function buildFacturaXml(params: {
   </infoFactura>
   <detalles>`;
 
-  items.forEach((item) => {
-    const codPrincipal = formatProductSku(item.productOptionId);
-    const nombreProducto = `${item.brand || 'Fructi'} ${item.size} ${item.container} - ${
-      item.flavorType === 'single' ? item.selectedFlavor : 'Surtido'
-    }`;
-    const packInfo = item.quantityJavas > 0 ? `${item.quantityJavas} packs` : '';
-    const unitInfo = item.quantityUnits > 0 ? `${item.quantityUnits} unidades` : '';
-    const breakdown = [packInfo, unitInfo].filter(Boolean).join(' + ');
-
-    const cantidad =
-      item.totalBottles && item.totalBottles > 0
-        ? item.totalBottles
-        : (item.quantityJavas || 0) * (item.unitsPerJava || 12) + (item.quantityUnits || 0);
-    const subtotalItemConIva = item.subtotal;
-    const baseImponibleItem = ivaRate === 15 ? Number((subtotalItemConIva / 1.15).toFixed(2)) : subtotalItemConIva;
-    const ivaItem = Number((subtotalItemConIva - baseImponibleItem).toFixed(2));
-    const precioUnitarioSinIva = Number((baseImponibleItem / (cantidad || 1)).toFixed(4));
-
+  lines.forEach((line) => {
     xml += `
     <detalle>
-      <codigoPrincipal>${escapeXml(codPrincipal)}</codigoPrincipal>
-      <descripcion>${escapeXml(nombreProducto)}</descripcion>
-      <cantidad>${cantidad.toFixed(2)}</cantidad>
-      <precioUnitario>${precioUnitarioSinIva.toFixed(4)}</precioUnitario>
+      <codigoPrincipal>${escapeXml(line.codigoPrincipal)}</codigoPrincipal>
+      <descripcion>${escapeXml(line.descripcion)}</descripcion>
+      <cantidad>${line.cantidad.toFixed(2)}</cantidad>
+      <precioUnitario>${line.precioUnitarioSinIva.toFixed(4)}</precioUnitario>
       <descuento>0.00</descuento>
-      <precioTotalSinImpuesto>${baseImponibleItem.toFixed(2)}</precioTotalSinImpuesto>${
-      breakdown
-        ? `
-      <detallesAdicionales>
-        <detAdicional nombre="Presentacion" valor="${escapeXml(breakdown)}"/>
-      </detallesAdicionales>`
-        : ''
-    }
+      <precioTotalSinImpuesto>${line.precioTotalSinImpuesto.toFixed(2)}</precioTotalSinImpuesto>
       <impuestos>
         <impuesto>
           <codigo>2</codigo>
           <codigoPorcentaje>${codigoPorcentajeIva}</codigoPorcentaje>
           <tarifa>${ivaRate.toFixed(2)}</tarifa>
-          <baseImponible>${baseImponibleItem.toFixed(2)}</baseImponible>
-          <valor>${ivaItem.toFixed(2)}</valor>
+          <baseImponible>${line.precioTotalSinImpuesto.toFixed(2)}</baseImponible>
+          <valor>${line.iva.toFixed(2)}</valor>
         </impuesto>
       </impuestos>
     </detalle>`;
@@ -305,32 +284,24 @@ export function buildNotaCreditoXml(params: {
   </infoNotaCredito>
   <detalles>`;
 
-  items.forEach((item) => {
-    const descripcion = `${item.brand || 'Fructi'} ${item.size} ${item.container} - ${
-      item.flavorType === 'single' ? item.selectedFlavor : 'Surtido'
-    }`;
-    const cantidad = item.totalBottles || (item.quantityJavas * item.unitsPerJava);
-    const subtotalItemConIva = item.subtotal;
-    const baseImponibleItem =
-      ivaRate === 15 ? Number((subtotalItemConIva / 1.15).toFixed(2)) : subtotalItemConIva;
-    const ivaItem = Number((subtotalItemConIva - baseImponibleItem).toFixed(2));
-    const precioUnitarioSinIva = Number((baseImponibleItem / (cantidad || 1)).toFixed(4));
+  const lines = expandCartItemsToFacturaLines(items, ivaRate);
 
+  lines.forEach((line) => {
     xml += `
     <detalle>
-      <codigoInterno>${escapeXml(item.productOptionId)}</codigoInterno>
-      <descripcion>${escapeXml(descripcion)}</descripcion>
-      <cantidad>${cantidad.toFixed(2)}</cantidad>
-      <precioUnitario>${precioUnitarioSinIva.toFixed(4)}</precioUnitario>
+      <codigoInterno>${escapeXml(line.codigoPrincipal)}</codigoInterno>
+      <descripcion>${escapeXml(line.descripcion)}</descripcion>
+      <cantidad>${line.cantidad.toFixed(2)}</cantidad>
+      <precioUnitario>${line.precioUnitarioSinIva.toFixed(4)}</precioUnitario>
       <descuento>0.00</descuento>
-      <precioTotalSinImpuesto>${baseImponibleItem.toFixed(2)}</precioTotalSinImpuesto>
+      <precioTotalSinImpuesto>${line.precioTotalSinImpuesto.toFixed(2)}</precioTotalSinImpuesto>
       <impuestos>
         <impuesto>
           <codigo>2</codigo>
           <codigoPorcentaje>${codigoPorcentajeIva}</codigoPorcentaje>
           <tarifa>${ivaRate.toFixed(2)}</tarifa>
-          <baseImponible>${baseImponibleItem.toFixed(2)}</baseImponible>
-          <valor>${ivaItem.toFixed(2)}</valor>
+          <baseImponible>${line.precioTotalSinImpuesto.toFixed(2)}</baseImponible>
+          <valor>${line.iva.toFixed(2)}</valor>
         </impuesto>
       </impuestos>
     </detalle>`;
