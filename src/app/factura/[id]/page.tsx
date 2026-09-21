@@ -20,9 +20,12 @@ import { SriBarcodeSVG } from '@/components/ui/SriBarcodeSVG';
 import { generarClaveAcceso } from '@/lib/sri/claveAcceso';
 import { buildFacturaXml, DEFAULT_TAX_PROFILE } from '@/lib/sri/xmlBuilder';
 import { getInvoiceByIdOrNumberFromDb, saveInvoiceToDb } from '@/lib/supabase/syncService';
+import { downloadInvoicePdf } from '@/lib/utils/pdfGenerator';
 import { Invoice } from '@/types';
 import {
   Printer,
+  FileDown,
+  Loader2,
   Code,
   ArrowLeft,
   CheckCircle2,
@@ -338,6 +341,21 @@ export default function PublicInvoicePage({
     window.open(link, '_blank');
   };
 
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState<boolean>(false);
+
+  const handleDownloadPdf = async () => {
+    if (!invoice || isGeneratingPdf) return;
+    setIsGeneratingPdf(true);
+    try {
+      const cleanNum = invoice.invoiceNumber.replace(/[^0-9A-Za-z_-]/g, '_');
+      await downloadInvoicePdf('invoice-printable-area', `FACTURA_${cleanNum}_SRI.pdf`);
+    } catch (err) {
+      console.error('Error al generar PDF:', err);
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
+
   const handleDownloadXml = async () => {
     if (!invoice) return;
     const seq = parseInt(invoice.invoiceNumber.replace(/\D/g, '').slice(-9), 10) || 1;
@@ -491,15 +509,36 @@ export default function PublicInvoicePage({
             <span>XML</span>
           </button>
 
-          {/* PDF */}
+          {/* Imprimir */}
           <button
             type="button"
             onClick={handlePrint}
-            title="Imprimir o guardar como PDF"
-            className="inline-flex items-center gap-1 px-3 sm:px-3.5 py-1.5 bg-[#0071e3] hover:bg-[#0077ed] active:scale-[0.97] text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
+            title="Imprimir directamente"
+            className="hidden sm:inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 bg-slate-100 hover:bg-slate-200/80 active:scale-[0.97] text-slate-700 rounded-xl text-xs font-semibold border border-slate-200/60 transition-all cursor-pointer"
           >
-            <Printer className="w-3.5 h-3.5" />
-            <span>PDF</span>
+            <Printer className="w-3.5 h-3.5 text-slate-500" />
+            <span>Imprimir</span>
+          </button>
+
+          {/* Descargar PDF */}
+          <button
+            type="button"
+            onClick={handleDownloadPdf}
+            disabled={isGeneratingPdf}
+            title="Descargar factura oficial en PDF"
+            className="inline-flex items-center gap-1 px-3 sm:px-3.5 py-1.5 bg-[#0071e3] hover:bg-[#0077ed] active:scale-[0.97] text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer disabled:opacity-75"
+          >
+            {isGeneratingPdf ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>Generando...</span>
+              </>
+            ) : (
+              <>
+                <FileDown className="w-3.5 h-3.5" />
+                <span>PDF</span>
+              </>
+            )}
           </button>
         </div>
       </div>

@@ -96,17 +96,42 @@
 }
 
 /* Print styles for invoices and QR stickers */
+@page {
+  size: A4 portrait;
+  margin: 6mm 8mm;
+}
+
 @media print {
-  body {
-    background: white !important;
-    color: black !important;
+  @page {
+    size: A4 portrait;
+    margin: 6mm 8mm;
   }
   
-  header, nav, .print\:hidden {
+  html, body {
+    background: white !important;
+    color: #0f172a !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  header, nav, footer, .print\:hidden {
     display: none !important;
   }
   
-  #invoice-printable-area, #qr-printable-sticker {
+  #invoice-printable-area {
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 auto !important;
+    width: 100% !important;
+    max-width: 195mm !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  #qr-printable-sticker {
     box-shadow: none !important;
     border: none !important;
     padding: 0 !important;
