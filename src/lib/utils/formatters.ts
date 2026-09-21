@@ -483,7 +483,7 @@ export function generateWhatsAppOrderLink(params: {
     cleanOrderNumber = formatOrderNumber(cleanOrderNumber);
   }
 
-  let message = `*DISTRIBUIDORA ANETH*\nComprobante de Entrega\n\n`;
+  let message = `*ANETH DISTRIBUCIONES*\nComprobante de Entrega\n\n`;
   message += `*Pedido:* ${cleanOrderNumber}\n`;
   message += `*Cliente:* ${params.clientName}\n`;
 

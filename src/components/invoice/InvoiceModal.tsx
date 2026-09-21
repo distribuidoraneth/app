@@ -276,7 +276,7 @@ export function InvoiceModal({ invoice, isOpen, onClose }: InvoiceModalProps) {
             {/* Columna Izquierda: Logo + Cuadro Emisor */}
             <div className="flex flex-col justify-between space-y-2.5 sm:space-y-3">
               <div className="py-1 px-0.5">
-                <AnethFullLogo size="md" showSubtitle={true} subtitleText="DISTRIBUIDORA" />
+                <AnethFullLogo size="md" showSubtitle={true} subtitleText="DISTRIBUCIONES" />
               </div>
 
               <div className="border border-slate-300 rounded-2xl p-3.5 sm:p-4 space-y-1.5 sm:space-y-2 text-xs text-slate-800 bg-white flex-1 flex flex-col justify-center">
@@ -289,7 +289,7 @@ export function InvoiceModal({ invoice, isOpen, onClose }: InvoiceModalProps) {
                     {DEFAULT_TAX_PROFILE.ruc}
                   </p>
                   <p className="font-bold text-slate-800 mt-0.5 tracking-tight">
-                    {DEFAULT_TAX_PROFILE.nombreComercial || 'DISTRIBUIDORA ANETH'}
+                    {DEFAULT_TAX_PROFILE.nombreComercial || 'ANETH DISTRIBUCIONES'}
                   </p>
                 </div>
 
@@ -452,7 +452,7 @@ export function InvoiceModal({ invoice, isOpen, onClose }: InvoiceModalProps) {
                   {invoice.clientAddress && (
                     <p><strong className="text-slate-900">Dirección:</strong> {invoice.clientAddress}</p>
                   )}
-                  <p><strong className="text-slate-900">Distribuidor:</strong> Distribuidora Aneth</p>
+                  <p><strong className="text-slate-900">Distribuidor:</strong> ANETH Distribuciones</p>
                 </div>
               </div>
 

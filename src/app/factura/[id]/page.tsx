@@ -424,7 +424,7 @@ export default function PublicInvoicePage({
         <div className="text-center bg-white p-8 rounded-3xl border border-slate-200/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] max-w-sm flex flex-col items-center">
           <div className="w-10 h-10 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mb-4" />
           <h2 className="font-extrabold text-slate-900 text-sm">Cargando Comprobante SRI</h2>
-          <p className="text-xs text-slate-500 mt-1">Verificando comprobante en Distribuidora Aneth...</p>
+          <p className="text-xs text-slate-500 mt-1">Verificando comprobante en ANETH Distribuciones...</p>
         </div>
       </div>
     );
@@ -585,7 +585,7 @@ export default function PublicInvoicePage({
           <div className="flex flex-col justify-between space-y-2.5 sm:space-y-3">
             {/* Logo */}
             <div className="py-1 px-0.5">
-              <AnethFullLogo size="md" showSubtitle={true} subtitleText="DISTRIBUIDORA" />
+              <AnethFullLogo size="md" showSubtitle={true} subtitleText="DISTRIBUCIONES" />
             </div>
 
             {/* Cuadro Oficial Emisor */}
@@ -599,7 +599,7 @@ export default function PublicInvoicePage({
                   {DEFAULT_TAX_PROFILE.ruc}
                 </p>
                 <p className="font-bold text-slate-800 mt-0.5 tracking-tight">
-                  {DEFAULT_TAX_PROFILE.nombreComercial || 'DISTRIBUIDORA ANETH'}
+                  {DEFAULT_TAX_PROFILE.nombreComercial || 'ANETH DISTRIBUCIONES'}
                 </p>
               </div>
 
@@ -762,7 +762,7 @@ export default function PublicInvoicePage({
                 {invoice.clientAddress && (
                   <p><strong className="text-slate-900">Dirección:</strong> {invoice.clientAddress}</p>
                 )}
-                <p><strong className="text-slate-900">Distribuidor:</strong> Distribuidora Aneth</p>
+                <p><strong className="text-slate-900">Distribuidor:</strong> ANETH Distribuciones</p>
               </div>
             </div>
 

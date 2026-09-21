@@ -55,7 +55,7 @@ export function QRCodeModal({ client, isOpen, onClose }: QRCodeModalProps) {
         <div id="qr-printable-sticker" className="p-6 text-center space-y-4 bg-white">
           {/* Brand header */}
           <div className="flex flex-col items-center space-y-1">
-            <AnethFullLogo size="md" className="items-center" showSubtitle={true} subtitleText="DISTRIBUIDORA" />
+            <AnethFullLogo size="md" className="items-center" showSubtitle={true} subtitleText="DISTRIBUCIONES" />
             <p className="text-xs text-slate-500 font-semibold pt-1">Pedidos Directos de Bebidas en Javas</p>
           </div>
 

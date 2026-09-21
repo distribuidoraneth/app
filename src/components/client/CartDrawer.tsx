@@ -193,7 +193,7 @@ export function CartDrawer({
     const greeting = clientName ? `Hola *${clientName}*, le` : 'Estimado/a cliente, le';
 
     const text =
-      `*DISTRIBUIDORA ANETH* 📦\n\n` +
+      `*ANETH DISTRIBUCIONES* 📦\n\n` +
       `${greeting} compartimos los datos bancarios para su transferencia:\n\n` +
       `🏦 *Banco:* Banco Pichincha\n` +
       `💳 *Tipo:* Cuenta de Ahorros\n` +
@@ -326,7 +326,7 @@ export function CartDrawer({
       ? `${typeof window !== 'undefined' ? window.location.origin : 'https://distribuidora-aneth.vercel.app'}/factura/${invoiceRef}`
       : '';
 
-    let text = `*DISTRIBUIDORA ANETH*\nComprobante de Entrega\n\n`;
+    let text = `*ANETH DISTRIBUCIONES*\nComprobante de Entrega\n\n`;
     text += `*Pedido:* ${createdOrderSummary.orderNumber}\n`;
     text += `*Cliente:* ${activeClient?.businessName || activeClient?.fullName}\n`;
 

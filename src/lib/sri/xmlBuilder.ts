@@ -8,7 +8,7 @@ import { formatProductSku, expandCartItemsToFacturaLines } from '@/lib/utils/for
 export const DEFAULT_TAX_PROFILE: CompanyTaxProfile = {
   ruc: '1803013810001',
   razonSocial: 'ANDRADE CONSTANTE ANA ELIZABETH',
-  nombreComercial: 'DISTRIBUIDORA ANETH',
+  nombreComercial: 'ANETH DISTRIBUCIONES',
   dirMatriz: 'AV. ATAHUALPA S/N Y TEODORO SOLIS, AMBATO, TUNGURAHUA',
   dirEstablecimiento: 'AV. ATAHUALPA S/N Y TEODORO SOLIS, AMBATO, TUNGURAHUA',
   establecimiento: '001',
@@ -185,7 +185,7 @@ export function buildFacturaXml(params: {
   }
 
   xml += `
-    <campoAdicional nombre="Distribuidor">Distribuidora Aneth</campoAdicional>
+    <campoAdicional nombre="Distribuidor">ANETH Distribuciones</campoAdicional>
   </infoAdicional>
 </factura>`;
 
@@ -311,7 +311,7 @@ export function buildNotaCreditoXml(params: {
   </detalles>
   <infoAdicional>
     <campoAdicional nombre="FacturaAfectada">${escapeXml(facturaModificada.numero)}</campoAdicional>
-    <campoAdicional nombre="Distribuidor">Distribuidora Aneth</campoAdicional>
+    <campoAdicional nombre="Distribuidor">ANETH Distribuciones</campoAdicional>
   </infoAdicional>
 </notaCredito>`;
 
