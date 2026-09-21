@@ -3,6 +3,7 @@ import { generarClaveAcceso } from '@/lib/sri/claveAcceso';
 import { buildFacturaXml, DEFAULT_TAX_PROFILE } from '@/lib/sri/xmlBuilder';
 import { signXmlXadesBes } from '@/lib/sri/signer';
 import { enviarRecepcionSRI, consultarAutorizacionSRI } from '@/lib/sri/soapClient';
+import { getServiceSupabase } from '@/lib/supabase/admin';
 
 export async function POST(req: NextRequest) {
   try {
@@ -90,6 +91,30 @@ export async function POST(req: NextRequest) {
         : sriAutorizacion?.estado === 'NO AUTORIZADO'
         ? sriAutorizacion.error
         : undefined;
+
+    // Si se emitió o procesó un secuencial válido, asegurar persistencia en company_tax_profiles
+    if (secuencial && Number(secuencial) >= 119) {
+      try {
+        const sbAdmin = getServiceSupabase();
+        const { data: existing } = await sbAdmin
+          .from('company_tax_profiles')
+          .select('id, current_secuencial')
+          .eq('ruc', taxProfile.ruc)
+          .maybeSingle();
+
+        if (existing && Number(secuencial) > (existing.current_secuencial || 0)) {
+          await sbAdmin
+            .from('company_tax_profiles')
+            .update({
+              current_secuencial: Number(secuencial),
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', existing.id);
+        }
+      } catch (seqErr) {
+        console.warn('[API facturar] No se pudo actualizar secuencial en company_tax_profiles:', seqErr);
+      }
+    }
 
     return NextResponse.json({
       success: finalStatus === 'AUTORIZADO' || finalStatus === 'RECIBIDA' || finalStatus === 'EN PROCESO',

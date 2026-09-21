@@ -33,6 +33,8 @@ import {
   updateOrderStatusInDb,
   saveInvoiceToDb,
   getInvoicesFromDb,
+  getCompanyTaxProfileFromDb,
+  updateCompanySecuencialInDb,
   GetOrdersOptions,
 } from '@/lib/supabase/syncService';
 
@@ -92,18 +94,59 @@ interface DistributionContextType {
   refreshData: () => Promise<void>;
   clearLocalCache: () => Promise<void>;
   ensureOrderLoaded: (idOrNumber: string) => Promise<Order | null>;
+  currentSecuencial: number;
 }
 
 const DistributionContext = createContext<DistributionContextType | undefined>(undefined);
 
 export const STORAGE_KEY = 'distribuidora_aneth_oficial_v12';
+export const MIN_INVOICE_SEQUENCE_BASE = 119;
+export const SEQUENCE_STORAGE_KEY = 'distribuidora_aneth_last_sequence';
 
-export function getNextInvoiceSequence(invoicesList: Invoice[]): number {
-  const maxSeq = (invoicesList || []).reduce((max, inv) => {
-    const num = parseInt(inv.invoiceNumber?.replace(/\D/g, '')?.slice(-9) || '0', 10);
-    return num > max ? num : max;
-  }, 113);
+export function getNextInvoiceSequence(invoicesList?: Invoice[], currentSecuencialBase?: number): number {
+  let maxSeq = MIN_INVOICE_SEQUENCE_BASE;
+
+  if (typeof currentSecuencialBase === 'number' && currentSecuencialBase > maxSeq) {
+    maxSeq = currentSecuencialBase;
+  }
+
+  if (typeof window !== 'undefined') {
+    try {
+      const stored = localStorage.getItem(SEQUENCE_STORAGE_KEY);
+      if (stored) {
+        const parsed = parseInt(stored, 10);
+        if (!isNaN(parsed) && parsed > maxSeq) {
+          maxSeq = parsed;
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  if (Array.isArray(invoicesList)) {
+    for (const inv of invoicesList) {
+      const num = parseInt(inv.invoiceNumber?.replace(/\D/g, '')?.slice(-9) || '0', 10);
+      if (num > maxSeq) {
+        maxSeq = num;
+      }
+    }
+  }
+
   return maxSeq + 1;
+}
+
+export function recordUsedInvoiceSequence(seq: number): void {
+  if (typeof window !== 'undefined' && seq >= MIN_INVOICE_SEQUENCE_BASE) {
+    try {
+      const current = parseInt(localStorage.getItem(SEQUENCE_STORAGE_KEY) || '0', 10);
+      if (seq > current) {
+        localStorage.setItem(SEQUENCE_STORAGE_KEY, String(seq));
+      }
+    } catch {
+      // ignore
+    }
+  }
 }
 
 export function DistributionProvider({ children }: { children: React.ReactNode }) {
@@ -111,6 +154,22 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
   const [catalog, setCatalog] = useState<JavaProductOption[]>(JAVA_PRODUCT_CATALOG);
   const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS);
   const [invoices, setInvoices] = useState<Invoice[]>(INITIAL_INVOICES);
+  const [currentSecuencial, setCurrentSecuencial] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem(SEQUENCE_STORAGE_KEY);
+        if (stored) {
+          const parsed = parseInt(stored, 10);
+          if (!isNaN(parsed) && parsed >= MIN_INVOICE_SEQUENCE_BASE) {
+            return parsed;
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+    return MIN_INVOICE_SEQUENCE_BASE;
+  });
 
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -145,12 +204,22 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
   // Sincronizar simultáneamente productos, clientes y órdenes con Supabase
   const refreshData = async () => {
     try {
-      const [dbProducts, dbClients, dbOrders, dbInvoices] = await Promise.all([
+      const [dbProducts, dbClients, dbOrders, dbInvoices, dbTaxProfile] = await Promise.all([
         getProductsFromDb(),
         getClientsFromDb(),
         getOrdersFromDb(ordersFilter || { datePreset: 'today' }),
         getInvoicesFromDb(),
+        getCompanyTaxProfileFromDb(),
       ]);
+
+      if (dbTaxProfile && typeof dbTaxProfile.current_secuencial === 'number') {
+        const profileSeq = Math.max(dbTaxProfile.current_secuencial, MIN_INVOICE_SEQUENCE_BASE);
+        setCurrentSecuencial((prev) => {
+          const updated = Math.max(prev, profileSeq);
+          recordUsedInvoiceSequence(updated);
+          return updated;
+        });
+      }
 
       if (dbProducts !== null) {
         setCatalog(dbProducts);
@@ -603,7 +672,10 @@ function generateUuid(): string {
     // Auto-generate Invoice ONLY for orders that are delivered immediately (Autoventa)
     // For Preventa, the invoice is generated automatically at the exact moment of dispatch/delivery
     if (saleType === 'autoventa') {
-      const seqNumber = getNextInvoiceSequence(invoices);
+      const seqNumber = getNextInvoiceSequence(invoices, currentSecuencial);
+      setCurrentSecuencial(seqNumber);
+      recordUsedInvoiceSequence(seqNumber);
+      updateCompanySecuencialInDb(seqNumber).catch(() => {});
       const invoiceNum = `001-001-${String(seqNumber).padStart(9, '0')}`;
       const facturaLines = expandCartItemsToFacturaLines(items, 15);
       const subtotal15 = Number(facturaLines.reduce((s, l) => s + l.precioTotalSinImpuesto, 0).toFixed(2));
@@ -796,7 +868,10 @@ function generateUuid(): string {
     // Facturación automática al momento del Despacho/Entrega si no tenía factura previa (Preventa)
     if (status === 'delivered' && targetOrder && !targetOrder.invoiceId) {
       const client = clients.find((c) => c.id === targetOrder.clientId);
-      const seqNumber = getNextInvoiceSequence(invoices);
+      const seqNumber = getNextInvoiceSequence(invoices, currentSecuencial);
+      setCurrentSecuencial(seqNumber);
+      recordUsedInvoiceSequence(seqNumber);
+      updateCompanySecuencialInDb(seqNumber).catch(() => {});
       const invoiceNum = `001-001-${String(seqNumber).padStart(9, '0')}`;
       const facturaLines = expandCartItemsToFacturaLines(targetOrder.items, 15);
       const subtotal15 = Number(facturaLines.reduce((s, l) => s + l.precioTotalSinImpuesto, 0).toFixed(2));
@@ -981,7 +1056,10 @@ function generateUuid(): string {
     const facturaLines = expandCartItemsToFacturaLines(order.items, 15);
     const subtotal15 = Number(facturaLines.reduce((s, l) => s + l.precioTotalSinImpuesto, 0).toFixed(2));
     const tax15 = Number(facturaLines.reduce((s, l) => s + l.iva, 0).toFixed(2));
-    const seqNumber = getNextInvoiceSequence(invoices);
+    const seqNumber = getNextInvoiceSequence(invoices, currentSecuencial);
+    setCurrentSecuencial(seqNumber);
+    recordUsedInvoiceSequence(seqNumber);
+    updateCompanySecuencialInDb(seqNumber).catch(() => {});
     const invoiceNum = `001-001-${String(seqNumber).padStart(9, '0')}`;
     const newInvoice: Invoice = {
       id: `fac-${Date.now()}`,
@@ -1132,6 +1210,7 @@ function generateUuid(): string {
         refreshData,
         clearLocalCache,
         ensureOrderLoaded,
+        currentSecuencial,
       }}
     >
       {children}

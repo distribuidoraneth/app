@@ -1,7 +1,11 @@
 'use client';
 
 import React, { use, useState, useMemo } from 'react';
-import { useDistribution } from '@/context/DistributionContext';
+import {
+  useDistribution,
+  getNextInvoiceSequence,
+  recordUsedInvoiceSequence,
+} from '@/context/DistributionContext';
 import {
   formatCurrency,
   formatUnitPrice,
@@ -19,7 +23,11 @@ import { AppleWhatsAppIcon } from '@/components/ui/AppleIcons';
 import { SriBarcodeSVG } from '@/components/ui/SriBarcodeSVG';
 import { generarClaveAcceso } from '@/lib/sri/claveAcceso';
 import { buildFacturaXml, DEFAULT_TAX_PROFILE } from '@/lib/sri/xmlBuilder';
-import { getInvoiceByIdOrNumberFromDb, saveInvoiceToDb } from '@/lib/supabase/syncService';
+import {
+  getInvoiceByIdOrNumberFromDb,
+  saveInvoiceToDb,
+  updateCompanySecuencialInDb,
+} from '@/lib/supabase/syncService';
 import { downloadInvoicePdf } from '@/lib/utils/pdfGenerator';
 import { Invoice } from '@/types';
 import {
@@ -43,7 +51,7 @@ export default function PublicInvoicePage({
 }) {
   const resolvedParams = use(params);
   const router = useRouter();
-  const { invoices, orders } = useDistribution();
+  const { invoices, orders, currentSecuencial } = useDistribution();
 
   const invoiceFromContext = invoices.find(
     (i) =>
@@ -198,12 +206,11 @@ export default function PublicInvoicePage({
       let clave: string | undefined = claveAcceso;
 
       if (isSequenceDuplicate) {
-        const maxSeq = invoices.reduce((max, inv) => {
-          const num = parseInt(inv.invoiceNumber?.replace(/\D/g, '')?.slice(-9) || '0', 10);
-          return num > max ? num : max;
-        }, 113);
-        seq = maxSeq + 1;
+        const nextValid = getNextInvoiceSequence(invoices, Math.max(seq, currentSecuencial || 119));
+        seq = nextValid;
         clave = undefined; // Forzar generación de nueva clave limpia para el nuevo secuencial
+        recordUsedInvoiceSequence(seq);
+        updateCompanySecuencialInDb(seq).catch(console.warn);
       }
 
       const res = await fetch('/api/sri/facturar', {
@@ -234,6 +241,9 @@ export default function PublicInvoicePage({
         setSriAuthNum(data.numeroAutorizacion);
         setSriAuthDate(data.fechaAutorizacion);
         setSriErrorMsg(data.error);
+
+        recordUsedInvoiceSequence(seq);
+        updateCompanySecuencialInDb(seq).catch(console.warn);
 
         // Actualizar invoice en localStorage para que refleje el nuevo número y estado
         try {

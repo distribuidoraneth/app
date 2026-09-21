@@ -684,6 +684,12 @@ export async function saveInvoiceToDb(
         .eq('id', orderId);
     }
 
+    // Proteger y registrar secuencial de factura en company_tax_profiles
+    const seq = parseInt(invoice.invoiceNumber?.replace(/\D/g, '')?.slice(-9) || '0', 10);
+    if (seq >= 119) {
+      updateCompanySecuencialInDb(seq).catch(() => {});
+    }
+
     return { success: true, data: savedInvoice };
   } catch (err: any) {
     console.warn('Excepción al guardar factura en Supabase:', err);
@@ -773,6 +779,75 @@ export async function getInvoiceByIdOrNumberFromDb(
   } catch (err) {
     console.warn('Excepción al buscar factura en Supabase:', err);
     return null;
+  }
+}
+
+export async function getCompanyTaxProfileFromDb(): Promise<{ ruc: string; current_secuencial: number } | null> {
+  try {
+    if (typeof window !== 'undefined') {
+      const res = await fetch('/api/billing/sequence', { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        return {
+          ruc: DEFAULT_TAX_PROFILE.ruc,
+          current_secuencial: Number(data.current_secuencial) || 119,
+        };
+      }
+    }
+
+    const { data, error } = await supabase
+      .from('company_tax_profiles')
+      .select('ruc, current_secuencial')
+      .eq('ruc', DEFAULT_TAX_PROFILE.ruc)
+      .maybeSingle();
+
+    if (error) {
+      console.warn('Advertencia al consultar company_tax_profiles:', error.message);
+      return { ruc: DEFAULT_TAX_PROFILE.ruc, current_secuencial: 119 };
+    }
+
+    return {
+      ruc: data?.ruc || DEFAULT_TAX_PROFILE.ruc,
+      current_secuencial: Number(data?.current_secuencial) || 119,
+    };
+  } catch (err) {
+    console.warn('Excepción al consultar company_tax_profiles:', err);
+    return { ruc: DEFAULT_TAX_PROFILE.ruc, current_secuencial: 119 };
+  }
+}
+
+export async function updateCompanySecuencialInDb(newSecuencial: number): Promise<boolean> {
+  try {
+    if (!newSecuencial || newSecuencial < 119) return false;
+
+    if (typeof window !== 'undefined') {
+      const res = await fetch('/api/billing/sequence', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ secuencial: newSecuencial }),
+      });
+      if (res.ok) return true;
+    }
+
+    const { data: existing } = await supabase
+      .from('company_tax_profiles')
+      .select('id, current_secuencial')
+      .eq('ruc', DEFAULT_TAX_PROFILE.ruc)
+      .maybeSingle();
+
+    if (existing && newSecuencial > (existing.current_secuencial || 0)) {
+      await supabase
+        .from('company_tax_profiles')
+        .update({
+          current_secuencial: newSecuencial,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', existing.id);
+    }
+    return true;
+  } catch (err) {
+    console.warn('Excepción al actualizar secuencial en DB:', err);
+    return false;
   }
 }
 
