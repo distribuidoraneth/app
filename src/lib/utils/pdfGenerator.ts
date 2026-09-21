@@ -51,11 +51,26 @@ export async function downloadInvoicePdf(
       backgroundColor: '#ffffff',
       windowWidth: 1024,
       onclone: (clonedDoc) => {
+        const clonedContainer = clonedDoc.getElementById(elementId);
+        if (clonedContainer) {
+          clonedContainer.style.position = 'static';
+          clonedContainer.style.left = '0';
+          clonedContainer.style.top = '0';
+          clonedContainer.style.display = 'block';
+          clonedContainer.style.visibility = 'visible';
+          clonedContainer.style.pointerEvents = 'auto';
+          clonedContainer.style.zIndex = 'auto';
+        }
+
         const clonedPage =
           (clonedDoc.querySelector(`[data-page-index="${i}"]`) as HTMLElement) ||
-          clonedDoc.getElementById(elementId);
+          clonedContainer;
 
         if (clonedPage) {
+          clonedPage.style.position = 'static';
+          clonedPage.style.left = '0';
+          clonedPage.style.top = '0';
+          clonedPage.style.display = 'block';
           clonedPage.style.width = '794px';
           clonedPage.style.maxWidth = '794px';
           clonedPage.style.margin = '0 auto';

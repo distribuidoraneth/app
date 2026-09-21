@@ -120,6 +120,37 @@
     display: none !important;
   }
   
+  .invoice-web-view {
+    display: none !important;
+  }
+
+  .invoice-pdf-container {
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    opacity: 1 !important;
+    z-index: auto !important;
+  }
+
+  .invoice-pdf-page {
+    page-break-after: always !important;
+    break-after: page !important;
+    width: 100% !important;
+    min-height: auto !important;
+    padding: 0 !important;
+    margin: 0 auto !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  .invoice-pdf-page:last-child {
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
+
   #invoice-printable-area {
     box-shadow: none !important;
     border: none !important;
