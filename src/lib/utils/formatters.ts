@@ -475,8 +475,16 @@ export function generateWhatsAppOrderLink(params: {
 
   const hasDebt = (params.debtBalance || 0) > 0;
 
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  let cleanOrderNumber = params.orderNumber;
+  if (isUuid.test(cleanOrderNumber)) {
+    cleanOrderNumber = params.invoiceNumber ? `FAC-${params.invoiceNumber}` : `ORD-${cleanOrderNumber.slice(0, 8).toUpperCase()}`;
+  } else if (!cleanOrderNumber.startsWith('ORD-') && !cleanOrderNumber.startsWith('FAC-')) {
+    cleanOrderNumber = formatOrderNumber(cleanOrderNumber);
+  }
+
   let message = `*DISTRIBUIDORA ANETH*\nComprobante de Entrega\n\n`;
-  message += `*Pedido:* ${params.orderNumber}\n`;
+  message += `*Pedido:* ${cleanOrderNumber}\n`;
   message += `*Cliente:* ${params.clientName}\n`;
 
   if (hasDebt) {

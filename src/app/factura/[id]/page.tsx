@@ -40,7 +40,7 @@ export default function PublicInvoicePage({
 }) {
   const resolvedParams = use(params);
   const router = useRouter();
-  const { invoices } = useDistribution();
+  const { invoices, orders } = useDistribution();
 
   const invoiceFromContext = invoices.find(
     (i) =>
@@ -305,11 +305,34 @@ export default function PublicInvoicePage({
 
   const handleShareWhatsApp = () => {
     if (!invoice) return;
+
+    const relatedOrder = orders.find(
+      (o) =>
+        o.id === invoice.orderId ||
+        (invoice.orderNumber && o.orderNumber === invoice.orderNumber) ||
+        o.invoiceId === invoice.id ||
+        o.invoiceNumber === invoice.invoiceNumber
+    );
+
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    let safeOrderNum = invoice.orderNumber || relatedOrder?.orderNumber;
+    if (!safeOrderNum) {
+      if (!isUuid.test(invoice.orderId)) {
+        safeOrderNum = invoice.orderId;
+      } else {
+        safeOrderNum = `ORD-${invoice.invoiceNumber.replace(/[^0-9]/g, '').slice(-9) || '1'}`;
+      }
+    }
+
     const link = generateWhatsAppOrderLink({
       phone: invoice.clientWhatsapp,
       clientName: invoice.clientName,
-      orderNumber: invoice.orderId,
+      orderNumber: safeOrderNum,
       total: invoice.total,
+      amountPaid: relatedOrder?.amountPaid,
+      debtBalance: relatedOrder?.debtBalance,
+      promisedCollectionDate: relatedOrder?.promisedCollectionDate,
+      promisedCollectionTime: relatedOrder?.promisedCollectionTime,
       invoiceNumber: invoice.invoiceNumber,
     });
     window.open(link, '_blank');

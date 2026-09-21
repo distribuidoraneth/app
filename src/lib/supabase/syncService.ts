@@ -482,6 +482,7 @@ function mapDbInvoice(i: any): Invoice {
     id: i.id,
     invoiceNumber: i.invoice_number,
     orderId: i.order_id || '',
+    orderNumber: i.orders?.order_number || i.order_number || undefined,
     claveAcceso: i.clave_acceso,
     ambiente: i.ambiente || '1',
     sriStatus: i.sri_status || 'PENDING',
@@ -532,6 +533,7 @@ function reconstructInvoiceFromOrder(order: Order): Invoice {
     id: generateUuid(),
     invoiceNumber: invoiceNum,
     orderId: order.id,
+    orderNumber: order.orderNumber,
     clientId: order.clientId,
     clientName: order.clientName,
     businessName: order.businessName || order.clientName,
@@ -667,7 +669,7 @@ export async function getInvoicesFromDb(): Promise<Invoice[] | null> {
   try {
     const { data, error } = await supabase
       .from('invoices')
-      .select('*, invoice_items(*)')
+      .select('*, invoice_items(*), orders(order_number)')
       .order('issued_at', { ascending: false })
       .limit(100);
 
@@ -691,7 +693,7 @@ export async function getInvoiceByIdOrNumberFromDb(
     if (!clean) return null;
 
     // 1. Buscar en la tabla 'invoices' de Supabase
-    let query = supabase.from('invoices').select('*, invoice_items(*)');
+    let query = supabase.from('invoices').select('*, invoice_items(*), orders(order_number)');
     if (isValidUuid(clean)) {
       query = query.or(`id.eq.${clean},order_id.eq.${clean},invoice_number.eq.${clean}`);
     } else {

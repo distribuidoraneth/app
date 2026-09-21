@@ -131,6 +131,7 @@ export interface Invoice {
   id: string;
   invoiceNumber: string; // e.g. "001-001-000000452"
   orderId: string;
+  orderNumber?: string;
   claveAcceso?: string; // 49 digits
   ambiente?: SriEnvironment;
   sriStatus?: SriStatus;
