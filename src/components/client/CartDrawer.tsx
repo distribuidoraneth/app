@@ -354,7 +354,11 @@ export function CartDrawer({
   };
 
   const modalContent = (
-    <div className="fixed inset-0 z-[9999] bg-slate-950/70 backdrop-blur-xs flex items-center justify-center sm:p-4 overflow-y-auto">
+    <div
+      className={`fixed inset-0 z-[9999] bg-slate-950/70 backdrop-blur-xs flex items-center justify-center sm:p-4 overflow-y-auto transition-opacity duration-200 ${
+        showThermalModal ? 'opacity-0 pointer-events-none' : 'opacity-100'
+      }`}
+    >
       <div className="w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-xl bg-white sm:rounded-3xl shadow-2xl flex flex-col justify-between overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
         <div className="p-4 sm:p-5 bg-white border-b border-slate-200 grid grid-cols-[auto_1fr_auto] items-center gap-2 sticky top-0 z-20 shadow-2xs">

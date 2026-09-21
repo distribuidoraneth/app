@@ -1,12 +1,11 @@
 'use client';
 
-import React, { useMemo, useRef } from 'react';
+import React, { useMemo, useRef, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Order, Client, Invoice } from '@/types';
 import { formatCurrency, formatItemTitle } from '@/lib/utils/formatters';
 import { DEFAULT_TAX_PROFILE } from '@/lib/sri/xmlBuilder';
-import { generarClaveAcceso } from '@/lib/sri/claveAcceso';
 import { PoplQRCodeSVG } from '@/components/ui/PoplQRCodeSVG';
-import { BarcodeSVG } from '@/components/ui/BarcodeSVG';
 import { AnethReceiptLogo } from './AnethReceiptLogo';
 import { Printer, X } from 'lucide-react';
 
@@ -26,25 +25,34 @@ export function ThermalReceiptModal({
   invoice,
 }: ThermalReceiptModalProps) {
   const receiptRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
 
-  const claveAcceso = useMemo(() => {
-    if (!order) return '';
-    if (invoice?.claveAcceso) return invoice.claveAcceso;
-    const seq = parseInt(
-      (invoice?.invoiceNumber || order.orderNumber).replace(/\D/g, '').slice(-9) || '1',
-      10
-    );
-    return generarClaveAcceso({
-      fecha: new Date(order.createdAt),
-      ruc: DEFAULT_TAX_PROFILE.ruc,
-      ambiente: '1',
-      establecimiento: '001',
-      puntoEmision: '001',
-      secuencial: seq,
-    });
-  }, [invoice, order]);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  if (!isOpen || !order) return null;
+  // Lock body scroll while open
+  useEffect(() => {
+    if (isOpen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [isOpen]);
+
+  // Keyboard shortcut: Escape to close
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
+  if (!isOpen || !order || !mounted) return null;
 
   const handlePrint = () => {
     window.print();
@@ -77,9 +85,11 @@ export function ThermalReceiptModal({
     hour12: false,
   })}`;
 
+  // Use readable order/invoice number rather than raw internal ID
+  const cleanRef = invoice?.invoiceNumber || order.invoiceNumber || order.orderNumber;
   const digitalInvoiceUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}/factura/${invoice?.id || order.invoiceId || order.orderNumber}`
-    : `https://distribuidora-aneth.vercel.app/factura/${invoice?.id || order.invoiceId || order.orderNumber}`;
+    ? `${window.location.origin}/factura/${cleanRef}`
+    : `https://distribuidora-aneth.vercel.app/factura/${cleanRef}`;
 
   const hasDebt = order.debtBalance > 0;
 
@@ -111,8 +121,13 @@ export function ThermalReceiptModal({
   const subtotal15 = Number((order.totalAmount / 1.15).toFixed(2));
   const tax15 = Number((order.totalAmount - subtotal15).toFixed(2));
 
-  return (
-    <div className="fixed inset-0 z-[10000] flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-xs overflow-y-auto print:p-0 print:bg-white print:fixed print:inset-0">
+  const modalContent = (
+    <div
+      className="fixed inset-0 z-[10000] flex sm:items-center items-end justify-center bg-black/60 backdrop-blur-sm sm:backdrop-blur-md p-0 sm:p-4 overflow-hidden print:p-0 print:bg-white print:fixed print:inset-0"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       {/* Estilos ultra-optimizados para RawBT y cabezal térmico Munbyn 58mm (48mm imprimible / 384 dots) */}
       <style>{`
         @media print {
@@ -136,7 +151,7 @@ export function ThermalReceiptModal({
           #thermal-printable-receipt,
           #thermal-printable-receipt * {
             visibility: visible !important;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
             color: #000000 !important;
             -webkit-text-stroke: 0 !important;
             text-shadow: none !important;
@@ -154,13 +169,13 @@ export function ThermalReceiptModal({
             margin: 0 auto !important;
             background: #ffffff !important;
             color: #000000 !important;
-            font-size: 10px !important;
-            line-height: 1.25 !important;
+            font-size: 9.5px !important;
+            line-height: 1.2 !important;
             box-shadow: none !important;
             border: none !important;
             border-radius: 0 !important;
           }
-          /* Control estricto de pesos tipográficos para RawBT (evita saturación y sangrado térmico) */
+          /* Control estricto de pesos tipográficos para Munbyn 58mm / RawBT */
           #thermal-printable-receipt,
           #thermal-printable-receipt p,
           #thermal-printable-receipt span,
@@ -169,10 +184,6 @@ export function ThermalReceiptModal({
           }
           #thermal-printable-receipt .font-semibold,
           #thermal-printable-receipt .font-bold {
-            font-weight: 600 !important;
-          }
-          #thermal-printable-receipt .font-extrabold,
-          #thermal-printable-receipt .font-black {
             font-weight: 700 !important;
           }
           #thermal-printable-receipt .font-mono {
@@ -188,15 +199,24 @@ export function ThermalReceiptModal({
         }
       `}</style>
 
-      <div className="relative w-full max-w-[340px] bg-slate-100 rounded-2xl shadow-2xl overflow-hidden border border-slate-300 my-auto flex flex-col max-h-[92vh] print:border-none print:shadow-none print:m-0 print:w-[48mm] print:max-w-[48mm] print:max-h-none print:rounded-none print:bg-white print:overflow-visible">
-        {/* Barra superior de control */}
-        <div className="bg-white border-b border-slate-200 px-4 py-2.5 flex items-center justify-between no-thermal-print shrink-0 shadow-xs">
+      {/* Sheet Container: Apple Bottom Sheet on Mobile / Glass Card on Desktop */}
+      <div
+        className="w-full sm:max-w-[360px] bg-white sm:rounded-3xl rounded-t-[32px] shadow-2xl flex flex-col max-h-[90vh] sm:max-h-[86vh] overflow-hidden border border-slate-200/80 animate-in slide-in-from-bottom duration-250 ease-out sm:zoom-in-95 print:border-none print:shadow-none print:m-0 print:w-[48mm] print:max-w-[48mm] print:max-h-none print:rounded-none print:bg-white print:overflow-visible"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="thermal-receipt-title"
+      >
+        {/* Mobile Apple Drag Handle Pill */}
+        <div className="w-10 h-1 bg-slate-300 rounded-full mx-auto mt-2.5 mb-1 sm:hidden no-thermal-print shrink-0" />
+
+        {/* Barra superior estilo Apple con frosted glass */}
+        <div className="bg-white/95 backdrop-blur-xl border-b border-slate-200/80 px-4 py-2.5 flex items-center justify-between no-thermal-print shrink-0 z-10">
           <div>
-            <span className="text-xs font-bold text-slate-800 block">
+            <h2 id="thermal-receipt-title" className="text-xs font-bold text-slate-900 leading-tight">
               Recibo Térmico (58mm)
-            </span>
+            </h2>
             <span className="text-[10px] text-slate-500 font-medium">
-              Munbyn • RawBT Optimizado
+              Munbyn • 48mm Imprimible
             </span>
           </div>
 
@@ -204,7 +224,7 @@ export function ThermalReceiptModal({
             <button
               type="button"
               onClick={handlePrint}
-              className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 active:scale-97 text-white rounded-lg text-xs font-bold flex items-center space-x-1.5 transition-transform duration-150 ease-out cursor-pointer shadow-xs"
+              className="px-3.5 py-1.5 bg-[#007AFF] hover:bg-[#0062cc] active:scale-95 text-white rounded-full text-xs font-semibold flex items-center space-x-1.5 transition-all duration-150 ease-out cursor-pointer shadow-xs"
             >
               <Printer className="w-3.5 h-3.5" />
               <span>Imprimir</span>
@@ -212,40 +232,47 @@ export function ThermalReceiptModal({
             <button
               type="button"
               onClick={onClose}
-              className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+              className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 active:scale-90 text-slate-500 flex items-center justify-center transition-all cursor-pointer"
+              aria-label="Cerrar recibo"
             >
-              <X className="w-4 h-4" />
+              <X className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
 
-        {/* Contenedor del ticket con scroll suave */}
-        <div className="p-3 sm:p-4 overflow-y-auto flex justify-center flex-1 print:p-0 print:overflow-visible">
-          {/* TICKET IMPRIMIBLE 58MM */}
+        {/* Contenedor con scroll suave y relleno inferior generoso para móviles */}
+        <div className="p-3 sm:p-4 overflow-y-auto overscroll-contain flex justify-center flex-1 bg-slate-100/70 pb-12 sm:pb-8 print:p-0 print:bg-white print:overflow-visible">
+          {/* TICKET IMPRIMIBLE 58MM (48mm área útil) */}
           <div
             id="thermal-printable-receipt"
             ref={receiptRef}
-            className="w-[280px] print:w-[48mm] bg-white text-black p-3.5 pb-6 shadow-md border border-slate-200 rounded-xs font-sans text-[11px] leading-[1.25] tracking-normal select-all print:shadow-none print:border-none print:p-0 print:pb-0"
+            className="w-[260px] print:w-[48mm] bg-white text-black p-3 pb-4 shadow-sm border border-slate-200/60 rounded-xs font-sans text-[10px] leading-[1.2] tracking-tight select-all print:shadow-none print:border-none print:p-0 print:pb-0"
           >
-            {/* LOGOTIPO OFICIAL DISTRIBUIDORA ANETH */}
-            <div className="text-center pt-1 pb-1">
-              <AnethReceiptLogo className="w-36 h-auto mx-auto mb-1" />
-              <p className="font-bold text-[10px] uppercase tracking-tight text-slate-800">
+            {/* LOGOTIPO OFICIAL ANETH DISTRIBUCIONES */}
+            <div className="text-center pt-0.5 pb-1">
+              <AnethReceiptLogo className="w-28 h-auto mx-auto mb-1" />
+              <p className="font-bold text-[11px] uppercase tracking-tight text-slate-900 leading-tight">
+                ANETH Distribuciones
+              </p>
+              <p className="text-[9px] text-slate-800 leading-tight">
                 {DEFAULT_TAX_PROFILE.razonSocial}
               </p>
-              <p className="font-semibold text-[10.5px]">
+              <p className="font-semibold text-[10px] pt-0.5">
                 RUC: {DEFAULT_TAX_PROFILE.ruc}
               </p>
-              <div className="border-b-2 border-black my-1.5" />
+              <p className="text-[8.5px] text-slate-600">
+                Ambato - Ecuador
+              </p>
+              <div className="border-b border-black my-1.5" />
             </div>
 
             {/* COMPROBANTE Y FECHA */}
-            <div className="space-y-0.5 text-[10px] pt-0.5">
+            <div className="space-y-0.5 text-[9.5px]">
               <div className="flex justify-between font-semibold">
-                <span>COMPROBANTE:</span>
+                <span>PEDIDO:</span>
                 <span className="font-bold">{order.orderNumber}</span>
               </div>
-              <div className="flex justify-between font-semibold">
+              <div className="flex justify-between">
                 <span>FECHA:</span>
                 <span>{formattedDate}</span>
               </div>
@@ -257,146 +284,118 @@ export function ThermalReceiptModal({
               )}
             </div>
 
-            {/* CÓDIGO DE BARRAS Y CLAVE DE ACCESO */}
-            <div className="pt-2 pb-1 border-t border-dashed border-black mt-1 text-center space-y-1">
-              <BarcodeSVG value={claveAcceso} height={32} showText={false} />
-              <div>
-                <p className="text-[8.5px] font-bold uppercase leading-none">CLAVE DE ACCESO SRI:</p>
-                <p className="text-[8px] font-mono tracking-tight break-all select-all leading-tight pt-0.5">
-                  {claveAcceso}
-                </p>
-              </div>
-            </div>
-
-            {/* LÍNEA DIVISORIA */}
-            <div className="border-b border-dashed border-black my-1.5" />
-
             {/* DATOS DEL CLIENTE */}
-            <div className="space-y-0.5 text-[10px]">
-              <p className="font-bold uppercase">CLIENTE: {clientName}</p>
+            <div className="border-t border-dashed border-black pt-1 mt-1 space-y-0.5 text-[9.5px]">
+              <p className="font-bold uppercase leading-tight">CLIENTE: {clientName}</p>
               <p><span className="font-semibold">C.I./RUC:</span> {clientTaxId}</p>
-              {clientPhone && <p><span className="font-semibold">TELÉFONO:</span> {clientPhone}</p>}
+              {clientPhone && <p><span className="font-semibold">TEL:</span> {clientPhone}</p>}
               {clientAddress && (
-                <p className="leading-tight"><span className="font-semibold">DIR:</span> {clientAddress}</p>
+                <p className="leading-tight truncate"><span className="font-semibold">DIR:</span> {clientAddress}</p>
               )}
             </div>
 
-            {/* LÍNEA DIVISORIA */}
-            <div className="border-b border-dashed border-black my-1.5" />
+            {/* TABLA DE PRODUCTOS (3 COLUMNAS LIMPIAS PARA MUNBYN 48MM) */}
+            <div className="border-t border-black pt-1 mt-1.5 mb-1">
+              <div className="flex justify-between font-bold text-[9.5px] border-b border-black pb-0.5 mb-1 tracking-tight">
+                <span className="w-12 text-left">CANT</span>
+                <span className="flex-1 text-left px-1">DESCRIPCIÓN</span>
+                <span className="w-12 text-right">TOTAL</span>
+              </div>
 
-            {/* TABLA DE PRODUCTOS */}
-            <div className="flex justify-between font-bold text-[10px] border-b border-black pb-0.5 mb-1">
-              <span className="w-10">CANT</span>
-              <span className="flex-1 text-left px-1">DETALLE</span>
-              <span className="w-10 text-right">P.U</span>
-              <span className="w-11 text-right">TOTAL</span>
+              {/* LISTA DE ITEMS DESGLOSADOS */}
+              <div className="space-y-1 text-[9.5px]">
+                {order.items.map((it, idx) => {
+                  const hasJavas = it.quantityJavas > 0;
+                  const hasUnits = (it.quantityUnits || 0) > 0;
+                  const effectivePricePerUnit = it.pricePerUnit > 0
+                    ? it.pricePerUnit
+                    : Number(((it.pricePerJava || 0) / (it.unitsPerJava || 12)).toFixed(4));
+
+                  const packSubtotal = Number((it.quantityJavas * it.pricePerJava).toFixed(2));
+                  const unitSubtotal = hasJavas
+                    ? Number((it.subtotal - packSubtotal).toFixed(2))
+                    : Number(((it.quantityUnits || 0) * effectivePricePerUnit).toFixed(2));
+
+                  const flavorDesc =
+                    it.flavorType === 'single'
+                      ? it.selectedFlavor
+                      : it.surtidoDetails
+                      ? Object.entries(it.surtidoDetails)
+                          .map(([f, q]) => `${q} ${f}`)
+                          .join(',')
+                      : 'Surtido';
+
+                  const packType = it.container === 'Vidrio' ? 'JAV' : 'PAK';
+
+                  return (
+                    <React.Fragment key={idx}>
+                      {/* Línea de Paquete / Java */}
+                      {hasJavas && (
+                        <div className="pb-0.5 border-b border-dashed border-slate-200">
+                          <div className="flex justify-between items-start leading-tight">
+                            <span className="w-12 font-bold">{it.quantityJavas} {packType}</span>
+                            <span className="flex-1 text-left px-1 font-semibold leading-tight">
+                              {it.brand || 'Fructi'} {it.size}
+                            </span>
+                            <span className="w-12 text-right font-bold font-mono text-[9px]">
+                              ${packSubtotal.toFixed(2)}
+                            </span>
+                          </div>
+                          <div className="pl-12 text-[8.5px] text-slate-700 leading-tight">
+                            {flavorDesc} • {it.quantityJavas * it.unitsPerJava} und • ${it.pricePerJava.toFixed(2)}/p
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Línea de Unidad Suelta */}
+                      {hasUnits && (
+                        <div className="pb-0.5 border-b border-dashed border-slate-200">
+                          <div className="flex justify-between items-start leading-tight">
+                            <span className="w-12 font-bold">{it.quantityUnits} UNI</span>
+                            <span className="flex-1 text-left px-1 font-semibold leading-tight">
+                              {it.brand || 'Fructi'} {it.size} {it.container}
+                            </span>
+                            <span className="w-12 text-right font-bold font-mono text-[9px]">
+                              ${unitSubtotal.toFixed(2)}
+                            </span>
+                          </div>
+                          <div className="pl-12 text-[8.5px] text-slate-700 leading-tight">
+                            {it.flavorType === 'single' ? it.selectedFlavor : 'Surtido'} • ${effectivePricePerUnit.toFixed(2)} c/u
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Fallback para pedidos históricos */}
+                      {!hasJavas && !hasUnits && (
+                        <div className="pb-0.5 border-b border-dashed border-slate-200">
+                          <div className="flex justify-between items-start leading-tight">
+                            <span className="w-12 font-bold">{it.totalBottles || 1} UNI</span>
+                            <span className="flex-1 text-left px-1 font-semibold leading-tight">
+                              {formatItemTitle(it)}
+                            </span>
+                            <span className="w-12 text-right font-bold font-mono text-[9px]">
+                              ${it.subtotal.toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </div>
             </div>
-
-            {/* LISTA DE ITEMS DESGLOSADOS */}
-            <div className="space-y-1 text-[10px]">
-              {order.items.map((it, idx) => {
-                const hasJavas = it.quantityJavas > 0;
-                const hasUnits = (it.quantityUnits || 0) > 0;
-                const effectivePricePerUnit = it.pricePerUnit > 0
-                  ? it.pricePerUnit
-                  : Number(((it.pricePerJava || 0) / (it.unitsPerJava || 12)).toFixed(4));
-
-                const packSubtotal = Number((it.quantityJavas * it.pricePerJava).toFixed(2));
-                const unitSubtotal = hasJavas
-                  ? Number((it.subtotal - packSubtotal).toFixed(2))
-                  : Number(((it.quantityUnits || 0) * effectivePricePerUnit).toFixed(2));
-
-                const flavorDesc =
-                  it.flavorType === 'single'
-                    ? it.selectedFlavor
-                    : it.surtidoDetails
-                    ? Object.entries(it.surtidoDetails)
-                        .map(([f, q]) => `${q} ${f}`)
-                        .join(',')
-                    : 'Surtido';
-
-                const packType = it.container === 'Vidrio' ? 'JAV' : 'PAK';
-
-                return (
-                  <React.Fragment key={idx}>
-                    {/* Línea de Paquete / Java */}
-                    {hasJavas && (
-                      <div className="pb-0.5 border-b border-dashed border-slate-300">
-                        <div className="flex justify-between items-start">
-                          <span className="w-10 font-semibold">{it.quantityJavas} {packType}</span>
-                          <span className="flex-1 text-left px-1 font-semibold leading-tight">
-                            {it.brand || 'Fructi'} {it.container === 'Vidrio' ? 'Java' : 'Pack'} {it.size}
-                          </span>
-                          <span className="w-10 text-right font-mono text-[9.5px]">
-                            ${it.pricePerJava.toFixed(2)}
-                          </span>
-                          <span className="w-11 text-right font-bold font-mono text-[9.5px]">
-                            ${packSubtotal.toFixed(2)}
-                          </span>
-                        </div>
-                        <div className="pl-10 text-[9px] text-slate-700 leading-none">
-                          {it.flavorType === 'surtido' ? `Surt: ${flavorDesc}` : it.selectedFlavor} ({it.quantityJavas * it.unitsPerJava} unds)
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Línea de Unidad Suelta */}
-                    {hasUnits && (
-                      <div className="pb-0.5 border-b border-dashed border-slate-300">
-                        <div className="flex justify-between items-start">
-                          <span className="w-10 font-semibold">{it.quantityUnits} UNI</span>
-                          <span className="flex-1 text-left px-1 font-semibold leading-tight">
-                            {it.brand || 'Fructi'} {it.size} {it.container}
-                          </span>
-                          <span className="w-10 text-right font-mono text-[9.5px]">
-                            ${effectivePricePerUnit.toFixed(2)}
-                          </span>
-                          <span className="w-11 text-right font-bold font-mono text-[9.5px]">
-                            ${unitSubtotal.toFixed(2)}
-                          </span>
-                        </div>
-                        <div className="pl-10 text-[9px] text-slate-700 leading-none">
-                          {it.flavorType === 'single' ? it.selectedFlavor : 'Surtido'}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Fallback para pedidos históricos */}
-                    {!hasJavas && !hasUnits && (
-                      <div className="pb-0.5 border-b border-dashed border-slate-300">
-                        <div className="flex justify-between items-start">
-                          <span className="w-10 font-semibold">{it.totalBottles || 1} UNI</span>
-                          <span className="flex-1 text-left px-1 font-semibold leading-tight">
-                            {formatItemTitle(it)}
-                          </span>
-                          <span className="w-10 text-right font-mono text-[9.5px]">
-                            ${it.pricePerJava.toFixed(2)}
-                          </span>
-                          <span className="w-11 text-right font-bold font-mono text-[9.5px]">
-                            ${it.subtotal.toFixed(2)}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  </React.Fragment>
-                );
-              })}
-            </div>
-
-            {/* LÍNEA DIVISORIA */}
-            <div className="border-b border-dashed border-black my-1.5" />
 
             {/* TOTALES */}
-            <div className="space-y-0.5 text-[10.5px]">
-              <div className="flex justify-between text-[10px]">
-                <span>SUBTOTAL (BASE 15%):</span>
+            <div className="border-t border-dashed border-black pt-1 my-1 space-y-0.5 text-[9.5px]">
+              <div className="flex justify-between">
+                <span>SUBTOTAL (15%):</span>
                 <span className="font-mono font-semibold">${subtotal15.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-[10px]">
+              <div className="flex justify-between">
                 <span>IVA 15%:</span>
                 <span className="font-mono font-semibold">${tax15.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between font-bold text-[12px] border-b border-black pb-0.5 mb-1 pt-0.5">
+              <div className="flex justify-between font-bold text-[11px] border-y border-black py-0.5 my-1">
                 <span>TOTAL A PAGAR:</span>
                 <span className="font-mono font-bold">
                   {formatCurrency(order.totalAmount)}
@@ -412,84 +411,60 @@ export function ThermalReceiptModal({
               </div>
 
               {hasDebt ? (
-                <div className="flex justify-between font-bold text-[11.5px] border-2 border-black px-1.5 py-1 my-1">
-                  <span>SALDO EN DEUDA:</span>
-                  <span className="font-mono font-bold">${order.debtBalance.toFixed(2)}</span>
+                <div className="border border-black p-1.5 my-1 text-left bg-slate-50 print:bg-transparent">
+                  <div className="flex justify-between font-bold text-[10.5px]">
+                    <span>SALDO PENDIENTE:</span>
+                    <span className="font-mono font-bold">${order.debtBalance.toFixed(2)}</span>
+                  </div>
+                  {(order.promisedCollectionDate || order.promisedCollectionTime) && (
+                    <p className="text-[8.5px] mt-0.5">
+                      <span className="font-semibold">Compromiso:</span>{' '}
+                      {formatPromisedDate(order.promisedCollectionDate)}{' '}
+                      {order.promisedCollectionTime ? `(${order.promisedCollectionTime})` : ''}
+                    </p>
+                  )}
+                  {/* Firma de conformidad */}
+                  <div className="pt-5 mt-1 border-t border-dashed border-black text-center">
+                    <div className="border-b border-black w-36 mx-auto mb-0.5" />
+                    <p className="text-[8px] uppercase font-bold">Firma Cliente: {clientName}</p>
+                    <p className="text-[7.5px] text-slate-600">C.I./RUC: {clientTaxId}</p>
+                  </div>
                 </div>
               ) : (
-                <div className="flex justify-between font-semibold text-[10px] pt-0.5">
+                <div className="flex justify-between font-bold text-[9.5px] pt-0.5">
                   <span>ESTADO:</span>
-                  <span>TOTALMENTE CANCELADO</span>
+                  <span>PAGADO COMPLETO</span>
                 </div>
               )}
             </div>
 
-            {/* COMPROMISO DIRECTO DE PAGO Y FIRMA (CUANDO HAY SALDO PENDIENTE) */}
-            {hasDebt && (
-              <div className="mt-2 pt-1 border-t border-black space-y-1">
-                <p className="font-bold text-center text-[10px] uppercase">
-                  COMPROMISO DE PAGO (CRÉDITO)
-                </p>
-                <div className="text-[10px] space-y-0.5">
-                  <div className="flex justify-between">
-                    <span className="font-semibold">Saldo por cobrar:</span>
-                    <span className="font-bold">${order.debtBalance.toFixed(2)}</span>
-                  </div>
-                  {(order.promisedCollectionDate || order.promisedCollectionTime) && (
-                    <div className="flex justify-between">
-                      <span className="font-semibold">Fecha de cobro:</span>
-                      <span className="font-semibold">
-                        {formatPromisedDate(order.promisedCollectionDate)} {order.promisedCollectionTime ? `(${order.promisedCollectionTime})` : ''}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                {/* ESPACIO PARA FIRMA DE CONFORMIDAD */}
-                <div className="pt-6 text-center space-y-0.5">
-                  <div className="border-b border-black w-44 mx-auto" />
-                  <p className="font-bold text-[9px] uppercase">
-                    FIRMA DEL CLIENTE
-                  </p>
-                  <p className="text-[8.5px] truncate">
-                    Nombre: {clientName}
-                  </p>
-                  <p className="text-[8.5px]">
-                    C.I./RUC: {clientTaxId}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* CÓDIGO QR ESTILO POPL (PUNTOS CIRCULARES Y ESQUINAS REDONDEADAS) */}
-            <div className="mt-2 pt-2 border-t border-dashed border-black text-center space-y-1">
-              <div className="flex justify-center py-1">
+            {/* CÓDIGO QR POPL COMPACTO (FACTURA DIGITAL SRI) */}
+            <div className="mt-2 pt-1.5 border-t border-dashed border-black text-center space-y-0.5">
+              <div className="flex justify-center py-0.5">
                 <PoplQRCodeSVG
                   value={digitalInvoiceUrl}
-                  size={110}
+                  size={72}
                   color="#000000"
                   bgColor="#ffffff"
                 />
               </div>
-              <p className="font-bold text-[9px] uppercase leading-tight">
-                Factura Digital SRI
+              <p className="font-bold text-[8.5px] uppercase tracking-tight leading-tight">
+                Factura Electrónica SRI
               </p>
-              <p className="text-[8px] text-slate-700 leading-tight">
-                Escanee el código QR para ver y descargar su comprobante
-              </p>
-              <p className="text-[7px] font-mono break-all text-slate-600">
-                {digitalInvoiceUrl}
+              <p className="text-[7.5px] text-slate-600 leading-tight">
+                Escanee para ver o descargar comprobante
               </p>
             </div>
 
             {/* PIE DE TICKET */}
-            <div className="mt-2 pt-1 border-t border-black text-center space-y-0.5 text-[9px]">
-              <p className="font-bold uppercase">¡GRACIAS POR SU PREFERENCIA!</p>
-              <div className="border-b-2 border-black my-1.5" />
+            <div className="mt-1.5 pt-1 border-t border-black text-center text-[8.5px]">
+              <p className="font-bold uppercase tracking-tight">¡Gracias por su preferencia!</p>
             </div>
           </div>
         </div>
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }
