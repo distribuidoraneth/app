@@ -38,6 +38,32 @@ export async function downloadInvoicePdf(
         clonedElement.style.boxShadow = 'none';
         clonedElement.style.borderRadius = '0';
         clonedElement.style.border = 'none';
+
+        // 1. Eliminar cualquier enlace generado automáticamente por iOS WebKit Data Detectors (teléfono, dirección, fechas)
+        const links = clonedElement.querySelectorAll('a');
+        links.forEach((a) => {
+          const span = clonedDoc.createElement('span');
+          span.innerHTML = a.innerHTML;
+          span.className = a.className;
+          span.style.cssText = a.style.cssText;
+          span.style.textDecoration = 'none';
+          span.style.setProperty('-webkit-text-decoration', 'none');
+          span.style.borderBottom = 'none';
+          span.style.color = 'inherit';
+          a.parentNode?.replaceChild(span, a);
+        });
+
+        // 2. Anular absolutamente cualquier text-decoration en todos los elementos del documento clonado
+        const allElements = clonedElement.querySelectorAll('*');
+        allElements.forEach((node) => {
+          if (node instanceof HTMLElement) {
+            node.style.textDecoration = 'none';
+            node.style.setProperty('-webkit-text-decoration', 'none', 'important');
+            node.style.setProperty('-webkit-text-decoration-line', 'none', 'important');
+            node.style.setProperty('text-decoration-line', 'none', 'important');
+            node.style.setProperty('text-decoration', 'none', 'important');
+          }
+        });
       }
     },
   });

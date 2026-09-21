@@ -577,6 +577,7 @@ export default function PublicInvoicePage({
       {/* Official SRI Printable RIDE */}
       <div
         id="invoice-printable-area"
+        data-prevent-detector="true"
         className="w-full max-w-3xl bg-white rounded-2xl sm:rounded-3xl shadow-xl border border-slate-200 p-3.5 sm:p-8 space-y-3.5 sm:space-y-4 text-slate-800 print:shadow-none print:border-none print:p-0 print:m-0 print:rounded-none"
       >
         {/* Top Header Section: Left (Emisor Box) & Right (SRI Factura Box) */}

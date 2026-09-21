@@ -270,7 +270,7 @@ export function InvoiceModal({ invoice, isOpen, onClose }: InvoiceModalProps) {
         </div>
 
         {/* Scrollable Modal Body: Official SRI RIDE (Exact match to /factura/[id]) */}
-        <div id="invoice-printable-area" className="p-3.5 sm:p-8 space-y-3.5 sm:space-y-4 text-slate-800 bg-white overflow-y-auto print:overflow-visible">
+        <div id="invoice-printable-area" data-prevent-detector="true" className="p-3.5 sm:p-8 space-y-3.5 sm:space-y-4 text-slate-800 bg-white overflow-y-auto print:overflow-visible">
           {/* Top Header Section: Left (Emisor Box) & Right (SRI Factura Box) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 items-stretch">
             {/* Columna Izquierda: Logo + Cuadro Emisor */}

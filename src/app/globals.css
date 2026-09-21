@@ -139,3 +139,34 @@
     width: 100% !important;
   }
 }
+
+/* Suprimir completamente subrayados y enlaces automáticos de iOS Safari Data Detectors */
+a[x-apple-data-detectors],
+[x-apple-data-detectors],
+[data-prevent-detector] a {
+  color: inherit !important;
+  text-decoration: none !important;
+  -webkit-text-decoration: none !important;
+  font-size: inherit !important;
+  font-family: inherit !important;
+  font-weight: inherit !important;
+  line-height: inherit !important;
+  border-bottom: none !important;
+}
+
+#invoice-printable-area a,
+#invoice-printable-area a:hover,
+#invoice-printable-area a:visited {
+  color: inherit !important;
+  text-decoration: none !important;
+  -webkit-text-decoration: none !important;
+  border-bottom: none !important;
+}
+
+#invoice-printable-area,
+#invoice-printable-area * {
+  text-decoration: none !important;
+  -webkit-text-decoration-line: none !important;
+  text-decoration-line: none !important;
+}
+
