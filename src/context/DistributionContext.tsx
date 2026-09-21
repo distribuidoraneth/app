@@ -90,6 +90,7 @@ interface DistributionContextType {
   generateInvoice: (orderId: string) => Invoice | null;
   updateStock: (optionId: string, newStock: number) => void;
   refreshData: () => Promise<void>;
+  clearLocalCache: () => Promise<void>;
   ensureOrderLoaded: (idOrNumber: string) => Promise<Order | null>;
 }
 
@@ -170,21 +171,8 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
           return [...dbOrders, ...recentInFlight];
         });
       }
-      if (dbInvoices !== null && dbInvoices.length > 0) {
-        setInvoices((prev) => {
-          const dbInvMap = new Map<string, Invoice>();
-          dbInvoices.forEach((inv) => {
-            dbInvMap.set(inv.id, inv);
-            dbInvMap.set(inv.invoiceNumber, inv);
-          });
-          const merged = [...dbInvoices];
-          prev.forEach((inv) => {
-            if (!dbInvMap.has(inv.id) && !dbInvMap.has(inv.invoiceNumber)) {
-              merged.push(inv);
-            }
-          });
-          return merged;
-        });
+      if (dbInvoices !== null) {
+        setInvoices(dbInvoices);
       }
     } catch (err) {
       console.warn('Error al sincronizar datos desde Supabase:', err);
@@ -201,7 +189,6 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
         if (Array.isArray(parsed.catalog) && parsed.catalog.length > 0) setCatalog(parsed.catalog);
         if (Array.isArray(parsed.invoices)) setInvoices(parsed.invoices);
         if (Array.isArray(parsed.orders)) {
-          // En arranque inicial (filtro "today"), no hidratar pedidos ya entregados de días anteriores
           const now = new Date();
           const todayOrders = parsed.orders.filter((o: Order) => {
             if (o.status === 'pending') return true;
@@ -227,55 +214,33 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
     refreshData();
   }, []);
 
-  // Save to local storage (Merge with existing cached orders to preserve past days)
+  // Guardar en almacenamiento local como captura rápida (Supabase es la única fuente de verdad)
   useEffect(() => {
     try {
-      let existingOrders: Order[] = [];
-      let existingInvoices: Invoice[] = [];
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed.orders)) existingOrders = parsed.orders;
-        if (Array.isArray(parsed.invoices)) existingInvoices = parsed.invoices;
-      }
-
-      // Merge: current active orders take priority, then preserve previous orders by ID
-      const mergedOrdersMap = new Map<string, Order>();
-      orders.forEach((o) => mergedOrdersMap.set(o.id, o));
-      existingOrders.forEach((o) => {
-        if (!mergedOrdersMap.has(o.id)) {
-          mergedOrdersMap.set(o.id, o);
-        }
-      });
-      const combinedOrders = Array.from(mergedOrdersMap.values())
-        .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
-        .slice(0, 50);
-
-      // Merge invoices
-      const mergedInvoicesMap = new Map<string, Invoice>();
-      invoices.forEach((i) => mergedInvoicesMap.set(i.id, i));
-      existingInvoices.forEach((i) => {
-        if (!mergedInvoicesMap.has(i.id)) {
-          mergedInvoicesMap.set(i.id, i);
-        }
-      });
-      const combinedInvoices = Array.from(mergedInvoicesMap.values())
-        .sort((a, b) => new Date(b.issuedAt || 0).getTime() - new Date(a.issuedAt || 0).getTime())
-        .slice(0, 30);
-
       localStorage.setItem(
         STORAGE_KEY,
         JSON.stringify({
           clients,
           catalog,
-          orders: combinedOrders,
-          invoices: combinedInvoices,
+          orders,
+          invoices,
         })
       );
     } catch {
       // ignore
     }
   }, [clients, catalog, orders, invoices]);
+
+  // Limpiar toda la caché local y re-sincronizar estrictamente desde Supabase
+  const clearLocalCache = async () => {
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+      sessionStorage.clear();
+    } catch {
+      // ignore
+    }
+    await refreshData();
+  };
 
   // Cart operations
   const addToCart = (newItem: CartItem) => {
@@ -384,7 +349,36 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
     // Prioridad 3: Slug legible del negocio o nombre completo
     let qrToken = '';
     if (cleanTaxId && cleanTaxId.length >= 10) {
-      qrToken = cleanTaxId;
+      // Verificar si ya existe otro cliente con este mismo taxId (sucursales múltiples)
+      const existingWithSameTaxId = clients.filter(
+        (c) => c.taxId && c.taxId.trim().replace(/\D/g, '') === cleanTaxId
+      );
+
+      if (existingWithSameTaxId.length === 0) {
+        // Primera ubicación / Matriz
+        qrToken = cleanTaxId;
+      } else {
+        // Sucursal adicional con la misma cédula/RUC:
+        // Extraer sufijo inteligente basado en ubicación o nombre del negocio
+        const addressText = (clientData.addressReference || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        const businessText = (clientData.businessName || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+        let branchTag = '';
+        if (addressText.includes('norte') || businessText.includes('norte')) branchTag = 'norte';
+        else if (addressText.includes('sur') || businessText.includes('sur')) branchTag = 'sur';
+        else if (addressText.includes('centro') || businessText.includes('centro')) branchTag = 'centro';
+        else {
+          const words = businessText.replace(/[^a-z0-9]+/g, ' ').trim().split(/\s+/);
+          const lastWord = words[words.length - 1];
+          if (lastWord && lastWord.length > 2 && !['local', 'tienda', 'bodega', 'minimarket'].includes(lastWord)) {
+            branchTag = lastWord;
+          } else {
+            branchTag = `sucursal-${existingWithSameTaxId.length + 1}`;
+          }
+        }
+
+        qrToken = `${cleanTaxId}-${branchTag}`;
+      }
     } else if (cleanPhone && cleanPhone.length >= 9) {
       qrToken = cleanPhone.startsWith('593') ? cleanPhone.slice(3) : cleanPhone;
     } else {
@@ -1119,6 +1113,7 @@ function generateUuid(): string {
         generateInvoice,
         updateStock,
         refreshData,
+        clearLocalCache,
         ensureOrderLoaded,
       }}
     >

@@ -42,6 +42,7 @@ import {
   Zap,
   Calendar,
   ExternalLink,
+  RotateCw,
 } from 'lucide-react';
 import {
   AppleGaugeDollarIcon,
@@ -61,7 +62,7 @@ import {
 
 export function AdminDashboard() {
   const router = useRouter();
-  const { clients, orders, invoices, catalog, recordDebtPayment, deleteClient } = useDistribution();
+  const { clients, orders, invoices, catalog, recordDebtPayment, deleteClient, clearLocalCache } = useDistribution();
 
   const [activeTab, setActiveTab] = useState<'dispatch' | 'clients' | 'debts' | 'invoices' | 'catalog'>('dispatch');
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState<boolean>(false);
@@ -258,6 +259,18 @@ export function AdminDashboard() {
                         {userProfile?.email || 'admin@aneth.com'}
                       </p>
                     </div>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        setIsProfileMenuOpen(false);
+                        await clearLocalCache();
+                        alert('Caché local limpiada. Todos los datos fueron re-sincronizados directamente con Supabase.');
+                      }}
+                      className="w-full text-left px-4 py-2.5 text-xs sm:text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center space-x-2 transition-colors cursor-pointer border-b border-slate-100"
+                    >
+                      <RotateCw className="w-4 h-4 text-blue-600" />
+                      <span>Limpiar Caché y Re-sincronizar</span>
+                    </button>
                     <button
                       type="button"
                       onClick={() => {

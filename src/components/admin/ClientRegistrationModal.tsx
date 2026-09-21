@@ -12,6 +12,7 @@ import {
   MapPin,
   RefreshCw,
   ExternalLink,
+  Sparkles,
 } from 'lucide-react';
 import {
   ApplePersonBadgePlusIcon,
@@ -39,7 +40,7 @@ export function ClientRegistrationModal({
   initialCoords,
   clientToEdit,
 }: ClientRegistrationModalProps) {
-  const { addClient, updateClient } = useDistribution();
+  const { clients, addClient, updateClient } = useDistribution();
 
   const [fullName, setFullName] = useState<string>('');
   const [businessName, setBusinessName] = useState<string>('');
@@ -469,6 +470,23 @@ export function ClientRegistrationModal({
                   {apiFeedback.message}
                 </p>
               )}
+
+              {/* Notificación proactiva si la Cédula/RUC ya tiene un local previo registrado */}
+              {!clientToEdit && taxId.replace(/\D/g, '').length >= 10 && (() => {
+                const cleanTax = taxId.replace(/\D/g, '');
+                const existing = clients.filter(c => c.taxId && c.taxId.replace(/\D/g, '') === cleanTax);
+                if (existing.length === 0) return null;
+                return (
+                  <div className="p-2.5 bg-blue-50/80 border border-blue-200/80 rounded-xl text-xs text-blue-800 flex items-start gap-2 animate-in fade-in duration-150">
+                    <Sparkles className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-bold">Cédula / RUC ya registrado:</span> Ya existe el local{' '}
+                      <span className="font-bold underline">{existing[0].businessName || existing[0].fullName}</span>.
+                      Este nuevo registro se guardará como sucursal adicional con ruta y código QR independientes.
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Nombre */}
