@@ -8,15 +8,13 @@ import {
   Search,
   Loader2,
   CheckCircle2,
-  Navigation,
-  MapPin,
   RefreshCw,
-  ExternalLink,
   Sparkles,
 } from 'lucide-react';
 import {
   ApplePersonBadgePlusIcon,
   ApplePencilIcon,
+  AppleMapPinIcon,
 } from '@/components/ui/AppleIcons';
 import {
   formatEcuadorianPhone,
@@ -257,6 +255,41 @@ export function ClientRegistrationModal({
     }
   };
 
+  const isCedula = taxIdType === '05';
+  const expectedLength = isCedula ? 10 : 13;
+  const currentLength = taxId.replace(/\D/g, '').length;
+  const taxValidation = isCedula ? validateEcuadorianCedula(taxId) : validateEcuadorianRuc(taxId);
+
+  const handleTaxIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/\D/g, '').slice(0, expectedLength);
+    setTaxId(raw);
+    if (apiFeedback) setApiFeedback(null);
+    if (raw.length === 13 && taxIdType !== '04') {
+      setTaxIdType('04');
+    }
+  };
+
+  const handleRefreshGps = () => {
+    if (navigator.geolocation) {
+      setIsCalibratingGps(true);
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const newLat = pos.coords.latitude;
+          const newLng = pos.coords.longitude;
+          setCoords({ lat: newLat, lng: newLng });
+          setGpsAccuracy(pos.coords.accuracy);
+          setIsCalibratingGps(false);
+          fetchGoogleAddress(newLat, newLng);
+        },
+        (err) => {
+          setIsCalibratingGps(false);
+          alert('Error al obtener GPS: ' + err.message);
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const newErrors: { [key: string]: string } = {};
@@ -351,7 +384,7 @@ export function ClientRegistrationModal({
               )}
             </div>
             <h2 className="font-black text-lg sm:text-xl text-slate-900 leading-tight">
-              {clientToEdit ? 'Modificar Cliente' : 'Registro de Cliente'}
+              {clientToEdit ? 'Modificar Local' : 'Registro de Local'}
             </h2>
           </div>
           <button
@@ -371,7 +404,7 @@ export function ClientRegistrationModal({
           <div className="flex-1 overflow-y-auto px-5 sm:px-7 py-5 space-y-5">
             
             {/* Cédula o RUC Input & Fast Query */}
-            <div className="p-4 sm:p-5 bg-slate-50 border border-slate-200/90 rounded-2xl space-y-3 shadow-2xs overflow-hidden">
+            <div className="p-4 sm:p-5 bg-slate-50 border border-slate-200/90 rounded-2xl space-y-3 shadow-2xs">
               <div className="flex items-center justify-between">
                 <label className="text-sm sm:text-base font-black text-slate-900 block">
                   Cédula o RUC
@@ -404,38 +437,54 @@ export function ClientRegistrationModal({
                 </div>
               </div>
 
-              <div className="flex items-stretch gap-2 w-full">
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={taxIdType === '04' ? 13 : 10}
-                  value={taxId}
-                  disabled={isOfficialDataLocked}
-                  onChange={(e) => {
-                    const clean = e.target.value.replace(/\D/g, '').slice(0, taxIdType === '04' ? 13 : 10);
-                    setTaxId(clean);
-                    if (clean.length === 13) setTaxIdType('04');
-                    else if (clean.length === 10) setTaxIdType('05');
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleLookup();
-                    }
-                  }}
-                  placeholder={taxIdType === '04' ? 'Ingresa RUC (13 dígitos)' : 'Ingresa Cédula (10 dígitos)'}
-                  className={`flex-1 min-w-0 text-base px-4 py-3.5 bg-white border rounded-xl font-mono focus:ring-2 focus:ring-blue-600 focus:outline-hidden ${
-                    isOfficialDataLocked
-                      ? 'bg-slate-100 border-slate-200 text-slate-500 cursor-not-allowed'
-                      : 'border-slate-300 text-slate-900 font-bold placeholder:font-normal'
-                  }`}
-                />
+              <div className="flex items-center gap-2 w-full">
+                <div className="relative flex-1 min-w-0">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={expectedLength}
+                    value={taxId}
+                    disabled={isOfficialDataLocked}
+                    onChange={handleTaxIdChange}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (taxValidation.isValid) handleLookup();
+                      }
+                    }}
+                    placeholder={isCedula ? 'Cédula (10 dígitos)' : 'RUC (13 dígitos)'}
+                    className={`w-full text-base px-4 pr-14 py-3 bg-white border rounded-xl font-mono focus:ring-2 focus:ring-blue-600 focus:outline-hidden transition-all ${
+                      isOfficialDataLocked
+                        ? 'bg-slate-100 border-slate-200 text-slate-500 cursor-not-allowed'
+                        : taxValidation.isValid
+                        ? 'border-emerald-500 focus:border-emerald-600 text-slate-900 font-bold'
+                        : currentLength === expectedLength
+                        ? 'border-rose-400 focus:border-rose-500 text-rose-900 font-bold'
+                        : 'border-slate-300 text-slate-900 font-bold placeholder:font-normal'
+                    }`}
+                  />
+
+                  {/* Badge de Conteo */}
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center space-x-1 pointer-events-none">
+                    <span
+                      className={`text-xs font-mono font-black ${
+                        taxValidation.isValid
+                          ? 'text-emerald-600'
+                          : currentLength === expectedLength
+                          ? 'text-rose-500'
+                          : 'text-slate-400'
+                      }`}
+                    >
+                      {currentLength}/{expectedLength}
+                    </span>
+                  </div>
+                </div>
 
                 {isOfficialDataLocked ? (
                   <button
                     type="button"
                     onClick={() => setIsOfficialDataLocked(false)}
-                    className="px-4 py-3.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl text-sm font-black transition-all shrink-0 cursor-pointer"
+                    className="h-12 px-4 bg-slate-200 hover:bg-slate-300 active:scale-95 text-slate-800 rounded-xl text-sm font-black transition-all shrink-0 cursor-pointer flex items-center justify-center"
                     title="Desbloquear para editar número"
                   >
                     Cambiar
@@ -444,18 +493,18 @@ export function ClientRegistrationModal({
                   <button
                     type="button"
                     onClick={handleLookup}
-                    disabled={
-                      isSearchingApi ||
-                      !(taxIdType === '04' ? validateEcuadorianRuc(taxId).isValid : validateEcuadorianCedula(taxId).isValid)
-                    }
-                    className="w-13 sm:w-14 shrink-0 bg-blue-600 hover:bg-blue-700 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl flex items-center justify-center transition-all shadow-xs cursor-pointer"
-                    title="Consultar Cédula o RUC"
+                    disabled={!taxValidation.isValid || isSearchingApi}
+                    className="h-12 w-12 sm:w-auto sm:px-4 shrink-0 bg-blue-600 hover:bg-blue-700 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl flex items-center justify-center space-x-2 transition-all shadow-xs cursor-pointer"
+                    title={taxValidation.isValid ? 'Consultar en SRI / Registro Civil' : 'Ingresa los dígitos completos para consultar'}
                   >
                     {isSearchingApi ? (
                       <Loader2 className="w-5 h-5 animate-spin" />
                     ) : (
                       <Search className="w-5 h-5 stroke-[2.5]" />
                     )}
+                    <span className="hidden sm:inline font-bold text-sm">
+                      {isSearchingApi ? 'Consultando...' : 'Consultar'}
+                    </span>
                   </button>
                 )}
               </div>
@@ -653,91 +702,68 @@ export function ClientRegistrationModal({
               </div>
             </div>
 
-            {/* Dirección y Referencias del Local */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-sm font-bold text-slate-800 block">
-                  Dirección y Referencias del Local
-                </label>
-                {isGeocoding && (
-                  <span className="text-xs text-blue-600 font-bold flex items-center animate-pulse">
-                    <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
-                    Obteniendo dirección oficial...
-                  </span>
-                )}
-              </div>
-              <input
-                type="text"
-                value={addressReference}
-                onChange={(e) => setAddressReference(e.target.value)}
-                placeholder="Ej. Galápagos 629 y Montalvo (frente a la farmacia)"
-                className="w-full text-base px-4 py-3.5 border border-slate-200 rounded-xl bg-white text-slate-900 font-medium focus:outline-hidden focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 leading-relaxed shadow-2xs"
-              />
-              <p className="text-xs sm:text-[13px] text-slate-500">
-                Se autocompleta con tu GPS mediante Google Maps. Puedes editarla o agregar referencias.
-              </p>
-            </div>
-
-            {/* Captura de Ubicación GPS Satelital */}
-            <div className="p-3.5 sm:p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2.5">
+            {/* Ubicación del Local (Apple Design Minimalista) */}
+            <div className="p-4 bg-slate-50 border border-slate-200/90 rounded-2xl space-y-3 shadow-2xs">
               <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center space-x-2.5 min-w-0">
-                  <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold shrink-0">
-                    <Navigation className="w-4 h-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <h4 className="text-sm font-black text-slate-900">Coordenadas GPS del Local</h4>
-                    <p className="text-xs text-slate-600 font-mono truncate">
-                      {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}
-                      {gpsAccuracy !== null && ` (±${Math.round(gpsAccuracy)}m)`}
-                    </p>
-                  </div>
+                <div className="flex items-center space-x-2 min-w-0">
+                  <AppleMapPinIcon size={18} alt="Ubicación" />
+                  <label className="text-sm sm:text-base font-black text-slate-900 truncate">
+                    Ubicación del Local
+                  </label>
+
+                  {/* Badge de Precisión Satelital */}
+                  {isCalibratingGps ? (
+                    <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200/70 text-2xs font-bold animate-pulse shrink-0">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-ping mr-0.5" />
+                      <span>Sintonizando...</span>
+                    </span>
+                  ) : isGeocoding ? (
+                    <span className="inline-flex items-center space-x-1.5 px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-2xs font-bold shrink-0">
+                      <Loader2 className="w-3 h-3 animate-spin text-blue-600" />
+                      <span>Obteniendo calle...</span>
+                    </span>
+                  ) : gpsAccuracy !== null ? (
+                    <span
+                      className={`inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full border text-2xs font-black shrink-0 ${
+                        gpsAccuracy <= 15
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200/80'
+                          : 'bg-amber-50 text-amber-700 border-amber-200/80'
+                      }`}
+                    >
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full ${
+                          gpsAccuracy <= 15 ? 'bg-emerald-500' : 'bg-amber-500'
+                        }`}
+                      />
+                      <span>±{Math.round(gpsAccuracy)} m de precisión</span>
+                    </span>
+                  ) : null}
                 </div>
 
+                {/* Botón sutil de Refrescar GPS */}
                 <button
                   type="button"
-                  onClick={() => {
-                    if (navigator.geolocation) {
-                      setIsCalibratingGps(true);
-                      navigator.geolocation.getCurrentPosition(
-                        (pos) => {
-                          const newLat = pos.coords.latitude;
-                          const newLng = pos.coords.longitude;
-                          setCoords({ lat: newLat, lng: newLng });
-                          setGpsAccuracy(pos.coords.accuracy);
-                          setIsCalibratingGps(false);
-                          fetchGoogleAddress(newLat, newLng);
-                        },
-                        (err) => {
-                          setIsCalibratingGps(false);
-                          alert('Error al obtener GPS: ' + err.message);
-                        },
-                        { enableHighAccuracy: true, timeout: 10000 }
-                      );
-                    }
-                  }}
-                  disabled={isCalibratingGps}
-                  className="px-3 py-2 bg-white hover:bg-slate-100 text-blue-600 border border-slate-200 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-2xs flex items-center space-x-1.5 cursor-pointer active:scale-95 shrink-0"
+                  onClick={handleRefreshGps}
+                  disabled={isCalibratingGps || isGeocoding}
+                  className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-white hover:bg-slate-100 active:scale-95 disabled:opacity-50 text-slate-700 hover:text-slate-900 font-bold text-xs rounded-xl border border-slate-200 transition-all cursor-pointer shrink-0 shadow-2xs"
+                  title="Actualizar ubicación satelital"
                 >
-                  <RefreshCw className={`w-3.5 h-3.5 ${isCalibratingGps ? 'animate-spin text-blue-600' : ''}`} />
-                  <span>{isCalibratingGps ? 'Detectando...' : 'Re-capturar GPS'}</span>
+                  <RefreshCw className={`w-3.5 h-3.5 ${isCalibratingGps ? 'animate-spin text-blue-600' : 'text-slate-600'}`} />
+                  <span>{isCalibratingGps ? 'Detectando...' : 'Refrescar'}</span>
                 </button>
               </div>
 
-              <div className="flex items-center justify-between pt-2 border-t border-slate-200/80 text-xs">
-                <span className="text-emerald-700 font-bold flex items-center">
-                  <CheckCircle2 className="w-3.5 h-3.5 mr-1 text-emerald-600" />
-                  Ubicación lista para cálculo de cercanía
-                </span>
-                <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${coords.lat},${coords.lng}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:text-blue-800 font-bold flex items-center space-x-1"
-                >
-                  <span>Verificar en Google Maps</span>
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </a>
+              <div className="space-y-1.5">
+                <input
+                  type="text"
+                  value={addressReference}
+                  onChange={(e) => setAddressReference(e.target.value)}
+                  placeholder="Dirección del local (obtenida con Google Maps)..."
+                  className="w-full text-sm sm:text-base px-4 py-3 border border-slate-200 rounded-xl bg-white text-slate-900 font-medium focus:outline-hidden focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 shadow-2xs"
+                />
+                <p className="text-xs text-slate-500">
+                  Se autocompleta con tu GPS mediante Google Maps. Puedes editarla o agregar referencias.
+                </p>
               </div>
             </div>
           </div>
