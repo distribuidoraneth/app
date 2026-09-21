@@ -31,6 +31,8 @@ import {
   getOrderByIdFromDb,
   updateClientDebtInDb,
   updateOrderStatusInDb,
+  saveInvoiceToDb,
+  getInvoicesFromDb,
   GetOrdersOptions,
 } from '@/lib/supabase/syncService';
 
@@ -142,10 +144,11 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
   // Sincronizar simultáneamente productos, clientes y órdenes con Supabase
   const refreshData = async () => {
     try {
-      const [dbProducts, dbClients, dbOrders] = await Promise.all([
+      const [dbProducts, dbClients, dbOrders, dbInvoices] = await Promise.all([
         getProductsFromDb(),
         getClientsFromDb(),
         getOrdersFromDb(ordersFilter || { datePreset: 'today' }),
+        getInvoicesFromDb(),
       ]);
 
       if (dbProducts !== null) {
@@ -165,6 +168,22 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
             (o) => !dbOrderIds.has(o.id) && o.createdAt && Date.now() - new Date(o.createdAt).getTime() < 60000
           );
           return [...dbOrders, ...recentInFlight];
+        });
+      }
+      if (dbInvoices !== null && dbInvoices.length > 0) {
+        setInvoices((prev) => {
+          const dbInvMap = new Map<string, Invoice>();
+          dbInvoices.forEach((inv) => {
+            dbInvMap.set(inv.id, inv);
+            dbInvMap.set(inv.invoiceNumber, inv);
+          });
+          const merged = [...dbInvoices];
+          prev.forEach((inv) => {
+            if (!dbInvMap.has(inv.id) && !dbInvMap.has(inv.invoiceNumber)) {
+              merged.push(inv);
+            }
+          });
+          return merged;
         });
       }
     } catch (err) {
@@ -589,7 +608,13 @@ function generateUuid(): string {
       };
 
       newOrder.invoiceId = newInvoice.id;
+      newOrder.invoiceNumber = newInvoice.invoiceNumber;
       setInvoices((prev) => [newInvoice, ...prev]);
+
+      // Guardar inmediatamente en Supabase
+      saveInvoiceToDb(newInvoice).catch((err) =>
+        console.warn('Error al guardar factura en Supabase:', err)
+      );
 
       // Enviar a SRI y sincronizar estado oficial
       fetch('/api/sri/facturar', {
@@ -605,20 +630,20 @@ function generateUuid(): string {
         .then((res) => res.json())
         .then((data) => {
           if (data && data.sriStatus) {
+            const updatedInv: Invoice = {
+              ...newInvoice,
+              claveAcceso: data.claveAcceso || newInvoice.claveAcceso,
+              sriStatus: data.sriStatus,
+              sriAuthorizationNumber: data.numeroAutorizacion,
+              sriAuthorizationDate: data.fechaAutorizacion,
+              sriErrorMessage: data.error,
+              xmlContent: data.xml,
+            };
             setInvoices((prev) =>
-              prev.map((inv) =>
-                inv.id === newInvoice.id
-                  ? {
-                      ...inv,
-                      claveAcceso: data.claveAcceso || inv.claveAcceso,
-                      sriStatus: data.sriStatus,
-                      sriAuthorizationNumber: data.numeroAutorizacion,
-                      sriAuthorizationDate: data.fechaAutorizacion,
-                      sriErrorMessage: data.error,
-                      xmlContent: data.xml,
-                    }
-                  : inv
-              )
+              prev.map((inv) => (inv.id === newInvoice.id ? updatedInv : inv))
+            );
+            saveInvoiceToDb(updatedInv).catch((err) =>
+              console.warn('Error al actualizar factura SRI en Supabase:', err)
             );
           }
         })
@@ -728,6 +753,7 @@ function generateUuid(): string {
   const updateOrderStatus = (orderId: string, status: OrderStatus) => {
     const targetOrder = orders.find((o) => o.id === orderId);
     let createdInvoiceId: string | undefined = targetOrder?.invoiceId;
+    let createdInvoiceNumber: string | undefined = targetOrder?.invoiceNumber;
 
     // Facturación automática al momento del Despacho/Entrega si no tenía factura previa (Preventa)
     if (status === 'delivered' && targetOrder && !targetOrder.invoiceId) {
@@ -774,7 +800,12 @@ function generateUuid(): string {
       };
 
       createdInvoiceId = newInvoice.id;
+      createdInvoiceNumber = newInvoice.invoiceNumber;
       setInvoices((prev) => [newInvoice, ...prev]);
+
+      saveInvoiceToDb(newInvoice).catch((err) =>
+        console.warn('Error al guardar factura en Supabase:', err)
+      );
 
       // Enviar a SRI y sincronizar estado oficial
       fetch('/api/sri/facturar', {
@@ -790,20 +821,20 @@ function generateUuid(): string {
         .then((res) => res.json())
         .then((data) => {
           if (data && data.sriStatus) {
+            const updatedInv: Invoice = {
+              ...newInvoice,
+              claveAcceso: data.claveAcceso || newInvoice.claveAcceso,
+              sriStatus: data.sriStatus,
+              sriAuthorizationNumber: data.numeroAutorizacion,
+              sriAuthorizationDate: data.fechaAutorizacion,
+              sriErrorMessage: data.error,
+              xmlContent: data.xml,
+            };
             setInvoices((prev) =>
-              prev.map((inv) =>
-                inv.id === newInvoice.id
-                  ? {
-                      ...inv,
-                      claveAcceso: data.claveAcceso || inv.claveAcceso,
-                      sriStatus: data.sriStatus,
-                      sriAuthorizationNumber: data.numeroAutorizacion,
-                      sriAuthorizationDate: data.fechaAutorizacion,
-                      sriErrorMessage: data.error,
-                      xmlContent: data.xml,
-                    }
-                  : inv
-              )
+              prev.map((inv) => (inv.id === newInvoice.id ? updatedInv : inv))
+            );
+            saveInvoiceToDb(updatedInv).catch((err) =>
+              console.warn('Error al actualizar factura SRI en Supabase:', err)
             );
           }
         })
@@ -819,6 +850,7 @@ function generateUuid(): string {
             status,
             deliveredAt,
             invoiceId: createdInvoiceId || o.invoiceId,
+            invoiceNumber: createdInvoiceNumber || o.invoiceNumber,
           };
         }
         return o;
@@ -935,7 +967,15 @@ function generateUuid(): string {
 
     setInvoices((prev) => [newInvoice, ...prev]);
     setOrders((prev) =>
-      prev.map((o) => (o.id === orderId ? { ...o, invoiceId: newInvoice.id } : o))
+      prev.map((o) =>
+        o.id === orderId
+          ? { ...o, invoiceId: newInvoice.id, invoiceNumber: newInvoice.invoiceNumber }
+          : o
+      )
+    );
+
+    saveInvoiceToDb(newInvoice).catch((err) =>
+      console.warn('Error al guardar factura en Supabase:', err)
     );
 
     return newInvoice;

@@ -454,6 +454,10 @@ export function generateWhatsAppOrderLink(params: {
   clientName: string;
   orderNumber: string;
   total: number;
+  amountPaid?: number;
+  debtBalance?: number;
+  promisedCollectionDate?: string;
+  promisedCollectionTime?: string;
   invoiceNumber?: string;
   invoiceUrl?: string;
 }): string {
@@ -464,17 +468,37 @@ export function generateWhatsAppOrderLink(params: {
     cleanPhone = '593' + cleanPhone;
   }
 
-  let message = `Estimado(a) *${params.clientName}*,\nLe saluda *Aneth Distribuciones*.\n\n`;
-  message += `Le confirmamos la recepción de su pedido *#${params.orderNumber}* por un valor total de *${formatCurrency(params.total)}*.\n\n`;
+  const invoiceRef = params.invoiceNumber || params.orderNumber;
+  const invLink =
+    params.invoiceUrl ||
+    `${typeof window !== 'undefined' ? window.location.origin : 'https://distribuidora-aneth.vercel.app'}/factura/${invoiceRef}`;
 
-  if (params.invoiceNumber) {
-    message += `Comprobante / Factura emitida: *${params.invoiceNumber}*\n`;
-    message += `Puede consultar y descargar su factura en el siguiente enlace:\n${params.invoiceUrl || (typeof window !== 'undefined' ? window.location.origin : 'https://distribuidora-aneth.vercel.app') + '/factura/' + params.invoiceNumber}\n\n`;
+  const hasDebt = (params.debtBalance || 0) > 0;
+
+  let message = `*DISTRIBUIDORA ANETH*\nComprobante de Entrega\n\n`;
+  message += `*Pedido:* ${params.orderNumber}\n`;
+  message += `*Cliente:* ${params.clientName}\n`;
+
+  if (hasDebt) {
+    message += `*Total:* $${params.total.toFixed(2)}\n`;
+    if (params.amountPaid !== undefined) {
+      message += `*Abono:* $${params.amountPaid.toFixed(2)}\n`;
+    }
+    message += `*Saldo Pendiente:* $${(params.debtBalance || 0).toFixed(2)}\n`;
+    if (params.promisedCollectionDate) {
+      message += `*Fecha de cobro:* ${params.promisedCollectionDate}${
+        params.promisedCollectionTime ? ` (${params.promisedCollectionTime})` : ''
+      }\n`;
+    }
   } else {
-    message += `Su pedido se encuentra en preparación para despacho.\n\n`;
+    message += `*Total:* $${params.total.toFixed(2)} (Pagado)\n`;
   }
 
-  message += `Agradecemos su preferencia.\n*Aneth Distribuciones*`;
+  if (params.invoiceNumber || params.invoiceUrl) {
+    message += `\n*Factura Electrónica SRI:*\n${invLink}\n`;
+  }
+
+  message += `\n¡Gracias por su preferencia!`;
 
   return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
 }

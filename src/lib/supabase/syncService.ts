@@ -3,9 +3,11 @@
  */
 
 import { supabase } from '@/lib/supabase/client';
-import { Client, JavaProductOption, Order, OrderStatus } from '@/types';
+import { Client, JavaProductOption, Order, OrderStatus, Invoice, CartItem } from '@/types';
 import { INITIAL_CLIENTS, JAVA_PRODUCT_CATALOG } from '@/lib/mockData';
-import { cleanAddress } from '@/lib/utils/formatters';
+import { cleanAddress, expandCartItemsToFacturaLines } from '@/lib/utils/formatters';
+import { generarClaveAcceso } from '@/lib/sri/claveAcceso';
+import { DEFAULT_TAX_PROFILE } from '@/lib/sri/xmlBuilder';
 
 export async function getClientsFromDb(): Promise<Client[] | null> {
   try {
@@ -298,6 +300,7 @@ function mapDbOrder(o: any): Order {
     notes: o.notes,
     createdAt: o.created_at,
     deliveredAt: o.delivered_at,
+    invoiceId: o.invoice_id || undefined,
   };
 }
 
@@ -455,3 +458,293 @@ export async function updateOrderStatusInDb(
     return { success: false, error: err?.message };
   }
 }
+
+function mapDbInvoice(i: any): Invoice {
+  const items: CartItem[] = (i.invoice_items || []).map((it: any) => ({
+    id: it.id,
+    productOptionId: it.item_code || 'opt-generic',
+    brand: it.description?.includes('Forest') ? 'Forest' : 'Fructi',
+    beverageType: it.description?.includes('Agua') ? 'Aguas' : 'Colas',
+    container: 'Plástico',
+    size: '500 ml',
+    flavorType: 'single',
+    selectedFlavor: it.description?.split('-')?.[1]?.trim() || 'General',
+    quantityJavas: Number(it.quantity_javas || 0),
+    quantityUnits: Number(it.quantity_units || 0),
+    unitsPerJava: 12,
+    pricePerJava: Number((Number(it.unit_price) * 12).toFixed(2)),
+    pricePerUnit: Number(it.unit_price),
+    totalBottles: Number(it.total_quantity),
+    subtotal: Number(it.subtotal),
+  }));
+
+  return {
+    id: i.id,
+    invoiceNumber: i.invoice_number,
+    orderId: i.order_id || '',
+    claveAcceso: i.clave_acceso,
+    ambiente: i.ambiente || '1',
+    sriStatus: i.sri_status || 'PENDING',
+    sriAuthorizationNumber: i.sri_authorization_number || undefined,
+    sriAuthorizationDate: i.sri_authorization_date || undefined,
+    sriErrorMessage: i.sri_error_message || undefined,
+    clientId: i.client_id || 'guest',
+    clientName: i.client_name,
+    businessName: i.business_name || i.client_name,
+    clientTaxId: i.client_tax_id || '9999999999999',
+    clientTaxIdType: i.client_tax_id_type || '07',
+    clientEmail: i.client_email || '',
+    clientWhatsapp: i.client_whatsapp || '',
+    clientAddress: i.client_address || '',
+    items,
+    totalJavas: Number(i.total_javas || 0),
+    totalUnits: Number(i.total_units || 0),
+    subtotal: Number(i.subtotal || 0),
+    subtotal15: Number(i.subtotal_15 || 0),
+    subtotal0: Number(i.subtotal_0 || 0),
+    tax: Number(i.tax || 0),
+    total: Number(i.total || 0),
+    xmlContent: i.xml_content || undefined,
+    pdfDownloadUrl: i.pdf_ride_url || undefined,
+    status: i.status || 'emitida',
+    issuedAt: i.issued_at || new Date().toISOString(),
+  };
+}
+
+function reconstructInvoiceFromOrder(order: Order): Invoice {
+  const facturaLines = expandCartItemsToFacturaLines(order.items, 15);
+  const subtotal15 = Number(facturaLines.reduce((s, l) => s + l.precioTotalSinImpuesto, 0).toFixed(2));
+  const tax15 = Number(facturaLines.reduce((s, l) => s + l.iva, 0).toFixed(2));
+  const seqMatch = order.orderNumber?.match(/(\d{3,9})/);
+  const seqNumber = seqMatch ? parseInt(seqMatch[1].slice(-4), 10) || 1 : 1;
+  const invoiceNum = `001-001-${String(seqNumber).padStart(9, '0')}`;
+
+  const claveAcceso = generarClaveAcceso({
+    fecha: order.createdAt ? new Date(order.createdAt) : new Date(),
+    ruc: DEFAULT_TAX_PROFILE.ruc,
+    ambiente: '1',
+    establecimiento: DEFAULT_TAX_PROFILE.establecimiento || '001',
+    puntoEmision: DEFAULT_TAX_PROFILE.puntoEmision || '001',
+    secuencial: seqNumber,
+  });
+
+  const reconstructedInvoice: Invoice = {
+    id: generateUuid(),
+    invoiceNumber: invoiceNum,
+    orderId: order.id,
+    clientId: order.clientId,
+    clientName: order.clientName,
+    businessName: order.businessName || order.clientName,
+    clientTaxId: '9999999999999',
+    clientTaxIdType: '07',
+    clientWhatsapp: order.whatsappNumber,
+    clientAddress: order.addressReference,
+    items: order.items,
+    totalJavas: order.totalJavas,
+    totalUnits: order.totalUnits || 0,
+    subtotal: subtotal15,
+    subtotal15,
+    subtotal0: 0,
+    tax: tax15,
+    total: order.totalAmount,
+    claveAcceso,
+    ambiente: '1',
+    sriStatus: 'PENDING',
+    status: order.paymentStatus === 'paid' ? 'pagada' : 'emitida',
+    issuedAt: order.deliveredAt || order.createdAt || new Date().toISOString(),
+  };
+
+  // Guardar en segundo plano para que ya quede en la base de datos
+  saveInvoiceToDb(reconstructedInvoice).catch((e) =>
+    console.warn('Error al auto-persistir factura reconstruida en Supabase:', e)
+  );
+
+  return reconstructedInvoice;
+}
+
+export async function saveInvoiceToDb(
+  invoice: Invoice
+): Promise<{ success: boolean; data?: any; error?: string }> {
+  try {
+    const safeId = isValidUuid(invoice.id) ? invoice.id : generateUuid();
+    const orderId = isValidUuid(invoice.orderId) ? invoice.orderId : null;
+    const clientId = isValidUuid(invoice.clientId) ? invoice.clientId : null;
+
+    const invoiceRecord: any = {
+      id: safeId,
+      invoice_number: invoice.invoiceNumber,
+      order_id: orderId,
+      clave_acceso: invoice.claveAcceso || '0'.repeat(49),
+      ambiente: invoice.ambiente || '1',
+      sri_status: invoice.sriStatus || 'PENDING',
+      sri_authorization_number: invoice.sriAuthorizationNumber || null,
+      sri_authorization_date: invoice.sriAuthorizationDate || null,
+      sri_error_message: invoice.sriErrorMessage || null,
+      client_id: clientId,
+      client_name: invoice.clientName || 'Consumidor Final',
+      business_name: invoice.businessName || invoice.clientName || '',
+      client_tax_id: invoice.clientTaxId || '9999999999999',
+      client_tax_id_type: invoice.clientTaxIdType || '07',
+      client_email: invoice.clientEmail || null,
+      client_whatsapp: invoice.clientWhatsapp || '',
+      client_address: cleanAddress(invoice.clientAddress) || '',
+      total_javas: invoice.totalJavas || 0,
+      total_units: invoice.totalUnits || 0,
+      subtotal: Number(invoice.subtotal || 0),
+      subtotal_15: Number(invoice.subtotal15 || 0),
+      subtotal_0: Number(invoice.subtotal0 || 0),
+      tax: Number(invoice.tax || 0),
+      total: Number(invoice.total || 0),
+      xml_content: invoice.xmlContent || null,
+      pdf_ride_url: invoice.pdfDownloadUrl || null,
+      status: invoice.status || 'emitida',
+      issued_at: invoice.issuedAt || new Date().toISOString(),
+    };
+
+    const { data: savedInvoice, error: invError } = await supabase
+      .from('invoices')
+      .upsert(invoiceRecord, { onConflict: 'invoice_number' })
+      .select()
+      .single();
+
+    if (invError) {
+      console.warn('Advertencia al guardar factura en Supabase:', invError.message);
+      return { success: false, error: invError.message };
+    }
+
+    const effectiveInvoiceId = savedInvoice?.id || safeId;
+
+    // Guardar los renglones / items de la factura
+    if (invoice.items && invoice.items.length > 0 && effectiveInvoiceId) {
+      const itemsToInsert = invoice.items.map((it) => {
+        const itemSubtotal =
+          it.subtotal ||
+          it.quantityJavas * it.pricePerJava +
+            (it.quantityUnits || 0) * (it.pricePerUnit || 0);
+        const itemTotal = Number((itemSubtotal * 1.15).toFixed(2));
+        const totalQty =
+          it.quantityJavas * (it.unitsPerJava || 12) + (it.quantityUnits || 0);
+        return {
+          invoice_id: effectiveInvoiceId,
+          item_code: it.productOptionId || 'PROD',
+          description: `${it.brand || 'Fructi'} ${it.beverageType} ${it.container} ${it.size} - ${
+            it.selectedFlavor || it.flavorType
+          }`,
+          quantity_javas: it.quantityJavas || 0,
+          quantity_units: it.quantityUnits || 0,
+          total_quantity: totalQty,
+          unit_price:
+            it.pricePerUnit ||
+            Number((it.pricePerJava / (it.unitsPerJava || 12)).toFixed(4)),
+          discount: 0,
+          iva_rate: 15,
+          subtotal: Number(itemSubtotal.toFixed(2)),
+          total: itemTotal,
+        };
+      });
+
+      // Limpiar items anteriores si era upsert y re-insertar
+      await supabase.from('invoice_items').delete().eq('invoice_id', effectiveInvoiceId);
+      await supabase.from('invoice_items').insert(itemsToInsert);
+    }
+
+    // Vincular invoice_id en la orden si es UUID
+    if (orderId) {
+      await supabase
+        .from('orders')
+        .update({ invoice_id: effectiveInvoiceId })
+        .eq('id', orderId);
+    }
+
+    return { success: true, data: savedInvoice };
+  } catch (err: any) {
+    console.warn('Excepción al guardar factura en Supabase:', err);
+    return { success: false, error: err?.message };
+  }
+}
+
+export async function getInvoicesFromDb(): Promise<Invoice[] | null> {
+  try {
+    const { data, error } = await supabase
+      .from('invoices')
+      .select('*, invoice_items(*)')
+      .order('issued_at', { ascending: false })
+      .limit(100);
+
+    if (error) {
+      console.warn('Advertencia al consultar facturas en Supabase:', error.message);
+      return null;
+    }
+
+    return (data || []).map(mapDbInvoice);
+  } catch (err) {
+    console.warn('Excepción al consultar facturas en Supabase:', err);
+    return null;
+  }
+}
+
+export async function getInvoiceByIdOrNumberFromDb(
+  idOrNumber: string
+): Promise<Invoice | null> {
+  try {
+    const clean = decodeURIComponent(idOrNumber).trim();
+    if (!clean) return null;
+
+    // 1. Buscar en la tabla 'invoices' de Supabase
+    let query = supabase.from('invoices').select('*, invoice_items(*)');
+    if (isValidUuid(clean)) {
+      query = query.or(`id.eq.${clean},order_id.eq.${clean},invoice_number.eq.${clean}`);
+    } else {
+      query = query.or(`invoice_number.eq.${clean},clave_acceso.eq.${clean}`);
+    }
+
+    const { data, error } = await query.limit(1).maybeSingle();
+    if (data) {
+      return mapDbInvoice(data);
+    }
+
+    // 2. Si el identificador es un fac- timestamp, buscar la orden correspondiente creada en ese momento
+    if (clean.startsWith('fac-')) {
+      const timestamp = parseInt(clean.replace('fac-', ''), 10);
+      if (!isNaN(timestamp)) {
+        const dateNear = new Date(timestamp);
+        const windowStart = new Date(dateNear.getTime() - 15 * 60 * 1000).toISOString();
+        const windowEnd = new Date(dateNear.getTime() + 15 * 60 * 1000).toISOString();
+        const { data: nearOrders } = await supabase
+          .from('orders')
+          .select('*, order_items(*)')
+          .gte('created_at', windowStart)
+          .lte('created_at', windowEnd)
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (nearOrders && nearOrders.length > 0) {
+          return reconstructInvoiceFromOrder(mapDbOrder(nearOrders[0]));
+        }
+      }
+    }
+
+    // 3. Buscar si coincide con una orden existente (por order_number o UUID)
+    const order = await getOrderByIdFromDb(clean);
+    if (order) {
+      // Si la orden ya tenía invoice_id UUID, verificar si existe en la tabla de facturas
+      if (order.invoiceId && isValidUuid(order.invoiceId)) {
+        const { data: linkedInv } = await supabase
+          .from('invoices')
+          .select('*, invoice_items(*)')
+          .eq('id', order.invoiceId)
+          .maybeSingle();
+        if (linkedInv) return mapDbInvoice(linkedInv);
+      }
+
+      // Reconstruir la factura en caliente para garantizar disponibilidad inmediata
+      return reconstructInvoiceFromOrder(order);
+    }
+
+    return null;
+  } catch (err) {
+    console.warn('Excepción al buscar factura en Supabase:', err);
+    return null;
+  }
+}
+

@@ -108,6 +108,7 @@ export interface Order {
   createdAt: string;
   deliveredAt?: string;
   invoiceId?: string;
+  invoiceNumber?: string;
 }
 
 export interface PaymentTransaction {

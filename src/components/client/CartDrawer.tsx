@@ -289,7 +289,7 @@ export function CartDrawer({
         promisedCollectionDate: order.promisedCollectionDate,
         promisedCollectionTime: order.promisedCollectionTime,
         invoiceId: matchedInvoice?.id || order.invoiceId,
-        invoiceNumber: matchedInvoice?.invoiceNumber,
+        invoiceNumber: matchedInvoice?.invoiceNumber || order.invoiceNumber,
       });
 
       setIsSubmitting(false);
@@ -316,21 +316,39 @@ export function CartDrawer({
     } else if (!phone.startsWith('593')) {
       phone = '593' + phone;
     }
-    const invoiceLink = createdOrderSummary.invoiceId
-      ? `${window.location.origin}/factura/${createdOrderSummary.invoiceId}`
+
+    const invoiceRef =
+      createdOrderSummary.invoiceNumber ||
+      createdOrderSummary.orderNumber ||
+      createdOrderSummary.invoiceId;
+
+    const invoiceLink = invoiceRef
+      ? `${typeof window !== 'undefined' ? window.location.origin : 'https://distribuidora-aneth.vercel.app'}/factura/${invoiceRef}`
       : '';
 
-    const text = `*ANETH DISTRIBUCIONES* - Comprobante de Entrega\n\n` +
-      `*Pedido:* ${createdOrderSummary.orderNumber}\n` +
-      `*Cliente:* ${activeClient?.businessName || activeClient?.fullName}\n` +
-      `*Tipo de Venta:* ${createdOrderSummary.saleType === 'autoventa' ? 'Autoventa (Entregado al instante)' : 'Preventa Programada'}\n` +
-      `*Total:* $${createdOrderSummary.totalAmount.toFixed(2)}\n` +
-      `*Valor Pagado:* $${createdOrderSummary.amountPaid.toFixed(2)}\n` +
-      (createdOrderSummary.debtBalance > 0
-        ? `*Saldo Pendiente:* $${createdOrderSummary.debtBalance.toFixed(2)}\n*Fecha pactada de cobro:* ${formatHumanDate(createdOrderSummary.promisedCollectionDate) || 'Por coordinar'} (${createdOrderSummary.promisedCollectionTime || 'En ruta'})\n`
-        : `*Estado:* Pagado Completo\n`) +
-      (invoiceLink ? `\n*Factura Electrónica SRI:* ${invoiceLink}\n` : '') +
-      `\n_Gracias por su preferencia - Aneth Distribuciones_`;
+    let text = `*DISTRIBUIDORA ANETH*\nComprobante de Entrega\n\n`;
+    text += `*Pedido:* ${createdOrderSummary.orderNumber}\n`;
+    text += `*Cliente:* ${activeClient?.businessName || activeClient?.fullName}\n`;
+
+    if (createdOrderSummary.debtBalance > 0) {
+      text += `*Total:* $${createdOrderSummary.totalAmount.toFixed(2)}\n`;
+      text += `*Abono:* $${createdOrderSummary.amountPaid.toFixed(2)}\n`;
+      text += `*Saldo Pendiente:* $${createdOrderSummary.debtBalance.toFixed(2)}\n`;
+      const dateText = formatHumanDate(createdOrderSummary.promisedCollectionDate);
+      if (dateText) {
+        text += `*Fecha de cobro:* ${dateText}${
+          createdOrderSummary.promisedCollectionTime ? ` (${createdOrderSummary.promisedCollectionTime})` : ''
+        }\n`;
+      }
+    } else {
+      text += `*Total:* $${createdOrderSummary.totalAmount.toFixed(2)} (Pagado)\n`;
+    }
+
+    if (invoiceLink) {
+      text += `\n*Factura Electrónica SRI:*\n${invoiceLink}\n`;
+    }
+
+    text += `\n¡Gracias por su preferencia!`;
 
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, '_blank');
   };
@@ -470,9 +488,9 @@ export function CartDrawer({
                   <span>Imprimir Recibo</span>
                 </button>
 
-                {createdOrderSummary.invoiceId && (
+                {(createdOrderSummary.invoiceNumber || createdOrderSummary.invoiceId || createdOrderSummary.orderNumber) && (
                   <Link
-                    href={`/factura/${createdOrderSummary.invoiceId}`}
+                    href={`/factura/${createdOrderSummary.invoiceNumber || createdOrderSummary.orderNumber || createdOrderSummary.invoiceId}`}
                     target="_blank"
                     className="w-full py-3.5 px-4 bg-slate-900 hover:bg-slate-800 active:scale-98 text-white rounded-2xl font-black text-sm flex items-center justify-center space-x-2 shadow-xs transition-all"
                   >

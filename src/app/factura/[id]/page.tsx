@@ -19,6 +19,8 @@ import { AppleWhatsAppIcon } from '@/components/ui/AppleIcons';
 import { SriBarcodeSVG } from '@/components/ui/SriBarcodeSVG';
 import { generarClaveAcceso } from '@/lib/sri/claveAcceso';
 import { buildFacturaXml, DEFAULT_TAX_PROFILE } from '@/lib/sri/xmlBuilder';
+import { getInvoiceByIdOrNumberFromDb, saveInvoiceToDb } from '@/lib/supabase/syncService';
+import { Invoice } from '@/types';
 import {
   Printer,
   Code,
@@ -40,9 +42,43 @@ export default function PublicInvoicePage({
   const router = useRouter();
   const { invoices } = useDistribution();
 
-  const invoice =
-    invoices.find((i) => i.invoiceNumber === resolvedParams.id || i.id === resolvedParams.id) ||
-    invoices[0];
+  const invoiceFromContext = invoices.find(
+    (i) =>
+      i.invoiceNumber === resolvedParams.id ||
+      i.id === resolvedParams.id ||
+      i.orderId === resolvedParams.id
+  );
+
+  const [dbInvoice, setDbInvoice] = useState<Invoice | null>(null);
+  const [isLoadingDb, setIsLoadingDb] = useState<boolean>(!invoiceFromContext);
+
+  React.useEffect(() => {
+    if (invoiceFromContext) {
+      setIsLoadingDb(false);
+      return;
+    }
+
+    let isMounted = true;
+    setIsLoadingDb(true);
+
+    getInvoiceByIdOrNumberFromDb(resolvedParams.id)
+      .then((inv) => {
+        if (isMounted) {
+          setDbInvoice(inv);
+          setIsLoadingDb(false);
+        }
+      })
+      .catch((err) => {
+        console.warn('Error al cargar factura desde Supabase:', err);
+        if (isMounted) setIsLoadingDb(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [invoiceFromContext, resolvedParams.id]);
+
+  const invoice = invoiceFromContext || dbInvoice;
 
   const claveAcceso = useMemo(() => {
     if (invoice?.claveAcceso) return invoice.claveAcceso;
@@ -123,6 +159,16 @@ export default function PublicInvoicePage({
           setSriFeedback('Comprobante recibido por el SRI (en cola de autorización).');
         } else {
           setSriFeedback(data.error || 'Respuesta obtenida del SRI');
+        }
+
+        if (invoice) {
+          saveInvoiceToDb({
+            ...invoice,
+            sriStatus: data.estado as any,
+            sriAuthorizationNumber: data.numeroAutorizacion || invoice.sriAuthorizationNumber,
+            sriAuthorizationDate: data.fechaAutorizacion || invoice.sriAuthorizationDate,
+            sriErrorMessage: data.error || invoice.sriErrorMessage,
+          }).catch((e) => console.warn('Error al actualizar SRI en Supabase:', e));
         }
       } else {
         setSriFeedback(data.error || 'No se pudo verificar ante el SRI');
@@ -211,6 +257,22 @@ export default function PublicInvoicePage({
             }
           }
         } catch (_) {}
+
+        if (invoice) {
+          const updatedInv: Invoice = {
+            ...invoice,
+            invoiceNumber: data.secuencialCompleto || invoice.invoiceNumber,
+            claveAcceso: data.claveAcceso || invoice.claveAcceso,
+            sriStatus: data.sriStatus,
+            sriAuthorizationNumber: data.numeroAutorizacion,
+            sriAuthorizationDate: data.fechaAutorizacion,
+            sriErrorMessage: data.error,
+            xmlContent: data.xml,
+          };
+          saveInvoiceToDb(updatedInv).catch((e) =>
+            console.warn('Error al persistir reintento SRI en Supabase:', e)
+          );
+        }
 
         setSriFeedback(
           data.sriStatus === 'AUTORIZADO'
@@ -315,13 +377,25 @@ export default function PublicInvoicePage({
     document.body.removeChild(link);
   };
 
+  if (isLoadingDb) {
+    return (
+      <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center p-4">
+        <div className="text-center bg-white p-8 rounded-3xl border border-slate-200/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] max-w-sm flex flex-col items-center">
+          <div className="w-10 h-10 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mb-4" />
+          <h2 className="font-extrabold text-slate-900 text-sm">Cargando Comprobante SRI</h2>
+          <p className="text-xs text-slate-500 mt-1">Verificando comprobante en Distribuidora Aneth...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!invoice) {
     return (
       <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center p-4">
         <div className="text-center bg-white p-8 rounded-3xl border border-slate-200 shadow-sm max-w-sm">
           <FileText className="w-10 h-10 text-slate-400 mx-auto mb-3" />
           <h2 className="font-extrabold text-slate-900">Factura no disponible</h2>
-          <p className="text-xs text-slate-500 mt-1">El comprobante consultado aún no ha sido emitido.</p>
+          <p className="text-xs text-slate-500 mt-1">El comprobante consultado aún no ha sido emitido o no existe.</p>
           <Link href="/" className="mt-4 inline-block px-5 py-2.5 bg-blue-600 text-white text-xs font-bold rounded-xl shadow-xs">
             Volver a la App
           </Link>

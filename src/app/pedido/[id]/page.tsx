@@ -183,6 +183,10 @@ export default function OrderDetailPage({
       clientName: order.businessName || order.clientName,
       orderNumber: formatOrderNumber(order.orderNumber),
       total: order.totalAmount,
+      amountPaid: order.amountPaid,
+      debtBalance: order.debtBalance,
+      promisedCollectionDate: order.promisedCollectionDate,
+      promisedCollectionTime: order.promisedCollectionTime,
       invoiceNumber: inv?.invoiceNumber,
     });
     window.open(url, '_blank');
