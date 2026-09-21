@@ -659,7 +659,7 @@ export default function PublicInvoicePage({
         className="w-full max-w-3xl bg-white rounded-2xl sm:rounded-3xl shadow-xl border border-slate-200 p-3.5 sm:p-8 space-y-3.5 sm:space-y-4 text-slate-800 print:shadow-none print:border-none print:p-0 print:m-0 print:rounded-none"
       >
         {/* Top Header Section: Left (Emisor Box) & Right (SRI Factura Box) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 items-stretch">
+        <div className="invoice-header-block break-inside-avoid grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 items-stretch">
           {/* Columna Izquierda: Logo + Cuadro Emisor */}
           <div className="flex flex-col justify-between space-y-2.5 sm:space-y-3">
             {/* Logo */}
@@ -761,7 +761,7 @@ export default function PublicInvoicePage({
         </div>
 
         {/* Cuadro Comprador / Cliente (Oficial SRI) */}
-        <div className="border border-slate-300 rounded-2xl p-3.5 sm:p-4 text-xs text-slate-800 bg-white">
+        <div className="invoice-buyer-block break-inside-avoid border border-slate-300 rounded-2xl p-3.5 sm:p-4 text-xs text-slate-800 bg-white">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 sm:gap-y-2">
             <div className="sm:col-span-2">
               <span className="font-bold text-slate-900">Razón Social / Nombres y Apellidos:</span>{' '}
@@ -783,7 +783,7 @@ export default function PublicInvoicePage({
         </div>
 
         {/* Tabla de Productos / Ítems (Oficial SRI con acento azul de marca) */}
-        <div className="border border-slate-300 rounded-2xl overflow-x-auto bg-white print:overflow-visible scrollbar-thin">
+        <div className="invoice-table-block border border-slate-300 rounded-2xl overflow-x-auto bg-white print:overflow-visible scrollbar-thin">
           <table className="w-full min-w-[500px] sm:min-w-0 text-xs text-left border-collapse">
             <thead>
               <tr className="bg-blue-50/70 border-b border-blue-200/80 text-blue-950 text-[10px] sm:text-[10.5px] font-bold tracking-tight">
@@ -797,7 +797,7 @@ export default function PublicInvoicePage({
             </thead>
             <tbody className="divide-y divide-slate-200 text-slate-800">
               {facturaLines.map((line, idx) => (
-                <tr key={idx} className="hover:bg-slate-50/50">
+                <tr key={idx} className="hover:bg-slate-50/50 break-inside-avoid page-break-inside-avoid">
                   <td className="py-1.5 sm:py-2 px-2.5 sm:px-3 border-r border-slate-200 font-mono text-[10.5px] sm:text-[11px] font-semibold text-slate-800">
                     {line.codigoPrincipal}
                   </td>
@@ -827,7 +827,7 @@ export default function PublicInvoicePage({
           {/* Columna Izquierda */}
           <div className="space-y-2.5 sm:space-y-3">
             {/* Información Adicional */}
-            <div className="border border-slate-300 rounded-2xl p-3 sm:p-3.5 text-xs space-y-1 sm:space-y-1.5 bg-white">
+            <div className="invoice-info-block break-inside-avoid border border-slate-300 rounded-2xl p-3 sm:p-3.5 text-xs space-y-1 sm:space-y-1.5 bg-white">
               <h4 className="font-bold text-blue-950 text-[11px] uppercase tracking-wide border-b border-blue-100 pb-1">
                 Información Adicional
               </h4>
@@ -846,7 +846,7 @@ export default function PublicInvoicePage({
             </div>
 
             {/* Tabla Forma de Pago (con acento azul de marca) */}
-            <div className="border border-slate-300 rounded-2xl overflow-hidden bg-white">
+            <div className="invoice-payments-block break-inside-avoid border border-slate-300 rounded-2xl overflow-hidden bg-white">
               <table className="w-full text-xs text-left border-collapse">
                 <thead>
                   <tr className="bg-blue-50/70 border-b border-blue-200/80 text-blue-950 text-[10.5px] font-bold tracking-tight">
@@ -869,7 +869,7 @@ export default function PublicInvoicePage({
           </div>
 
           {/* Columna Derecha: Totales SRI Oficiales */}
-          <div className="border border-slate-300 rounded-2xl overflow-hidden bg-white">
+          <div className="invoice-totals-block break-inside-avoid border border-slate-300 rounded-2xl overflow-hidden bg-white">
             <table className="w-full text-xs border-collapse">
               <tbody className="divide-y divide-slate-200">
                 <tr>
