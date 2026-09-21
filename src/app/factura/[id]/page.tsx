@@ -8,6 +8,7 @@ import {
   formatDate,
   formatSriDate,
   formatSriDateTime,
+  formatProductSku,
   generateWhatsAppOrderLink,
 } from '@/lib/utils/formatters';
 import Link from 'next/link';
@@ -510,8 +511,8 @@ export default function PublicInvoicePage({
         </div>
 
         {/* Cuadro Comprador / Cliente (Oficial SRI) */}
-        <div className="border border-slate-300 rounded-2xl p-3.5 text-xs text-slate-800 bg-white">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">
+        <div className="border border-slate-300 rounded-2xl p-4 text-xs text-slate-800 bg-white">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
             <div className="sm:col-span-2">
               <span className="font-bold text-slate-900">Razón Social / Nombres y Apellidos:</span>{' '}
               <span className="font-medium text-slate-900">{invoice.clientName}</span>
@@ -528,28 +529,20 @@ export default function PublicInvoicePage({
               <span className="font-bold text-slate-900">Dirección:</span>{' '}
               <span className="font-medium text-slate-800">{invoice.clientAddress || 'Ambato, Ecuador'}</span>
             </div>
-            <div>
-              <span className="font-bold text-slate-900">Guía de Remisión:</span>{' '}
-              <span className="text-slate-400 font-mono">—</span>
-            </div>
-            <div>
-              <span className="font-bold text-slate-900">Placa / Matrícula:</span>{' '}
-              <span className="text-slate-400 font-mono">—</span>
-            </div>
           </div>
         </div>
 
-        {/* Tabla de Productos / Ítems (Oficial SRI) */}
+        {/* Tabla de Productos / Ítems (Oficial SRI con acento azul de marca) */}
         <div className="border border-slate-300 rounded-2xl overflow-hidden bg-white">
           <table className="w-full text-xs text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-300 text-slate-700 text-[10.5px] font-bold">
-                <th className="py-2 px-3 border-r border-slate-200 w-28">Cod. Principal</th>
-                <th className="py-2 px-2.5 border-r border-slate-200 text-right w-16">Cantidad</th>
-                <th className="py-2 px-3 border-r border-slate-200">Descripción</th>
-                <th className="py-2 px-2.5 border-r border-slate-200 text-right w-24">Precio Unitario</th>
-                <th className="py-2 px-2 border-r border-slate-200 text-right w-16">Descuento</th>
-                <th className="py-2 px-3 text-right w-24">Precio Total</th>
+              <tr className="bg-blue-50/70 border-b border-blue-200/80 text-blue-950 text-[10.5px] font-bold tracking-tight">
+                <th className="py-2.5 px-3 border-r border-blue-200/60 w-28">Cod. Principal</th>
+                <th className="py-2.5 px-2.5 border-r border-blue-200/60 text-right w-16">Cantidad</th>
+                <th className="py-2.5 px-3 border-r border-blue-200/60">Descripción</th>
+                <th className="py-2.5 px-2.5 border-r border-blue-200/60 text-right w-24">Precio Unitario</th>
+                <th className="py-2.5 px-2 border-r border-blue-200/60 text-right w-16">Descuento</th>
+                <th className="py-2.5 px-3 text-right w-24">Precio Total</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 text-slate-800">
@@ -561,7 +554,7 @@ export default function PublicInvoicePage({
                 const subtotalItem = Number(item.subtotal.toFixed(2));
                 const baseImponibleItem = Number((subtotalItem / 1.15).toFixed(2));
                 const precioUnitario = Number((baseImponibleItem / (cantidad || 1)).toFixed(4));
-                const codPrincipal = item.productOptionId || `PROD-${idx + 1}`;
+                const codPrincipal = formatProductSku(item.productOptionId);
 
                 const packInfo = item.quantityJavas > 0
                   ? `${item.quantityJavas} ${item.container === 'Vidrio' ? 'javas' : 'packs'}`
@@ -569,20 +562,25 @@ export default function PublicInvoicePage({
                 const unitInfo = item.quantityUnits > 0 ? `${item.quantityUnits} unidades` : '';
                 const breakdown = [packInfo, unitInfo].filter(Boolean).join(' + ');
 
-                const descripcion = `${item.brand || 'Fructi'} ${item.size} ${item.container} - ${
+                const nombreProducto = `${item.brand || 'Fructi'} ${item.size} ${item.container} - ${
                   item.flavorType === 'surtido' ? 'Surtido' : item.selectedFlavor || 'Original'
-                }${breakdown ? ` (${breakdown})` : ''}`;
+                }`;
 
                 return (
                   <tr key={idx} className="hover:bg-slate-50/50">
-                    <td className="py-2 px-3 border-r border-slate-200 font-mono text-[11px] text-slate-700">
+                    <td className="py-2 px-3 border-r border-slate-200 font-mono text-[11px] font-semibold text-slate-800">
                       {codPrincipal}
                     </td>
                     <td className="py-2 px-2.5 border-r border-slate-200 text-right font-mono text-[11px]">
                       {Number(cantidad).toFixed(2)}
                     </td>
-                    <td className="py-2 px-3 border-r border-slate-200 font-medium text-slate-900">
-                      {descripcion}
+                    <td className="py-2 px-3 border-r border-slate-200 text-slate-900">
+                      <span className="font-medium text-slate-900 block">{nombreProducto}</span>
+                      {breakdown && (
+                        <span className="text-[10px] text-slate-500 block mt-0.5 font-normal">
+                          Presentación: {breakdown}
+                        </span>
+                      )}
                     </td>
                     <td className="py-2 px-2.5 border-r border-slate-200 text-right font-mono text-[11px]">
                       {precioUnitario.toFixed(4)}
@@ -605,11 +603,11 @@ export default function PublicInvoicePage({
           {/* Columna Izquierda */}
           <div className="space-y-3">
             {/* Información Adicional */}
-            <div className="border border-slate-300 rounded-2xl p-3 text-xs space-y-1.5 bg-white">
-              <h4 className="font-bold text-slate-900 text-[11px] uppercase tracking-wide border-b border-slate-200 pb-1">
+            <div className="border border-slate-300 rounded-2xl p-3.5 text-xs space-y-1.5 bg-white">
+              <h4 className="font-bold text-blue-950 text-[11px] uppercase tracking-wide border-b border-blue-100 pb-1">
                 Información Adicional
               </h4>
-              <div className="space-y-1 text-[11px] text-slate-700">
+              <div className="space-y-1 text-[11px] text-slate-700 pt-0.5">
                 {invoice.clientEmail && (
                   <p><strong className="text-slate-900">Email:</strong> {invoice.clientEmail}</p>
                 )}
@@ -623,13 +621,13 @@ export default function PublicInvoicePage({
               </div>
             </div>
 
-            {/* Tabla Forma de Pago */}
+            {/* Tabla Forma de Pago (con acento azul de marca) */}
             <div className="border border-slate-300 rounded-2xl overflow-hidden bg-white">
               <table className="w-full text-xs text-left border-collapse">
                 <thead>
-                  <tr className="bg-slate-50 border-b border-slate-300 text-slate-700 text-[10.5px] font-bold">
-                    <th className="py-1.5 px-3 border-r border-slate-200">Forma de pago</th>
-                    <th className="py-1.5 px-3 text-right w-24">Valor</th>
+                  <tr className="bg-blue-50/70 border-b border-blue-200/80 text-blue-950 text-[10.5px] font-bold tracking-tight">
+                    <th className="py-2 px-3 border-r border-blue-200/60">Forma de pago</th>
+                    <th className="py-2 px-3 text-right w-24">Valor</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -730,11 +728,11 @@ export default function PublicInvoicePage({
                     0.00
                   </td>
                 </tr>
-                <tr className="bg-slate-50/80 font-bold">
-                  <td className="py-2 px-3 text-slate-900 border-r border-slate-200 text-xs">
+                <tr className="bg-blue-50/90 font-bold border-t-2 border-blue-200">
+                  <td className="py-2.5 px-3 text-blue-950 border-r border-blue-200 text-xs font-black">
                     VALOR TOTAL
                   </td>
-                  <td className="py-2 px-3 text-right font-mono text-sm text-slate-900 w-28">
+                  <td className="py-2.5 px-3 text-right font-mono text-sm font-black text-blue-700 w-28">
                     {formatCurrency(invoice.total)}
                   </td>
                 </tr>

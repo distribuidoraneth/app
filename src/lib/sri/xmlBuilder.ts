@@ -3,6 +3,7 @@
  */
 
 import { CartItem, CompanyTaxProfile } from '@/types';
+import { formatProductSku } from '@/lib/utils/formatters';
 
 export const DEFAULT_TAX_PROFILE: CompanyTaxProfile = {
   ruc: '1803013810001',
@@ -143,11 +144,13 @@ export function buildFacturaXml(params: {
   <detalles>`;
 
   items.forEach((item) => {
-    const descripcion = `${item.brand || 'Fructi'} ${item.size} ${item.container} - ${
+    const codPrincipal = formatProductSku(item.productOptionId);
+    const nombreProducto = `${item.brand || 'Fructi'} ${item.size} ${item.container} - ${
       item.flavorType === 'single' ? item.selectedFlavor : 'Surtido'
-    } (${item.quantityJavas > 0 ? `${item.quantityJavas} javas` : ''}${
-      item.quantityJavas > 0 && item.quantityUnits > 0 ? ' + ' : ''
-    }${item.quantityUnits > 0 ? `${item.quantityUnits} unidades` : ''})`;
+    }`;
+    const packInfo = item.quantityJavas > 0 ? `${item.quantityJavas} packs` : '';
+    const unitInfo = item.quantityUnits > 0 ? `${item.quantityUnits} unidades` : '';
+    const breakdown = [packInfo, unitInfo].filter(Boolean).join(' + ');
 
     const cantidad =
       item.totalBottles && item.totalBottles > 0
@@ -160,12 +163,19 @@ export function buildFacturaXml(params: {
 
     xml += `
     <detalle>
-      <codigoPrincipal>${escapeXml(item.productOptionId)}</codigoPrincipal>
-      <descripcion>${escapeXml(descripcion)}</descripcion>
+      <codigoPrincipal>${escapeXml(codPrincipal)}</codigoPrincipal>
+      <descripcion>${escapeXml(nombreProducto)}</descripcion>
       <cantidad>${cantidad.toFixed(2)}</cantidad>
       <precioUnitario>${precioUnitarioSinIva.toFixed(4)}</precioUnitario>
       <descuento>0.00</descuento>
-      <precioTotalSinImpuesto>${baseImponibleItem.toFixed(2)}</precioTotalSinImpuesto>
+      <precioTotalSinImpuesto>${baseImponibleItem.toFixed(2)}</precioTotalSinImpuesto>${
+      breakdown
+        ? `
+      <detallesAdicionales>
+        <detAdicional nombre="Presentacion" valor="${escapeXml(breakdown)}"/>
+      </detallesAdicionales>`
+        : ''
+    }
       <impuestos>
         <impuesto>
           <codigo>2</codigo>

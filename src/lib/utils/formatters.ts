@@ -224,6 +224,25 @@ export function formatSriDateTime(dateInput: string | Date | number): string {
   }
 }
 
+export function formatProductSku(productOptionId?: string): string {
+  if (!productOptionId) return 'PROD-01';
+  const map: Record<string, string> = {
+    'opt-colas-plastico-300': 'FRU-300-PLAS',
+    'opt-colas-plastico-500': 'FRU-500-PLAS',
+    'opt-colas-plastico-1500': 'FRU-1.5L-PLAS',
+    'opt-colas-plastico-3000': 'FRU-3.0L-PLAS',
+    'opt-colas-vidrio-300': 'FRU-300-VID',
+    'opt-tes-plastico-550': 'TES-550-PLAS',
+    'opt-agua-forest-600': 'AGUA-600-PLAS',
+    'opt-agua-forest-1000': 'AGUA-1L-PLAS',
+  };
+  if (map[productOptionId]) return map[productOptionId];
+  return productOptionId
+    .replace(/^opt-/, '')
+    .toUpperCase()
+    .replace(/[^A-Z0-9.-]/g, '');
+}
+
 export function generateWhatsAppOrderLink(params: {
   phone: string;
   clientName: string;
