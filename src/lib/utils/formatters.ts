@@ -286,7 +286,7 @@ export function formatInvoiceItemDescription(
   if (type === 'pack') {
     return `${baseTitle} (${packName} x ${unitsCount})`;
   } else {
-    return `${baseTitle} (Unidad suelta)`;
+    return baseTitle;
   }
 }
 
