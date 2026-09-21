@@ -24,12 +24,12 @@ CREATE TABLE IF NOT EXISTS public.company_tax_profiles (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Insertar perfil fiscal de la distribuidora
+-- Insertar perfil fiscal oficial de la distribuidora
 INSERT INTO public.company_tax_profiles (
-  ruc, razon_social, nombre_comercial, dir_matriz, establecimiento, punto_emision, ambiente, obligado_contabilidad, regimen_rimpe
+  ruc, razon_social, nombre_comercial, dir_matriz, dir_establecimiento, establecimiento, punto_emision, current_secuencial, ambiente, obligado_contabilidad, regimen_rimpe
 ) VALUES (
-  '1792345678001', 'DISTRIBUIDORA ANETH BEVERAGES S.A.S.', 'DISTRIBUIDORA ANETH',
-  'Av. 6 de Diciembre y Orellana, Quito - Ecuador', '001', '001', '1', 'NO', true
+  '1803013810001', 'ANDRADE CONSTANTE ANA ELIZABETH', 'DISTRIBUIDORA ANETH',
+  'AV. ATAHUALPA S/N Y TEODORO SOLIS, AMBATO - ECUADOR', 'AV. ATAHUALPA S/N Y TEODORO SOLIS, AMBATO - ECUADOR', '001', '001', 121, '1', 'NO', false
 ) ON CONFLICT (ruc) DO NOTHING;
 
 -- 2. Directorio de Clientes Comerciales
