@@ -24,7 +24,22 @@ export async function getClientsFromDb(): Promise<Client[] | null> {
     return (data || []).map((c: any) => {
       const tierMatch = c.qr_token?.match(/\|tier:(normal|distribuidor|especial)/);
       const clientTier = tierMatch ? tierMatch[1] : (c.client_tier || 'normal');
-      const cleanQr = c.qr_token ? c.qr_token.split('|')[0] : `aneth-${c.id}`;
+      const cleanTaxId = c.tax_id?.trim().replace(/\D/g, '');
+      const rawQr = c.qr_token ? c.qr_token.split('|')[0] : '';
+
+      // Si el cliente tiene Cédula o RUC (>= 10 dígitos) y su token actual es el formato legacy ("aneth-...") o está vacío:
+      let cleanQr = rawQr;
+      if (cleanTaxId && cleanTaxId.length >= 10 && (!cleanQr || cleanQr.startsWith('aneth-') || cleanQr.startsWith('cli-'))) {
+        cleanQr = cleanTaxId;
+      } else if (!cleanQr) {
+        cleanQr = cleanTaxId || (c.whatsapp_number ? c.whatsapp_number.replace(/\D/g, '') : `cli-${c.id}`);
+      }
+
+      // Si se modernizó un token viejo a la cédula, sincronizar en background con Supabase
+      if (rawQr && cleanQr !== rawQr && cleanQr === cleanTaxId) {
+        const safeUpdatedToken = `${cleanQr}|tier:${clientTier}`;
+        supabase.from('clients').update({ qr_token: safeUpdatedToken }).eq('id', c.id).then();
+      }
 
       return {
         id: c.id,

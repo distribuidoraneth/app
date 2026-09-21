@@ -89,36 +89,34 @@ export function QRCodeModal({ client, isOpen, onClose }: QRCodeModalProps) {
       }}
     >
       <div className="relative w-full max-w-sm bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-200/80 animate-in zoom-in-95 duration-150">
-        {/* Header bar estilo Apple */}
-        <div className="bg-slate-50/90 border-b border-slate-200/80 px-5 py-3.5 flex items-center justify-between">
-          <span className="text-xs font-extrabold text-slate-900 flex items-center">
-            <AppleQrCodeIcon size={16} className="mr-1.5 text-blue-600" />
-            Código QR de Pedidos
-          </span>
+        {/* Header bar estilo Apple con título centrado */}
+        <div className="relative bg-slate-50/90 border-b border-slate-200/80 px-5 py-3.5 flex items-center justify-center">
+          <h3 className="text-sm font-black text-slate-900 tracking-tight text-center">
+            Portal QR
+          </h3>
           <button
             type="button"
             onClick={onClose}
-            className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 active:scale-90 text-slate-500 flex items-center justify-center transition-all cursor-pointer"
+            className="absolute right-4 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 active:scale-90 text-slate-500 flex items-center justify-center transition-all cursor-pointer"
             aria-label="Cerrar modal"
           >
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
 
-        {/* Card Content */}
+        {/* Card Content - Ultra limpio sin textos que estorben */}
         <div className="p-6 text-center space-y-4 bg-white">
           {/* Brand header */}
-          <div className="flex flex-col items-center space-y-1">
+          <div className="flex flex-col items-center">
             <AnethFullLogo size="md" className="items-center" showSubtitle={true} subtitleText="DISTRIBUCIONES" />
-            <p className="text-xs text-slate-500 font-semibold pt-0.5">Pedidos Directos de Bebidas en Javas</p>
           </div>
 
-          {/* QR Code Container estilo Popl con Isotipo 'A' en silueta pura */}
-          <div className="p-2 sm:p-3 bg-slate-50 rounded-2xl border border-slate-200/70 inline-block shadow-xs">
+          {/* QR Code Container estilo Popl con Isotipo 'A' en disco circular blanco prolijo */}
+          <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/70 inline-block shadow-xs">
             <PoplQRCodeSVG
               id="client-popl-qr-svg"
               value={clientPortalUrl}
-              size={200}
+              size={210}
               showIsotypeLogo={true}
               color="#0f172a"
               bgColor="#ffffff"
@@ -127,18 +125,13 @@ export function QRCodeModal({ client, isOpen, onClose }: QRCodeModalProps) {
           </div>
 
           {/* Client Details */}
-          <div className="space-y-0.5">
-            <div className="text-sm font-black text-slate-900 uppercase tracking-tight">
-              {client.businessName || 'Local Registrado'}
+          <div className="space-y-0.5 pt-0.5">
+            <div className="text-base font-black text-slate-900 uppercase tracking-tight leading-snug">
+              {client.businessName || client.fullName}
             </div>
             {client.businessName && client.businessName.trim().toLowerCase() !== client.fullName.trim().toLowerCase() && (
-              <div className="text-xs text-slate-600 font-medium">{client.fullName}</div>
+              <div className="text-xs text-slate-500 font-medium">{client.fullName}</div>
             )}
-            <div className="text-[11px] font-mono text-slate-400 pt-0.5">Token: {client.qrToken}</div>
-          </div>
-
-          <div className="text-xs text-slate-600 bg-blue-50/80 p-3 rounded-2xl border border-blue-100/80 font-medium leading-tight">
-            Escanee este código con su celular para hacer sus pedidos de javas y consultar sus facturas en cualquier momento.
           </div>
         </div>
 

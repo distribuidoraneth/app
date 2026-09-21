@@ -45,8 +45,14 @@ export const PoplQRCodeSVG: React.FC<PoplQRCodeSVGProps> = ({
   const matrixSize = qrData.size;
   const moduleSize = 10;
   const svgSize = matrixSize * moduleSize;
-  const centerCoord = Math.floor(matrixSize / 2);
-  const clearRadius = showIsotypeLogo ? 3 : 0; // Despeja 7x7 módulos centrales para la silueta del isotipo
+  const centerCoord = (matrixSize - 1) / 2;
+  const centerPixelX = (matrixSize * moduleSize) / 2;
+  const centerPixelY = (matrixSize * moduleSize) / 2;
+
+  // Radio circular en unidades de módulo para despejar puntos de manera armónica (Popl style)
+  // Con corrección de error 'H' (30%), un radio de 3.8 módulos consume apenas ~7.5% del área, garantizando lectura instantánea
+  const clearRadiusModules = showIsotypeLogo ? 3.8 : 0;
+  const circleRadiusPixels = clearRadiusModules * moduleSize;
 
   // Determinar si una celda pertenece a los patrones de posición de las 3 esquinas (7x7)
   const isFinderPattern = (r: number, c: number) => {
@@ -56,13 +62,11 @@ export const PoplQRCodeSVG: React.FC<PoplQRCodeSVGProps> = ({
     return false;
   };
 
-  // Determinar si una celda cae dentro de la zona despejada para el isotipo
+  // Determinar si una celda cae dentro de la zona circular despejada para el isotipo
   const isInCenterClearance = (r: number, c: number) => {
     if (!showIsotypeLogo) return false;
-    return (
-      Math.abs(r - centerCoord) <= clearRadius &&
-      Math.abs(c - centerCoord) <= clearRadius
-    );
+    const cellDist = Math.hypot(r - centerCoord, c - centerCoord);
+    return cellDist <= clearRadiusModules;
   };
 
   const dots: React.ReactNode[] = [];
@@ -127,11 +131,8 @@ export const PoplQRCodeSVG: React.FC<PoplQRCodeSVGProps> = ({
     renderFinder(0, (matrixSize - 7) * moduleSize, 'finder-bl'),
   ];
 
-  // Cálculo del Isotipo "A" centrado como silueta matemática pura (sin círculos ni cajas envolventes)
-  const centerPixelX = centerCoord * moduleSize + moduleSize / 2;
-  const centerPixelY = centerCoord * moduleSize + moduleSize / 2;
-  // El viewBox del Isotipo es 809 x 615. Escalado para ocupar armónicamente la zona central despejada (~48px de ancho)
-  const targetWidth = 48;
+  // Dimensionamiento y centrado armónico del Isotipo "A" dentro del disco central
+  const targetWidth = Math.round(circleRadiusPixels * 1.22);
   const targetHeight = (targetWidth * 615) / 809;
   const scale = targetWidth / 809;
   const offsetX = centerPixelX - targetWidth / 2;
@@ -155,11 +156,21 @@ export const PoplQRCodeSVG: React.FC<PoplQRCodeSVGProps> = ({
       {dots}
       {finders}
 
-      {/* Silueta pura del Isotipo "A" centrada directamente sobre el código (Sin marcos circulares ni cajas) */}
+      {/* Isotipo "A" en disco circular puro y prolijo (Popl style sin cajas cuadradas dentadas) */}
       {showIsotypeLogo && (
-        <g transform={`translate(${offsetX}, ${offsetY}) scale(${scale})`}>
-          <path d={PATH_ISOTYPE_TOP} fill={topColor} fillRule="evenodd" />
-          <path d={PATH_ISOTYPE_SWOOSH} fill={swooshColor} fillRule="evenodd" />
+        <g id="popl-center-logo">
+          {/* Círculo blanco puro para contraste óptico de escaneo */}
+          <circle
+            cx={centerPixelX}
+            cy={centerPixelY}
+            r={circleRadiusPixels * 0.96}
+            fill={bgColor}
+          />
+          {/* Silueta del Isotipo "A" con su cuerpo superior y swoosh azul dinámico */}
+          <g transform={`translate(${offsetX}, ${offsetY}) scale(${scale})`}>
+            <path d={PATH_ISOTYPE_TOP} fill={topColor} fillRule="evenodd" />
+            <path d={PATH_ISOTYPE_SWOOSH} fill={swooshColor} fillRule="evenodd" />
+          </g>
         </g>
       )}
     </svg>

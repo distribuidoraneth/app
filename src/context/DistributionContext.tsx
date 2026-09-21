@@ -376,13 +376,28 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
 
   // Add Client
   const addClient = (clientData: Omit<Client, 'id' | 'qrToken' | 'createdAt'>): Client => {
-    const slug = clientData.fullName
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9]+/g, '-')
-      .slice(0, 20);
-    const randomSuffix = Math.floor(10 + Math.random() * 90);
-    const qrToken = `aneth-${slug}-${randomSuffix}`;
+    const cleanTaxId = clientData.taxId?.trim().replace(/\D/g, '');
+    const cleanPhone = clientData.whatsappNumber?.trim().replace(/\D/g, '');
+
+    // Prioridad 1: Cédula o RUC (10 o 13 dígitos)
+    // Prioridad 2: Número de WhatsApp limpio
+    // Prioridad 3: Slug legible del negocio o nombre completo
+    let qrToken = '';
+    if (cleanTaxId && cleanTaxId.length >= 10) {
+      qrToken = cleanTaxId;
+    } else if (cleanPhone && cleanPhone.length >= 9) {
+      qrToken = cleanPhone.startsWith('593') ? cleanPhone.slice(3) : cleanPhone;
+    } else {
+      const slug = (clientData.businessName || clientData.fullName)
+        .toLowerCase()
+        .trim()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+      const randomSuffix = Math.floor(100 + Math.random() * 900);
+      qrToken = `${slug || 'cliente'}-${randomSuffix}`;
+    }
 
     const validUuid = typeof crypto !== 'undefined' && crypto.randomUUID
       ? crypto.randomUUID()
@@ -414,12 +429,23 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
 
   // Update Client
   const updateClient = (updatedClient: Client) => {
+    const cleanTaxId = updatedClient.taxId?.trim().replace(/\D/g, '');
+    let finalClient = updatedClient;
+
+    // Si tiene cédula/RUC y su token actual era legacy ("aneth-...") o está vacío o correspondía a un taxId anterior:
+    if (cleanTaxId && cleanTaxId.length >= 10 && (!updatedClient.qrToken || updatedClient.qrToken.startsWith('aneth-') || /^\d{10,13}$/.test(updatedClient.qrToken))) {
+      finalClient = {
+        ...updatedClient,
+        qrToken: cleanTaxId,
+      };
+    }
+
     setClients((prev) =>
-      prev.map((c) => (c.id === updatedClient.id ? updatedClient : c))
+      prev.map((c) => (c.id === finalClient.id ? finalClient : c))
     );
 
     // Persist to Supabase in background
-    saveClientToDb(updatedClient).catch((err) => {
+    saveClientToDb(finalClient).catch((err) => {
       console.warn('Error updating client in Supabase:', err);
     });
   };

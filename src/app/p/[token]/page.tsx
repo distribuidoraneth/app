@@ -32,12 +32,33 @@ export default function ClientExperiencePage({
   const { clients, orders, invoices, cancelOrder, cart, cartTotalJavas, cartTotalAmount } =
     useDistribution();
 
-  // Match client by QR token
+  const rawToken = decodeURIComponent(resolvedParams.token || '').trim();
+  const tokenDigits = rawToken.replace(/\D/g, '');
+  const tokenLower = rawToken.toLowerCase();
+
+  // Match client by QR token, Cédula / RUC (taxId), WhatsApp number, or ID
   const client =
-    clients.find((c) => c.qrToken === resolvedParams.token) ||
-    clients[0] || {
-      id: `cli-${resolvedParams.token}`,
-      qrToken: resolvedParams.token,
+    clients.find((c) => {
+      // 1. Coincidencia directa por qrToken
+      if (c.qrToken && c.qrToken.toLowerCase() === tokenLower) return true;
+      // 2. Coincidencia directa o numérica por Cédula / RUC
+      if (c.taxId && c.taxId.trim().toLowerCase() === tokenLower) return true;
+      if (tokenDigits.length >= 10 && c.taxId && c.taxId.replace(/\D/g, '') === tokenDigits) return true;
+      // 3. Coincidencia por número de WhatsApp
+      if (tokenDigits.length >= 9 && c.whatsappNumber) {
+        const phoneDigits = c.whatsappNumber.replace(/\D/g, '');
+        if (phoneDigits === tokenDigits || phoneDigits.endsWith(tokenDigits) || tokenDigits.endsWith(phoneDigits)) {
+          return true;
+        }
+      }
+      // 4. Coincidencia por ID interno
+      if (c.id === rawToken) return true;
+      return false;
+    }) ||
+    // Si solo hay un cliente registrado en el sistema, enlazarlo para evitar estados vacíos en desarrollo
+    (clients.length === 1 ? clients[0] : null) || {
+      id: `cli-${rawToken}`,
+      qrToken: rawToken,
       fullName: 'Cliente Comercial',
       businessName: 'Local Registrado',
       gender: 'Hombre' as const,
