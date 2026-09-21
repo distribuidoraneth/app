@@ -313,33 +313,39 @@ export interface FacturaItemLine {
  * - Garantiza suma matemática estricta sin descuadres de centavos.
  */
 export function expandCartItemsToFacturaLines(
-  items: CartItem[],
+  items?: CartItem[] | null,
   ivaRate: number = 15
 ): FacturaItemLine[] {
+  if (!items || !Array.isArray(items) || items.length === 0) return [];
   const lines: FacturaItemLine[] = [];
 
   for (const item of items) {
+    if (!item) continue;
     const isVidrio = (item.container || '').toLowerCase().includes('vid');
     const packSkuType = isVidrio ? 'JAV' : 'PAQ';
     const packUnitMedida = isVidrio ? 'java' : 'pack';
-    const hasJavas = (item.quantityJavas || 0) > 0;
-    const hasUnits = (item.quantityUnits || 0) > 0;
+    const quantityJavas = Number(item.quantityJavas) || 0;
+    const quantityUnits = Number(item.quantityUnits) || 0;
+    const hasJavas = quantityJavas > 0;
+    const hasUnits = quantityUnits > 0;
+    const pricePerJava = Number(item.pricePerJava) || 0;
+    const subtotal = Number(item.subtotal) || 0;
 
     // Caso 1: Mixto (Packs y Unidades sueltas en el mismo producto)
     if (hasJavas && hasUnits) {
       // Línea 1: Packs
-      const subtotalPacksConIva = Number((item.quantityJavas * (item.pricePerJava || 0)).toFixed(2));
+      const subtotalPacksConIva = Number((quantityJavas * pricePerJava).toFixed(2));
       const baseImponiblePack =
         ivaRate > 0
           ? Number((subtotalPacksConIva / (1 + ivaRate / 100)).toFixed(2))
           : subtotalPacksConIva;
       const ivaPack = Number((subtotalPacksConIva - baseImponiblePack).toFixed(2));
-      const pUnitPackSinIva = Number((baseImponiblePack / item.quantityJavas).toFixed(4));
+      const pUnitPackSinIva = Number((baseImponiblePack / quantityJavas).toFixed(4));
 
       lines.push({
         codigoPrincipal: formatProductSku(item.productOptionId, packSkuType),
         descripcion: formatInvoiceItemDescription(item, 'pack'),
-        cantidad: item.quantityJavas,
+        cantidad: quantityJavas,
         precioUnitarioSinIva: pUnitPackSinIva,
         descuento: 0,
         precioTotalSinImpuesto: baseImponiblePack,
@@ -350,18 +356,18 @@ export function expandCartItemsToFacturaLines(
       });
 
       // Línea 2: Unidades Sueltas
-      const subtotalUnitsConIva = Number((item.subtotal - subtotalPacksConIva).toFixed(2));
+      const subtotalUnitsConIva = Number((subtotal - subtotalPacksConIva).toFixed(2));
       const baseImponibleUnits =
         ivaRate > 0
           ? Number((subtotalUnitsConIva / (1 + ivaRate / 100)).toFixed(2))
           : subtotalUnitsConIva;
       const ivaUnits = Number((subtotalUnitsConIva - baseImponibleUnits).toFixed(2));
-      const pUnitUndSinIva = Number((baseImponibleUnits / item.quantityUnits).toFixed(4));
+      const pUnitUndSinIva = Number((baseImponibleUnits / quantityUnits).toFixed(4));
 
       lines.push({
         codigoPrincipal: formatProductSku(item.productOptionId, 'UND'),
         descripcion: formatInvoiceItemDescription(item, 'unit'),
-        cantidad: item.quantityUnits,
+        cantidad: quantityUnits,
         precioUnitarioSinIva: pUnitUndSinIva,
         descuento: 0,
         precioTotalSinImpuesto: baseImponibleUnits,
@@ -372,18 +378,18 @@ export function expandCartItemsToFacturaLines(
       });
     } else if (hasJavas) {
       // Caso 2: Solo Packs / Javas
-      const subtotalConIva = Number(item.subtotal.toFixed(2));
+      const subtotalConIva = subtotal > 0 ? subtotal : Number((quantityJavas * pricePerJava).toFixed(2));
       const baseImponible =
         ivaRate > 0
           ? Number((subtotalConIva / (1 + ivaRate / 100)).toFixed(2))
           : subtotalConIva;
       const iva = Number((subtotalConIva - baseImponible).toFixed(2));
-      const pUnitSinIva = Number((baseImponible / item.quantityJavas).toFixed(4));
+      const pUnitSinIva = Number((baseImponible / quantityJavas).toFixed(4));
 
       lines.push({
         codigoPrincipal: formatProductSku(item.productOptionId, packSkuType),
         descripcion: formatInvoiceItemDescription(item, 'pack'),
-        cantidad: item.quantityJavas,
+        cantidad: quantityJavas,
         precioUnitarioSinIva: pUnitSinIva,
         descuento: 0,
         precioTotalSinImpuesto: baseImponible,
@@ -394,18 +400,18 @@ export function expandCartItemsToFacturaLines(
       });
     } else if (hasUnits) {
       // Caso 3: Solo Unidades Sueltas
-      const subtotalConIva = Number(item.subtotal.toFixed(2));
+      const subtotalConIva = subtotal > 0 ? subtotal : Number((quantityUnits * (item.pricePerUnit || 0)).toFixed(2));
       const baseImponible =
         ivaRate > 0
           ? Number((subtotalConIva / (1 + ivaRate / 100)).toFixed(2))
           : subtotalConIva;
       const iva = Number((subtotalConIva - baseImponible).toFixed(2));
-      const pUnitSinIva = Number((baseImponible / item.quantityUnits).toFixed(4));
+      const pUnitSinIva = Number((baseImponible / quantityUnits).toFixed(4));
 
       lines.push({
         codigoPrincipal: formatProductSku(item.productOptionId, 'UND'),
         descripcion: formatInvoiceItemDescription(item, 'unit'),
-        cantidad: item.quantityUnits,
+        cantidad: quantityUnits,
         precioUnitarioSinIva: pUnitSinIva,
         descuento: 0,
         precioTotalSinImpuesto: baseImponible,
@@ -417,7 +423,7 @@ export function expandCartItemsToFacturaLines(
     } else {
       // Caso 4: Fallback (unidades sueltas por totalBottles o 1)
       const cant = item.totalBottles && item.totalBottles > 0 ? item.totalBottles : 1;
-      const subtotalConIva = Number(item.subtotal.toFixed(2));
+      const subtotalConIva = subtotal;
       const baseImponible =
         ivaRate > 0
           ? Number((subtotalConIva / (1 + ivaRate / 100)).toFixed(2))

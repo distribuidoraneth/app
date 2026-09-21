@@ -31,14 +31,13 @@ interface InvoiceModalProps {
 }
 
 export function InvoiceModal({ invoice, isOpen, onClose }: InvoiceModalProps) {
-  if (!isOpen || !invoice) return null;
-
   // Clave de acceso de 49 dígitos generada o existente
   const claveAcceso = useMemo(() => {
+    if (!invoice) return '';
     if (invoice.claveAcceso) return invoice.claveAcceso;
-    const seq = parseInt(invoice.invoiceNumber.replace(/\D/g, '').slice(-9), 10) || 1;
+    const seq = parseInt(invoice.invoiceNumber?.replace(/\D/g, '')?.slice(-9) || '1', 10) || 1;
     return generarClaveAcceso({
-      fecha: new Date(invoice.issuedAt),
+      fecha: new Date(invoice.issuedAt || Date.now()),
       ruc: DEFAULT_TAX_PROFILE.ruc,
       ambiente: '1',
       establecimiento: '001',
@@ -46,6 +45,33 @@ export function InvoiceModal({ invoice, isOpen, onClose }: InvoiceModalProps) {
       secuencial: seq,
     });
   }, [invoice]);
+
+  const facturaLines = useMemo(() => {
+    if (!invoice?.items) return [];
+    return expandCartItemsToFacturaLines(invoice.items, 15);
+  }, [invoice?.items]);
+
+  const subtotal15 = useMemo(() => {
+    if (facturaLines.length > 0) {
+      return Number(facturaLines.reduce((s, l) => s + l.precioTotalSinImpuesto, 0).toFixed(2));
+    }
+    if (!invoice) return 0;
+    return invoice.subtotal15 && invoice.subtotal15 < invoice.total
+      ? invoice.subtotal15
+      : Number(((invoice.total || 0) / 1.15).toFixed(2));
+  }, [facturaLines, invoice]);
+
+  const tax15 = useMemo(() => {
+    if (facturaLines.length > 0) {
+      return Number(facturaLines.reduce((s, l) => s + l.iva, 0).toFixed(2));
+    }
+    if (!invoice) return 0;
+    return invoice.tax && invoice.tax > 0
+      ? invoice.tax
+      : Number(((invoice.total || 0) - subtotal15).toFixed(2));
+  }, [facturaLines, invoice, subtotal15]);
+
+  if (!isOpen || !invoice) return null;
 
   const handlePrint = () => {
     window.print();
@@ -121,29 +147,6 @@ export function InvoiceModal({ invoice, isOpen, onClose }: InvoiceModalProps) {
     link.click();
     document.body.removeChild(link);
   };
-
-  const facturaLines = useMemo(() => {
-    if (!invoice?.items) return [];
-    return expandCartItemsToFacturaLines(invoice.items, 15);
-  }, [invoice?.items]);
-
-  const subtotal15 = useMemo(() => {
-    if (facturaLines.length > 0) {
-      return Number(facturaLines.reduce((s, l) => s + l.precioTotalSinImpuesto, 0).toFixed(2));
-    }
-    return invoice.subtotal15 && invoice.subtotal15 < invoice.total
-      ? invoice.subtotal15
-      : Number((invoice.total / 1.15).toFixed(2));
-  }, [facturaLines, invoice]);
-
-  const tax15 = useMemo(() => {
-    if (facturaLines.length > 0) {
-      return Number(facturaLines.reduce((s, l) => s + l.iva, 0).toFixed(2));
-    }
-    return invoice.tax && invoice.tax > 0
-      ? invoice.tax
-      : Number((invoice.total - subtotal15).toFixed(2));
-  }, [facturaLines, invoice, subtotal15]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs overflow-y-auto print:p-0 print:bg-white">

@@ -55,6 +55,29 @@ export default function PublicInvoicePage({
     });
   }, [invoice]);
 
+  const facturaLines = useMemo(() => {
+    if (!invoice?.items) return [];
+    return expandCartItemsToFacturaLines(invoice.items, 15);
+  }, [invoice?.items]);
+
+  const subtotal15 = useMemo(() => {
+    if (facturaLines.length > 0) {
+      return Number(facturaLines.reduce((s, l) => s + l.precioTotalSinImpuesto, 0).toFixed(2));
+    }
+    return invoice?.subtotal15 && invoice.subtotal15 < invoice.total
+      ? invoice.subtotal15
+      : Number(((invoice?.total || 0) / 1.15).toFixed(2));
+  }, [facturaLines, invoice]);
+
+  const tax15 = useMemo(() => {
+    if (facturaLines.length > 0) {
+      return Number(facturaLines.reduce((s, l) => s + l.iva, 0).toFixed(2));
+    }
+    return invoice?.tax && invoice.tax > 0
+      ? invoice.tax
+      : Number(((invoice?.total || 0) - subtotal15).toFixed(2));
+  }, [facturaLines, invoice, subtotal15]);
+
   const [sriStatus, setSriStatus] = useState<string | null>(invoice?.sriStatus || null);
   const [sriAuthNum, setSriAuthNum] = useState<string | null>(invoice?.sriAuthorizationNumber || null);
   const [sriAuthDate, setSriAuthDate] = useState<string | null>(invoice?.sriAuthorizationDate || null);
@@ -62,6 +85,15 @@ export default function PublicInvoicePage({
   const [isCheckingSri, setIsCheckingSri] = useState<boolean>(false);
   const [isRetryingSri, setIsRetryingSri] = useState<boolean>(false);
   const [sriFeedback, setSriFeedback] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (invoice) {
+      setSriStatus(invoice.sriStatus || null);
+      setSriAuthNum(invoice.sriAuthorizationNumber || null);
+      setSriAuthDate(invoice.sriAuthorizationDate || null);
+      setSriErrorMsg(invoice.sriErrorMessage || null);
+    }
+  }, [invoice]);
 
   const handleConsultarSri = async () => {
     if (!claveAcceso) return;
@@ -287,29 +319,6 @@ export default function PublicInvoicePage({
       </div>
     );
   }
-
-  const facturaLines = useMemo(() => {
-    if (!invoice?.items) return [];
-    return expandCartItemsToFacturaLines(invoice.items, 15);
-  }, [invoice?.items]);
-
-  const subtotal15 = useMemo(() => {
-    if (facturaLines.length > 0) {
-      return Number(facturaLines.reduce((s, l) => s + l.precioTotalSinImpuesto, 0).toFixed(2));
-    }
-    return invoice?.subtotal15 && invoice.subtotal15 < invoice.total
-      ? invoice.subtotal15
-      : Number(((invoice?.total || 0) / 1.15).toFixed(2));
-  }, [facturaLines, invoice]);
-
-  const tax15 = useMemo(() => {
-    if (facturaLines.length > 0) {
-      return Number(facturaLines.reduce((s, l) => s + l.iva, 0).toFixed(2));
-    }
-    return invoice?.tax && invoice.tax > 0
-      ? invoice.tax
-      : Number(((invoice?.total || 0) - subtotal15).toFixed(2));
-  }, [facturaLines, invoice, subtotal15]);
 
   return (
     <div className="min-h-screen bg-[#f8fafc] py-6 sm:py-10 px-4 flex flex-col items-center print:bg-white print:p-0">
