@@ -252,21 +252,6 @@ export function ClientsManager() {
                   </div>
                 )}
               </div>
-
-              {/* Pie de tarjeta estilo Apple: Ruta directa y micro-interacción */}
-              <div className="pt-2.5 border-t border-slate-100/80 flex items-center justify-between text-xs">
-                <div className="flex items-center gap-1.5 text-slate-500 font-medium">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md">
-                    Portal
-                  </span>
-                  <span className="font-mono text-[11px] font-bold text-slate-700 truncate max-w-[170px] sm:max-w-[220px]">
-                    /p/{client.qrToken}
-                  </span>
-                </div>
-                <span className="text-[#0071e3] font-bold text-xs opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all flex items-center gap-0.5 shrink-0">
-                  Abrir &rarr;
-                </span>
-              </div>
             </div>
           ))}
         </div>
