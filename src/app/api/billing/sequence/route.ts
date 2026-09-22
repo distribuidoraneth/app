@@ -59,6 +59,28 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
+    const sbAdmin = getServiceSupabase();
+    const ruc = DEFAULT_TAX_PROFILE.ruc;
+
+    // 1. Soporte para obtención atómica del siguiente secuencial mediante RPC de Postgres
+    if (body?.action === 'next') {
+      try {
+        const { data: rpcSeq, error: rpcErr } = await sbAdmin.rpc('get_next_invoice_secuencial', {
+          p_ruc: ruc,
+        });
+        if (!rpcErr && rpcSeq) {
+          const val = Number(rpcSeq);
+          return NextResponse.json({
+            success: true,
+            current_secuencial: val,
+            next_secuencial: val + 1,
+          });
+        }
+      } catch {
+        // Fallback a lógica de lectura/actualización directa si la función no ha sido migrada aún
+      }
+    }
+
     const newSeq = Number(body?.secuencial);
 
     if (isNaN(newSeq) || newSeq < MIN_BASE_SEQUENCE) {
@@ -67,9 +89,6 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-
-    const sbAdmin = getServiceSupabase();
-    const ruc = DEFAULT_TAX_PROFILE.ruc;
 
     const { data: existing } = await sbAdmin
       .from('company_tax_profiles')

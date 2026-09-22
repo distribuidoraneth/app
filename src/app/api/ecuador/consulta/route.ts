@@ -15,7 +15,14 @@ export async function GET(req: NextRequest) {
     }
 
     const taxId = taxIdRaw.replace(/\D/g, '').trim();
-    const apiKey = process.env.ECUADOR_API_KEY || 'ecu_VM0WREMh5FXUf16_ph4Gf5GzDRqBXu3nimJbMXTcKts';
+    const apiKey = process.env.ECUADOR_API_KEY;
+
+    if (!apiKey) {
+      return NextResponse.json(
+        { success: false, error: 'Servicio de consulta no configurado en el servidor.' },
+        { status: 500 }
+      );
+    }
 
     if (taxId.length === 13) {
       // 1. Consulta RUC

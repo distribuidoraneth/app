@@ -3,11 +3,70 @@
  */
 
 import { supabase } from '@/lib/supabase/client';
-import { Client, JavaProductOption, Order, OrderStatus, Invoice, CartItem } from '@/types';
+import { Client, JavaProductOption, Order, OrderStatus, Invoice, CartItem, PaymentTransaction } from '@/types';
 import { INITIAL_CLIENTS, JAVA_PRODUCT_CATALOG } from '@/lib/mockData';
 import { cleanAddress, expandCartItemsToFacturaLines } from '@/lib/utils/formatters';
 import { generarClaveAcceso } from '@/lib/sri/claveAcceso';
 import { DEFAULT_TAX_PROFILE } from '@/lib/sri/xmlBuilder';
+
+export function isValidUuid(id?: string | null): boolean {
+  if (!id || typeof id !== 'string') return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+}
+
+export function generateUuid(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
+function mapDbClient(c: any): Client {
+  const tierMatch = c.qr_token?.match(/\|tier:(normal|distribuidor|especial)/);
+  const clientTier = tierMatch ? tierMatch[1] : (c.client_tier || 'normal');
+  const cleanTaxId = c.tax_id?.trim().replace(/\D/g, '');
+  const rawQr = c.qr_token ? c.qr_token.split('|')[0] : '';
+
+  // Si el cliente tiene Cédula o RUC (>= 10 dígitos) y su token actual es el formato legacy ("aneth-...") o está vacío:
+  let cleanQr = rawQr;
+  if (cleanTaxId && cleanTaxId.length >= 10 && (!cleanQr || cleanQr.startsWith('aneth-') || cleanQr.startsWith('cli-'))) {
+    cleanQr = cleanTaxId;
+  } else if (!cleanQr) {
+    cleanQr = cleanTaxId || (c.whatsapp_number ? c.whatsapp_number.replace(/\D/g, '') : `cli-${c.id}`);
+  }
+
+  // Si se modernizó un token viejo a la cédula, sincronizar en background con Supabase
+  if (rawQr && cleanQr !== rawQr && cleanQr === cleanTaxId) {
+    const safeUpdatedToken = `${cleanQr}|tier:${clientTier}`;
+    supabase.from('clients').update({ qr_token: safeUpdatedToken }).eq('id', c.id).then();
+  }
+
+  return {
+    id: c.id,
+    qrToken: cleanQr,
+    fullName: c.full_name,
+    businessName: c.business_name,
+    gender: c.gender || 'Hombre',
+    clientTier,
+    whatsappNumber: c.whatsapp_number,
+    latitude: Number(c.latitude),
+    longitude: Number(c.longitude),
+    addressReference: cleanAddress(c.address_reference),
+    taxId: c.tax_id,
+    taxIdType: c.tax_id_type,
+    email: c.email,
+    creditLimit: Number(c.credit_limit || 0),
+    currentDebt: Number(c.current_debt || 0),
+    birthDate: c.birth_date,
+    economicActivity: c.economic_activity,
+    taxpayerType: c.taxpayer_type,
+    createdAt: c.created_at,
+  };
+}
 
 export async function getClientsFromDb(): Promise<Client[] | null> {
   try {
@@ -21,68 +80,49 @@ export async function getClientsFromDb(): Promise<Client[] | null> {
       return null;
     }
 
-    return (data || []).map((c: any) => {
-      const tierMatch = c.qr_token?.match(/\|tier:(normal|distribuidor|especial)/);
-      const clientTier = tierMatch ? tierMatch[1] : (c.client_tier || 'normal');
-      const cleanTaxId = c.tax_id?.trim().replace(/\D/g, '');
-      const rawQr = c.qr_token ? c.qr_token.split('|')[0] : '';
-
-      // Si el cliente tiene Cédula o RUC (>= 10 dígitos) y su token actual es el formato legacy ("aneth-...") o está vacío:
-      let cleanQr = rawQr;
-      if (cleanTaxId && cleanTaxId.length >= 10 && (!cleanQr || cleanQr.startsWith('aneth-') || cleanQr.startsWith('cli-'))) {
-        cleanQr = cleanTaxId;
-      } else if (!cleanQr) {
-        cleanQr = cleanTaxId || (c.whatsapp_number ? c.whatsapp_number.replace(/\D/g, '') : `cli-${c.id}`);
-      }
-
-      // Si se modernizó un token viejo a la cédula, sincronizar en background con Supabase
-      if (rawQr && cleanQr !== rawQr && cleanQr === cleanTaxId) {
-        const safeUpdatedToken = `${cleanQr}|tier:${clientTier}`;
-        supabase.from('clients').update({ qr_token: safeUpdatedToken }).eq('id', c.id).then();
-      }
-
-      return {
-        id: c.id,
-        qrToken: cleanQr,
-        fullName: c.full_name,
-        businessName: c.business_name,
-        gender: c.gender || 'Hombre',
-        clientTier,
-        whatsappNumber: c.whatsapp_number,
-        latitude: Number(c.latitude),
-        longitude: Number(c.longitude),
-        addressReference: cleanAddress(c.address_reference),
-        taxId: c.tax_id,
-        taxIdType: c.tax_id_type,
-        email: c.email,
-        creditLimit: Number(c.credit_limit || 0),
-        currentDebt: Number(c.current_debt || 0),
-        birthDate: c.birth_date,
-        economicActivity: c.economic_activity,
-        taxpayerType: c.taxpayer_type,
-        createdAt: c.created_at,
-      };
-    });
+    return (data || []).map(mapDbClient);
   } catch (err) {
     console.warn('Excepción al consultar clientes:', err);
     return null;
   }
 }
 
-function isValidUuid(id?: string | null): boolean {
-  if (!id || typeof id !== 'string') return false;
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
-}
+export async function getClientsByTokenFromDb(rawToken: string): Promise<Client[] | null> {
+  try {
+    const cleanToken = decodeURIComponent(rawToken || '').trim();
+    if (!cleanToken) return null;
 
-function generateUuid(): string {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-    return crypto.randomUUID();
+    const tokenDigits = cleanToken.replace(/\D/g, '');
+    let query = supabase.from('clients').select('*');
+
+    const orClauses: string[] = [
+      `qr_token.ilike.%${cleanToken}%`,
+    ];
+
+    if (isValidUuid(cleanToken)) {
+      orClauses.push(`id.eq.${cleanToken}`);
+    }
+
+    if (cleanToken.length >= 3) {
+      orClauses.push(`tax_id.eq.${cleanToken}`);
+    }
+
+    if (tokenDigits.length >= 9) {
+      orClauses.push(`tax_id.eq.${tokenDigits}`);
+      orClauses.push(`whatsapp_number.ilike.%${tokenDigits}%`);
+    }
+
+    const { data, error } = await query.or(orClauses.join(','));
+    if (error) {
+      console.warn('Advertencia al consultar cliente por token en Supabase:', error.message);
+      return null;
+    }
+
+    return (data || []).map(mapDbClient);
+  } catch (err) {
+    console.warn('Excepción al buscar cliente por token:', err);
+    return null;
   }
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0;
-    const v = c === 'x' ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
 }
 
 export async function saveClientToDb(client: Client): Promise<{ success: boolean; error?: string }> {
@@ -137,11 +177,17 @@ export async function deleteClientFromDb(
   qrToken?: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    const { data: { session } } = await supabase.auth.getSession();
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (session?.access_token) {
+      headers['Authorization'] = `Bearer ${session.access_token}`;
+    }
+
     const res = await fetch('/api/clients/delete', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify({ clientId, qrToken }),
     });
 
@@ -379,7 +425,7 @@ export async function saveOrderToDb(order: Order): Promise<{ success: boolean; d
   try {
     const orderRecord: any = {
       order_number: order.orderNumber,
-      client_id: order.clientId && order.clientId.startsWith('cli-') ? null : order.clientId,
+      client_id: isValidUuid(order.clientId) ? order.clientId : null,
       client_name: order.clientName,
       business_name: order.businessName,
       whatsapp_number: order.whatsappNumber,
@@ -401,6 +447,8 @@ export async function saveOrderToDb(order: Order): Promise<{ success: boolean; d
       notes: order.notes,
       promised_collection_date: order.promisedCollectionDate || null,
       promised_collection_time: order.promisedCollectionTime || null,
+      invoice_id: isValidUuid(order.invoiceId) ? order.invoiceId : null,
+      delivered_at: order.deliveredAt || null,
     };
 
     if (isValidUuid(order.id)) {
@@ -469,23 +517,208 @@ export async function saveOrderToDb(order: Order): Promise<{ success: boolean; d
   }
 }
 
+export interface UpdateOrderPayload {
+  status?: OrderStatus;
+  invoiceId?: string;
+  invoiceNumber?: string;
+  deliveredAt?: string;
+  amountPaid?: number;
+  debtBalance?: number;
+  paymentStatus?: 'pending' | 'paid' | 'partial';
+  paymentMethod?: string;
+  scheduledDeliveryDate?: string;
+  scheduledTimeSlot?: string;
+  notes?: string;
+}
+
 export async function updateOrderStatusInDb(
   orderId: string,
-  status: OrderStatus
+  statusOrPayload: OrderStatus | UpdateOrderPayload
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const { error } = await supabase
-      .from('orders')
-      .update({ status })
-      .or(`id.eq.${orderId},order_number.eq.${orderId}`);
+    const rawPayload: any =
+      typeof statusOrPayload === 'string'
+        ? { status: statusOrPayload }
+        : { ...statusOrPayload };
+
+    const dbPayload: any = {};
+    if (rawPayload.status !== undefined) dbPayload.status = rawPayload.status;
+    if (rawPayload.deliveredAt !== undefined) dbPayload.delivered_at = rawPayload.deliveredAt;
+    if (rawPayload.invoiceId !== undefined) {
+      dbPayload.invoice_id = isValidUuid(rawPayload.invoiceId) ? rawPayload.invoiceId : null;
+    }
+    if (rawPayload.invoiceNumber !== undefined) dbPayload.invoice_number = rawPayload.invoiceNumber;
+    if (rawPayload.amountPaid !== undefined) dbPayload.amount_paid = Number(rawPayload.amountPaid);
+    if (rawPayload.debtBalance !== undefined) dbPayload.debt_balance = Number(rawPayload.debtBalance);
+    if (rawPayload.paymentStatus !== undefined) dbPayload.payment_status = rawPayload.paymentStatus;
+    if (rawPayload.paymentMethod !== undefined) dbPayload.payment_method = rawPayload.paymentMethod;
+    if (rawPayload.scheduledDeliveryDate !== undefined) {
+      dbPayload.scheduled_delivery_date = rawPayload.scheduledDeliveryDate;
+    }
+    if (rawPayload.scheduledTimeSlot !== undefined) {
+      dbPayload.scheduled_time_slot = rawPayload.scheduledTimeSlot;
+    }
+    if (rawPayload.notes !== undefined) dbPayload.notes = rawPayload.notes;
+
+    let query = supabase.from('orders').update(dbPayload);
+
+    if (isValidUuid(orderId)) {
+      query = query.eq('id', orderId);
+    } else {
+      query = query.eq('order_number', orderId);
+    }
+
+    const { error } = await query;
 
     if (error) {
-      console.warn('Advertencia al actualizar estado de orden en Supabase:', error.message);
+      console.warn('Advertencia al actualizar orden en Supabase:', error.message);
       return { success: false, error: error.message };
     }
     return { success: true };
   } catch (err: any) {
     return { success: false, error: err?.message };
+  }
+}
+
+export async function savePaymentToDb(
+  payment: PaymentTransaction
+): Promise<{ success: boolean; data?: any; error?: string }> {
+  try {
+    const paymentRecord: any = {
+      id: isValidUuid(payment.id) ? payment.id : generateUuid(),
+      order_id: isValidUuid(payment.orderId) ? payment.orderId : null,
+      client_id: isValidUuid(payment.clientId) ? payment.clientId : null,
+      amount: Number(payment.amount || 0),
+      payment_method: payment.paymentMethod || 'cash',
+      payment_proof_url: payment.paymentProofUrl || null,
+      reference_number: payment.referenceNumber || null,
+      notes: payment.notes || null,
+      recorded_at: payment.recordedAt || new Date().toISOString(),
+    };
+
+    const { data, error } = await supabase.from('payments').insert(paymentRecord).select().single();
+    if (error) {
+      console.warn('Advertencia al guardar pago en Supabase:', error.message);
+      return { success: false, error: error.message };
+    }
+    return { success: true, data };
+  } catch (err: any) {
+    console.warn('Excepción al guardar pago en Supabase:', err);
+    return { success: false, error: err?.message };
+  }
+}
+
+export async function getPaymentsByOrderFromDb(orderId: string): Promise<PaymentTransaction[]> {
+  try {
+    if (!isValidUuid(orderId)) return [];
+    const { data, error } = await supabase
+      .from('payments')
+      .select('*')
+      .eq('order_id', orderId)
+      .order('recorded_at', { ascending: false });
+
+    if (error) {
+      console.warn('Advertencia al consultar pagos en Supabase:', error.message);
+      return [];
+    }
+
+    return (data || []).map((p: any) => ({
+      id: p.id,
+      orderId: p.order_id,
+      clientId: p.client_id,
+      amount: Number(p.amount || 0),
+      paymentMethod: p.payment_method,
+      paymentProofUrl: p.payment_proof_url,
+      referenceNumber: p.reference_number,
+      notes: p.notes,
+      recordedAt: p.recorded_at,
+    }));
+  } catch (err) {
+    console.warn('Excepción al consultar pagos:', err);
+    return [];
+  }
+}
+
+export async function getPaymentsByClientFromDb(clientId: string): Promise<PaymentTransaction[]> {
+  try {
+    if (!isValidUuid(clientId)) return [];
+    const { data, error } = await supabase
+      .from('payments')
+      .select('*')
+      .eq('client_id', clientId)
+      .order('recorded_at', { ascending: false });
+
+    if (error) {
+      console.warn('Advertencia al consultar pagos por cliente:', error.message);
+      return [];
+    }
+
+    return (data || []).map((p: any) => ({
+      id: p.id,
+      orderId: p.order_id,
+      clientId: p.client_id,
+      amount: Number(p.amount || 0),
+      paymentMethod: p.payment_method,
+      paymentProofUrl: p.payment_proof_url,
+      referenceNumber: p.reference_number,
+      notes: p.notes,
+      recordedAt: p.recorded_at,
+    }));
+  } catch (err) {
+    console.warn('Excepción al consultar pagos por cliente:', err);
+    return [];
+  }
+}
+
+export async function getOrdersByClientIdFromDb(clientId: string): Promise<Order[] | null> {
+  try {
+    if (!clientId) return null;
+    let query = supabase.from('orders').select('*, order_items(*)');
+
+    if (isValidUuid(clientId)) {
+      query = query.eq('client_id', clientId);
+    } else {
+      query = query.or(`client_id.eq.${clientId},order_number.ilike.%${clientId}%`);
+    }
+
+    const { data, error } = await query
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    if (error) {
+      console.warn('Advertencia al consultar pedidos por cliente:', error.message);
+      return null;
+    }
+    return (data || []).map(mapDbOrder);
+  } catch (err) {
+    console.warn('Excepción al consultar pedidos por cliente:', err);
+    return null;
+  }
+}
+
+export async function getInvoicesByClientIdFromDb(clientId: string): Promise<Invoice[] | null> {
+  try {
+    if (!clientId) return null;
+    let query = supabase.from('invoices').select('*, invoice_items(*), orders(order_number)');
+
+    if (isValidUuid(clientId)) {
+      query = query.eq('client_id', clientId);
+    } else {
+      query = query.eq('client_tax_id', clientId);
+    }
+
+    const { data, error } = await query
+      .order('issued_at', { ascending: false })
+      .limit(50);
+
+    if (error) {
+      console.warn('Advertencia al consultar facturas por cliente:', error.message);
+      return null;
+    }
+    return (data || []).map(mapDbInvoice);
+  } catch (err) {
+    console.warn('Excepción al consultar facturas por cliente:', err);
+    return null;
   }
 }
 

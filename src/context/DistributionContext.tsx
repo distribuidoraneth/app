@@ -36,6 +36,12 @@ import {
   getCompanyTaxProfileFromDb,
   updateCompanySecuencialInDb,
   GetOrdersOptions,
+  generateUuid,
+  isValidUuid,
+  savePaymentToDb,
+  getClientsByTokenFromDb,
+  getOrdersByClientIdFromDb,
+  getInvoicesByClientIdFromDb,
 } from '@/lib/supabase/syncService';
 
 interface DistributionContextType {
@@ -44,13 +50,9 @@ interface DistributionContextType {
   catalog: JavaProductOption[];
   orders: Order[];
   invoices: Invoice[];
-
-  // Orders Filter & Smart Querying
   ordersFilter: GetOrdersOptions;
   isOrdersLoading: boolean;
   loadOrders: (options?: GetOrdersOptions) => Promise<void>;
-
-  // Active state
   selectedClientId: string;
   setSelectedClientId: (id: string) => void;
 
@@ -65,7 +67,7 @@ interface DistributionContextType {
   cartTotalUnits: number;
   cartTotalBottles: number;
 
-  // Actions
+  // Operations
   addClient: (client: Omit<Client, 'id' | 'qrToken' | 'createdAt'>) => Promise<Client>;
   updateClient: (client: Client) => void;
   deleteClient: (clientId: string) => Promise<boolean>;
@@ -94,6 +96,12 @@ interface DistributionContextType {
   refreshData: () => Promise<void>;
   clearLocalCache: () => Promise<void>;
   ensureOrderLoaded: (idOrNumber: string) => Promise<Order | null>;
+  loadClientPortalData: (token: string) => Promise<{
+    client: Client | null;
+    matchingClients: Client[];
+    orders: Order[];
+    invoices: Invoice[];
+  }>;
   currentSecuencial: number;
 }
 
@@ -264,6 +272,14 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
   // Sincronizar simultáneamente productos, clientes y órdenes con Supabase
   const refreshData = async () => {
     try {
+      const isPortal = typeof window !== 'undefined' && window.location.pathname.startsWith('/p/');
+      if (isPortal) {
+        // En portales públicos de clientes (/p/...), solo cargar el catálogo para privacidad y velocidad
+        const dbProducts = await getProductsFromDb();
+        if (dbProducts !== null) setCatalog(dbProducts);
+        return;
+      }
+
       const [dbProducts, dbClients, dbOrders, dbInvoices, dbTaxProfile] = await Promise.all([
         getProductsFromDb(),
         getClientsFromDb(),
@@ -317,33 +333,36 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
 
   // Carga inicial: leer caché local y sincronizar de inmediato con Supabase PostgreSQL
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed.clients)) setClients(parsed.clients);
-        if (Array.isArray(parsed.catalog) && parsed.catalog.length > 0) setCatalog(parsed.catalog);
-        if (Array.isArray(parsed.invoices)) setInvoices(parsed.invoices);
-        if (Array.isArray(parsed.orders)) {
-          const now = new Date();
-          const todayOrders = parsed.orders.filter((o: Order) => {
-            if (o.status === 'pending') return true;
-            if (!o.createdAt) return false;
-            const d = new Date(o.createdAt);
-            return (
-              d.getFullYear() === now.getFullYear() &&
-              d.getMonth() === now.getMonth() &&
-              d.getDate() === now.getDate()
-            );
-          });
-          setOrders(todayOrders);
+    const isPortal = typeof window !== 'undefined' && window.location.pathname.startsWith('/p/');
+    if (!isPortal) {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed.clients)) setClients(parsed.clients);
+          if (Array.isArray(parsed.catalog) && parsed.catalog.length > 0) setCatalog(parsed.catalog);
+          if (Array.isArray(parsed.invoices)) setInvoices(parsed.invoices);
+          if (Array.isArray(parsed.orders)) {
+            const now = new Date();
+            const todayOrders = parsed.orders.filter((o: Order) => {
+              if (o.status === 'pending') return true;
+              if (!o.createdAt) return false;
+              const d = new Date(o.createdAt);
+              return (
+                d.getFullYear() === now.getFullYear() &&
+                d.getMonth() === now.getMonth() &&
+                d.getDate() === now.getDate()
+              );
+            });
+            setOrders(todayOrders);
+          }
+          if (parsed.clients && parsed.clients.length > 0 && !selectedClientId) {
+            setSelectedClientId(parsed.clients[0].id);
+          }
         }
-        if (parsed.clients && parsed.clients.length > 0 && !selectedClientId) {
-          setSelectedClientId(parsed.clients[0].id);
-        }
+      } catch {
+        // ignore
       }
-    } catch {
-      // ignore
     }
 
     // La verdad de la base de datos toma precedencia sobre la caché
@@ -352,6 +371,9 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
 
   // Guardar en almacenamiento local como captura rápida (Supabase es la única fuente de verdad)
   useEffect(() => {
+    const isPortal = typeof window !== 'undefined' && window.location.pathname.startsWith('/p/');
+    if (isPortal) return; // No sobreescribir la base de clientes administrativa desde un portal individual
+
     try {
       localStorage.setItem(
         STORAGE_KEY,
@@ -366,6 +388,56 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
       // ignore
     }
   }, [clients, catalog, orders, invoices]);
+
+  // Carga bajo demanda y aislada para el portal del cliente
+  const loadClientPortalData = async (token: string) => {
+    try {
+      const dbClients = await getClientsByTokenFromDb(token);
+      if (!dbClients || dbClients.length === 0) {
+        return { client: null, matchingClients: [], orders: [], invoices: [] };
+      }
+
+      setClients((prev) => {
+        const existingIds = new Set(prev.map((c) => c.id));
+        const newToAdd = dbClients.filter((c) => !existingIds.has(c.id));
+        return [...prev, ...newToAdd];
+      });
+
+      const primary = dbClients[0];
+      setSelectedClientId(primary.id);
+
+      const [clientOrders, clientInvoices] = await Promise.all([
+        getOrdersByClientIdFromDb(primary.id),
+        getInvoicesByClientIdFromDb(primary.id),
+      ]);
+
+      if (clientOrders) {
+        setOrders((prev) => {
+          const fetchedIds = new Set(clientOrders.map((o) => o.id));
+          const kept = prev.filter((o) => !fetchedIds.has(o.id));
+          return [...clientOrders, ...kept];
+        });
+      }
+
+      if (clientInvoices) {
+        setInvoices((prev) => {
+          const fetchedIds = new Set(clientInvoices.map((i) => i.id));
+          const kept = prev.filter((i) => !fetchedIds.has(i.id));
+          return [...clientInvoices, ...kept];
+        });
+      }
+
+      return {
+        client: primary,
+        matchingClients: dbClients,
+        orders: clientOrders || [],
+        invoices: clientInvoices || [],
+      };
+    } catch (err) {
+      console.warn('Error al cargar datos del portal de cliente:', err);
+      return { client: null, matchingClients: [], orders: [], invoices: [] };
+    }
+  };
 
   // Limpiar toda la caché local y re-sincronizar estrictamente desde Supabase
   const clearLocalCache = async () => {
@@ -663,17 +735,6 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
       ? (promisedCollectionDate ? `[Cobro saldo: ${promisedCollectionDate} ${promisedCollectionTime || ''}] ${notes}` : notes)
       : (promisedCollectionDate ? `Cobro saldo programado: ${promisedCollectionDate} (${promisedCollectionTime || 'En ruta'})` : undefined);
 
-function generateUuid(): string {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-    return crypto.randomUUID();
-  }
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-    const r = (Math.random() * 16) | 0;
-    const v = c === 'x' ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
-}
-
     const newOrder: Order = {
       id: generateUuid(),
       orderNumber: orderNum,
@@ -750,7 +811,7 @@ function generateUuid(): string {
       });
 
       const newInvoice: Invoice = {
-        id: `fac-${Date.now()}`,
+        id: generateUuid(),
         invoiceNumber: invoiceNum,
         orderId: newOrder.id,
         orderNumber: newOrder.orderNumber,
@@ -853,6 +914,19 @@ function generateUuid(): string {
 
     // Async save to Supabase
     saveOrderToDb(newOrder).catch((err) => console.warn('Sync DB error:', err));
+
+    if (actualAmountPaid > 0) {
+      savePaymentToDb({
+        id: generateUuid(),
+        orderId: newOrder.id,
+        clientId: client?.id || '',
+        amount: actualAmountPaid,
+        paymentMethod,
+        paymentProofUrl,
+        notes: `Cobro inicial registrado en pedido ${orderNum}`,
+        recordedAt: new Date().toISOString(),
+      }).catch((err) => console.warn('Error al guardar pago inicial en Supabase:', err));
+    }
 
     return newOrder;
   };
@@ -974,7 +1048,7 @@ function generateUuid(): string {
       });
 
       const newInvoice: Invoice = {
-        id: `fac-${Date.now()}`,
+        id: generateUuid(),
         invoiceNumber: invoiceNum,
         orderId: targetOrder.id,
         orderNumber: targetOrder.orderNumber,
@@ -1043,14 +1117,15 @@ function generateUuid(): string {
         .catch((err) => console.warn('SRI background sync error on delivery:', err));
     }
 
+    const deliveredAtTime = status === 'delivered' ? new Date().toISOString() : undefined;
+
     setOrders((prev) =>
       prev.map((o) => {
         if (o.id === orderId) {
-          const deliveredAt = status === 'delivered' ? new Date().toISOString() : o.deliveredAt;
           return {
             ...o,
             status,
-            deliveredAt,
+            deliveredAt: deliveredAtTime || o.deliveredAt,
             invoiceId: createdInvoiceId || o.invoiceId,
             invoiceNumber: createdInvoiceNumber || o.invoiceNumber,
           };
@@ -1058,22 +1133,39 @@ function generateUuid(): string {
         return o;
       })
     );
-    updateOrderStatusInDb(orderId, status).catch((err) =>
+
+    updateOrderStatusInDb(orderId, {
+      status,
+      deliveredAt: deliveredAtTime,
+      invoiceId: createdInvoiceId,
+      invoiceNumber: createdInvoiceNumber,
+    }).catch((err) =>
       console.warn('Error al sincronizar estado de orden en Supabase:', err)
     );
   };
 
   const updatePaymentStatus = (orderId: string, status: PaymentStatus) => {
+    let finalPaid: number | undefined;
+    let finalDebt: number | undefined;
+
     setOrders((prev) =>
       prev.map((o) => {
         if (o.id === orderId) {
           const amountPaid = status === 'paid' ? o.totalAmount : o.amountPaid;
           const debtBalance = status === 'paid' ? 0 : o.debtBalance;
+          finalPaid = amountPaid;
+          finalDebt = debtBalance;
           return { ...o, paymentStatus: status, amountPaid, debtBalance };
         }
         return o;
       })
     );
+
+    updateOrderStatusInDb(orderId, {
+      paymentStatus: status,
+      amountPaid: finalPaid,
+      debtBalance: finalDebt,
+    }).catch((err) => console.warn('Error al sincronizar estado de pago en Supabase:', err));
   };
 
   const updateOrderSchedule = (orderId: string, date: string, timeSlot?: string) => {
@@ -1089,6 +1181,12 @@ function generateUuid(): string {
           : o
       )
     );
+
+    updateOrderStatusInDb(orderId, {
+      status: 'scheduled',
+      scheduledDeliveryDate: date,
+      scheduledTimeSlot: timeSlot,
+    }).catch((err) => console.warn('Error al sincronizar agenda de entrega en Supabase:', err));
   };
 
   const recordOrderPayment = (
@@ -1097,6 +1195,20 @@ function generateUuid(): string {
     method: PaymentMethod,
     proofUrl?: string
   ) => {
+    const targetOrder = orders.find((o) => o.id === orderId);
+    if (targetOrder) {
+      savePaymentToDb({
+        id: generateUuid(),
+        orderId: targetOrder.id,
+        clientId: targetOrder.clientId,
+        amount,
+        paymentMethod: method,
+        paymentProofUrl: proofUrl,
+        notes: `Abono a orden ${targetOrder.orderNumber}`,
+        recordedAt: new Date().toISOString(),
+      }).catch((err) => console.warn('Error al guardar pago en Supabase:', err));
+    }
+
     setOrders((prev) =>
       prev.map((o) => {
         if (o.id === orderId) {
@@ -1119,6 +1231,13 @@ function generateUuid(): string {
               updateClientDebtInDb(client.id, updatedDebt).catch(() => {});
             }
           }
+
+          updateOrderStatusInDb(orderId, {
+            amountPaid: newPaid,
+            debtBalance: newDebt,
+            paymentStatus,
+            paymentMethod: method,
+          }).catch((err) => console.warn('Error al actualizar abono de orden en Supabase:', err));
 
           return {
             ...o,
@@ -1150,7 +1269,7 @@ function generateUuid(): string {
     updateCompanySecuencialInDb(seqNumber).catch(() => {});
     const invoiceNum = `001-001-${String(seqNumber).padStart(9, '0')}`;
     const newInvoice: Invoice = {
-      id: `fac-${Date.now()}`,
+      id: generateUuid(),
       invoiceNumber: invoiceNum,
       orderId: order.id,
       orderNumber: order.orderNumber,
@@ -1193,15 +1312,30 @@ function generateUuid(): string {
     method: PaymentMethod = 'cash',
     notes?: string
   ) => {
+    let updatedDebt = 0;
     setClients((prev) =>
       prev.map((c) => {
         if (c.id === clientId) {
-          const newDebt = Math.max(0, (c.currentDebt || 0) - amount);
-          return { ...c, currentDebt: newDebt };
+          updatedDebt = Math.max(0, Number(((c.currentDebt || 0) - amount).toFixed(2)));
+          return { ...c, currentDebt: updatedDebt };
         }
         return c;
       })
     );
+
+    updateClientDebtInDb(clientId, updatedDebt).catch((err) =>
+      console.warn('Error al sincronizar saldo de cliente en Supabase:', err)
+    );
+
+    savePaymentToDb({
+      id: generateUuid(),
+      orderId: '',
+      clientId,
+      amount,
+      paymentMethod: method,
+      notes: notes || 'Abono general a deuda de cliente',
+      recordedAt: new Date().toISOString(),
+    }).catch((err) => console.warn('Error al guardar abono a deuda en Supabase:', err));
   };
 
   const updateStock = (optionId: string, newStock: number) => {
@@ -1298,6 +1432,7 @@ function generateUuid(): string {
         refreshData,
         clearLocalCache,
         ensureOrderLoaded,
+        loadClientPortalData,
         currentSecuencial,
       }}
     >

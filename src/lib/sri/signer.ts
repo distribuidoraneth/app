@@ -6,7 +6,6 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { EMBEDDED_P12_BASE64, EMBEDDED_P12_PASSWORD } from './certData';
 // @ts-ignore
 import { signXml } from './osodreamerSigner.mjs';
 
@@ -19,9 +18,9 @@ export interface SigningOptions {
 export async function signXmlXadesBes(xmlString: string, options?: SigningOptions): Promise<string> {
   try {
     let p12Buffer: Buffer | null = options?.p12Buffer || null;
-    let password = options?.p12Password || process.env.SRI_P12_PASSWORD || EMBEDDED_P12_PASSWORD;
+    let password = options?.p12Password || process.env.SRI_P12_PASSWORD || '';
 
-    // 1. Cargar desde variable de entorno base64 si existe
+    // 1. Cargar desde variable de entorno base64 si existe (Vercel Serverless / Producción)
     if (!p12Buffer && process.env.SRI_P12_BASE64) {
       try {
         p12Buffer = Buffer.from(process.env.SRI_P12_BASE64, 'base64');
@@ -30,7 +29,7 @@ export async function signXmlXadesBes(xmlString: string, options?: SigningOption
       }
     }
 
-    // 2. Si no está en env, buscar en sistema de archivos local
+    // 2. Si no está en env, buscar en sistema de archivos local (Desarrollo)
     if (!p12Buffer) {
       const cwd = process.cwd();
       const possiblePaths = [
@@ -47,18 +46,8 @@ export async function signXmlXadesBes(xmlString: string, options?: SigningOption
       }
     }
 
-    // 3. Si no está en archivos ni en variable de entorno (ej. Vercel Serverless), usar certificado embebido
-    if (!p12Buffer && EMBEDDED_P12_BASE64) {
-      try {
-        p12Buffer = Buffer.from(EMBEDDED_P12_BASE64, 'base64');
-        password = EMBEDDED_P12_PASSWORD;
-      } catch (err) {
-        console.error('Error al decodificar EMBEDDED_P12_BASE64:', err);
-      }
-    }
-
     if (!p12Buffer) {
-      throw new Error('Certificado digital P12 no disponible para firmar');
+      throw new Error('Certificado digital P12 no disponible. Configure SRI_P12_BASE64 en las variables de entorno.');
     }
 
     const xmlBuffer = Buffer.from(xmlString.trim(), 'utf-8');

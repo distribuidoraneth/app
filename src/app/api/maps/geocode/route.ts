@@ -10,11 +10,9 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Coordenadas requeridas' }, { status: 400 });
     }
 
-    const DEFAULT_GOOGLE_KEY = 'AIzaSyBxdOiBsT-hmDUzpwhLg8BSmjvgCof0uI0';
     const apiKey =
       process.env.GOOGLE_MAPS_API_KEY ||
-      process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ||
-      DEFAULT_GOOGLE_KEY;
+      process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
     let address = '';
     let placeId = '';

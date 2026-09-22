@@ -64,14 +64,6 @@ export default function AdminLayout({
           return;
         }
 
-        // 3. Fallback: bandera local de autenticación
-        const localAuth = localStorage.getItem('aneth_admin_authenticated');
-        if (localAuth === 'true' && isMounted) {
-          setIsAuthenticated(true);
-          setIsLoading(false);
-          return;
-        }
-
         // No autenticado
         if (isMounted) {
           setIsLoading(false);

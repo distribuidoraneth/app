@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, use } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import { useDistribution } from '@/context/DistributionContext';
 import { BeverageOrderPasarela } from '@/components/order/BeverageOrderPasarela';
@@ -50,7 +50,7 @@ export default function ClientExperiencePage({
   params: Promise<{ token: string }>;
 }) {
   const resolvedParams = use(params);
-  const { clients, orders, invoices, cancelOrder, cart, cartTotalJavas, cartTotalAmount } =
+  const { clients, orders, invoices, cancelOrder, cart, cartTotalJavas, cartTotalAmount, loadClientPortalData } =
     useDistribution();
 
   const [selectedBranchId, setSelectedBranchId] = useState<string>('');
@@ -59,10 +59,30 @@ export default function ClientExperiencePage({
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [selectedOrderForThermal, setSelectedOrderForThermal] = useState<Order | null>(null);
   const [selectedOrderView, setSelectedOrderView] = useState<Order | null>(null);
+  const [isPortalLoading, setIsPortalLoading] = useState<boolean>(true);
 
   const rawToken = decodeURIComponent(resolvedParams.token || '').trim();
   const tokenDigits = rawToken.replace(/\D/g, '');
   const tokenLower = rawToken.toLowerCase();
+
+  useEffect(() => {
+    let isMounted = true;
+    if (rawToken) {
+      setIsPortalLoading(true);
+      loadClientPortalData(rawToken)
+        .then(() => {
+          if (isMounted) setIsPortalLoading(false);
+        })
+        .catch(() => {
+          if (isMounted) setIsPortalLoading(false);
+        });
+    } else {
+      setIsPortalLoading(false);
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [rawToken]);
 
   // 1. Si hay coincidencia directa por qrToken (ej. /p/1789952432-norte), va directo al local
   const exactQrMatch = clients.find((c) => c.qrToken && c.qrToken.toLowerCase() === tokenLower);
@@ -83,6 +103,19 @@ export default function ClientExperiencePage({
         if (c.id === rawToken) return true;
         return false;
       });
+
+  if (isPortalLoading && !exactQrMatch && matchingClients.length === 0) {
+    return (
+      <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center p-4">
+        <div className="flex flex-col items-center space-y-4 animate-pulse">
+          <AnethFullLogo size="md" showSubtitle={true} subtitleText="DISTRIBUCIONES" />
+          <div className="text-xs font-semibold text-slate-500 uppercase tracking-widest">
+            Cargando portal del cliente...
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Si hay más de una sucursal y aún no se ha elegido ninguna, mostrar el selector
   if (matchingClients.length > 1 && !selectedBranchId) {
