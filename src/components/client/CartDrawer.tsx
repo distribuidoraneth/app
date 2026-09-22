@@ -55,6 +55,7 @@ interface CartDrawerProps {
   clientId?: string;
   onOrderSuccess?: (orderId: string) => void;
   saleType?: SaleType;
+  isClientPortal?: boolean;
 }
 
 export function CartDrawer({
@@ -63,6 +64,7 @@ export function CartDrawer({
   clientId,
   onOrderSuccess,
   saleType: propSaleType = 'autoventa',
+  isClientPortal = false,
 }: CartDrawerProps) {
   const {
     cart,
@@ -452,7 +454,7 @@ export function CartDrawer({
                 {createdOrderSummary.debtBalance > 0 ? (
                   <>
                     <div className="flex justify-between pt-2 border-t border-slate-100 text-amber-900 font-bold">
-                      <span>Saldo Pendiente (Cartera):</span>
+                      <span>{isClientPortal ? 'Saldo Pendiente de Pago:' : 'Saldo Pendiente (Cartera):'}</span>
                       <span className="font-mono font-black text-amber-700">{formatCurrency(createdOrderSummary.debtBalance)}</span>
                     </div>
                     {createdOrderSummary.promisedCollectionDate && (
@@ -474,14 +476,16 @@ export function CartDrawer({
 
               {/* Action Buttons */}
               <div className="space-y-2.5 pt-2">
-                <button
-                  type="button"
-                  onClick={handleShareWhatsApp}
-                  className="w-full py-3.5 px-4 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/90 active:scale-98 text-emerald-900 rounded-2xl font-black text-sm flex items-center justify-center space-x-2 shadow-xs transition-all cursor-pointer"
-                >
-                  <AppleWhatsAppIcon size={18} alt="WhatsApp" />
-                  <span>Enviar Comprobante</span>
-                </button>
+                {!isClientPortal && (
+                  <button
+                    type="button"
+                    onClick={handleShareWhatsApp}
+                    className="w-full py-3.5 px-4 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/90 active:scale-98 text-emerald-900 rounded-2xl font-black text-sm flex items-center justify-center space-x-2 shadow-xs transition-all cursor-pointer"
+                  >
+                    <AppleWhatsAppIcon size={18} alt="WhatsApp" />
+                    <span>Enviar Comprobante</span>
+                  </button>
+                )}
 
                 <button
                   type="button"
@@ -489,10 +493,10 @@ export function CartDrawer({
                   className="w-full py-3.5 px-4 bg-blue-600 hover:bg-blue-700 active:scale-98 text-white rounded-2xl font-black text-sm flex items-center justify-center space-x-2 shadow-md transition-all cursor-pointer"
                 >
                   <ApplePrinterIcon size={18} className="text-white" />
-                  <span>Imprimir Recibo</span>
+                  <span>{isClientPortal ? 'Ver Recibo de Pedido' : 'Imprimir Recibo'}</span>
                 </button>
 
-                {(createdOrderSummary.invoiceNumber || createdOrderSummary.invoiceId || createdOrderSummary.orderNumber) && (
+                {!isClientPortal && (createdOrderSummary.invoiceNumber || createdOrderSummary.invoiceId || createdOrderSummary.orderNumber) && (
                   <Link
                     href={`/factura/${createdOrderSummary.invoiceNumber || createdOrderSummary.orderNumber || createdOrderSummary.invoiceId}`}
                     target="_blank"
@@ -506,9 +510,9 @@ export function CartDrawer({
                 <button
                   type="button"
                   onClick={handleCloseAll}
-                  className="w-full py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl font-bold text-xs transition-colors"
+                  className="w-full py-3 px-4 bg-slate-100 hover:bg-slate-200 active:scale-98 text-slate-700 rounded-2xl font-bold text-xs transition-colors cursor-pointer"
                 >
-                  Cerrar y Continuar Venta
+                  {isClientPortal ? 'Cerrar y Ver Mis Pedidos' : 'Cerrar y Continuar Venta'}
                 </button>
               </div>
             </div>
@@ -727,15 +731,17 @@ export function CartDrawer({
                       </div>
 
                       <div className="flex items-center space-x-1.5 shrink-0">
-                        <button
-                          type="button"
-                          onClick={handleSendBankDetailsWhatsApp}
-                          className="px-2.5 py-1 bg-white hover:bg-emerald-50 text-emerald-800 border border-emerald-200/90 rounded-lg text-xs font-bold flex items-center space-x-1.5 shadow-2xs transition-all active:scale-95 cursor-pointer"
-                          title="Enviar datos bancarios al cliente por WhatsApp"
-                        >
-                          <AppleWhatsAppIcon size={14} alt="WhatsApp" />
-                          <span>WhatsApp</span>
-                        </button>
+                        {!isClientPortal && (
+                          <button
+                            type="button"
+                            onClick={handleSendBankDetailsWhatsApp}
+                            className="px-2.5 py-1 bg-white hover:bg-emerald-50 text-emerald-800 border border-emerald-200/90 rounded-lg text-xs font-bold flex items-center space-x-1.5 shadow-2xs transition-all active:scale-95 cursor-pointer"
+                            title="Enviar datos bancarios al cliente por WhatsApp"
+                          >
+                            <AppleWhatsAppIcon size={14} alt="WhatsApp" />
+                            <span>WhatsApp</span>
+                          </button>
+                        )}
 
                         <button
                           type="button"

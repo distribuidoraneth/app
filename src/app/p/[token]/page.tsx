@@ -5,8 +5,16 @@ import Link from 'next/link';
 import { useDistribution } from '@/context/DistributionContext';
 import { BeverageOrderPasarela } from '@/components/order/BeverageOrderPasarela';
 import { CartDrawer } from '@/components/client/CartDrawer';
-import { formatCurrency, formatDate, cleanAddress } from '@/lib/utils/formatters';
-import { Invoice } from '@/types';
+import { InvoiceModal } from '@/components/invoice/InvoiceModal';
+import { ThermalReceiptModal } from '@/components/receipt/ThermalReceiptModal';
+import {
+  formatCurrency,
+  formatDate,
+  formatSmartOrderTime,
+  formatOrderNumber,
+  cleanAddress,
+} from '@/lib/utils/formatters';
+import { Invoice, Order } from '@/types';
 import { AnethFullLogo } from '@/components/ui/AnethLogo';
 import { MobileTestButton } from '@/components/ui/MobileTestQRModal';
 import {
@@ -20,8 +28,17 @@ import {
   User,
   Sparkles,
   ArrowRight,
+  ChevronDown,
+  Calendar,
 } from 'lucide-react';
-import { AppleMapPinIcon, AppleCartIcon, ApplePrinterIcon } from '@/components/ui/AppleIcons';
+import {
+  AppleMapPinIcon,
+  AppleCartIcon,
+  ApplePrinterIcon,
+  AppleCheckmarkSealIcon,
+  AppleBanknoteIcon,
+  AppleReceiptIcon,
+} from '@/components/ui/AppleIcons';
 
 export default function ClientExperiencePage({
   params,
@@ -35,6 +52,13 @@ export default function ClientExperiencePage({
   const [selectedBranchId, setSelectedBranchId] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'order' | 'history'>('order');
   const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [selectedOrderForThermal, setSelectedOrderForThermal] = useState<Order | null>(null);
+  const [expandedOrders, setExpandedOrders] = useState<Record<string, boolean>>({});
+
+  const toggleOrderExpand = (orderId: string) => {
+    setExpandedOrders((prev) => ({ ...prev, [orderId]: !prev[orderId] }));
+  };
 
   const rawToken = decodeURIComponent(resolvedParams.token || '').trim();
   const tokenDigits = rawToken.replace(/\D/g, '');
@@ -131,6 +155,18 @@ export default function ClientExperiencePage({
   const clientOrders = orders.filter((o) => o.clientId === client?.id || o.whatsappNumber === client?.whatsappNumber);
   const clientInvoices = invoices.filter((i) => i.clientId === client?.id);
 
+  // Cálculo de deuda acumulada del cliente
+  const totalOrdersDebt = clientOrders.reduce(
+    (sum, o) => (o.status !== 'cancelled' ? sum + (o.debtBalance || 0) : sum),
+    0
+  );
+  const clientTotalDebt = Number(
+    ((client?.currentDebt !== undefined && client.currentDebt > 0)
+      ? client.currentDebt
+      : totalOrdersDebt
+    ).toFixed(2)
+  );
+
   const handleOrderCancel = (orderId: string) => {
     if (confirm('¿Deseas cancelar este pedido de javas?')) {
       const success = cancelOrder(orderId);
@@ -179,27 +215,74 @@ export default function ClientExperiencePage({
       </header>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-5 space-y-4">
-        {/* 1. Tarjeta Independiente del Comercio */}
-        <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs p-5 sm:p-6 space-y-1.5">
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-tight">
-            {businessTitle}
-          </h1>
+        {/* 1. Tarjeta Independiente del Comercio con Estado de Cuenta */}
+        <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs p-5 sm:p-6 space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="space-y-1">
+              <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-tight">
+                {businessTitle}
+              </h1>
 
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-600">
-            <span className="flex items-center font-bold text-slate-800">
-              <User className="w-4 h-4 mr-1.5 text-slate-400" />
-              {client?.fullName}
-            </span>
-            {cleanAddress(client?.addressReference) && (
-              <>
-                <span className="text-slate-300 hidden sm:inline">•</span>
-                <span className="flex items-center font-medium text-slate-500">
-                  <AppleMapPinIcon size={14} className="mr-1.5 opacity-60 flex-shrink-0" alt="Ubicación" />
-                  {cleanAddress(client?.addressReference)}
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-600">
+                <span className="flex items-center font-bold text-slate-800">
+                  <User className="w-4 h-4 mr-1.5 text-slate-400" />
+                  {client?.fullName}
                 </span>
-              </>
-            )}
+                {cleanAddress(client?.addressReference) && (
+                  <>
+                    <span className="text-slate-300 hidden sm:inline">•</span>
+                    <span className="flex items-center font-medium text-slate-500">
+                      <AppleMapPinIcon size={14} className="mr-1.5 opacity-60 shrink-0" alt="Ubicación" />
+                      {cleanAddress(client?.addressReference)}
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
+
+          {/* Saldo / Estado Financiero del Cliente */}
+          {clientTotalDebt > 0 ? (
+            <div className="pt-3 border-t border-slate-100 flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 p-3.5 bg-rose-50/80 border border-rose-200/80 rounded-2xl">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-9 h-9 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center shrink-0 shadow-2xs">
+                  <AppleBanknoteIcon size={18} />
+                </div>
+                <div>
+                  <span className="text-xs font-black text-rose-950 block leading-tight">
+                    Saldo Pendiente de Pago
+                  </span>
+                  <span className="text-[11px] text-rose-700 font-medium">
+                    Tienes valores pendientes por liquidar a tu repartidor
+                  </span>
+                </div>
+              </div>
+              <div className="text-right shrink-0">
+                <span className="text-lg sm:text-xl font-black font-mono text-rose-700 tabular-nums">
+                  {formatCurrency(clientTotalDebt)}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-between p-3 bg-emerald-50/70 border border-emerald-200/70 rounded-2xl">
+              <div className="flex items-center space-x-2">
+                <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                  <CheckCircle2 className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="text-xs font-black text-emerald-950 block leading-tight">
+                    Cuenta al Día
+                  </span>
+                  <span className="text-[11px] text-emerald-700 font-medium">
+                    No registras deudas pendientes
+                  </span>
+                </div>
+              </div>
+              <span className="text-xs font-mono font-bold text-emerald-700 bg-white/90 px-2.5 py-1 rounded-lg border border-emerald-200/60 shadow-2xs">
+                $0.00
+              </span>
+            </div>
+          )}
         </div>
 
         {/* 2. Selector Líquido de 2 Pestañas con Tipografía Grande y Proporcionada */}
@@ -244,25 +327,30 @@ export default function ClientExperiencePage({
           />
         )}
 
-        {/* TAB 2: MIS PEDIDOS (CON FACTURA INTEGRADA EN CADA PEDIDO) */}
+        {/* TAB 2: MIS PEDIDOS (NUEVAS TARJETAS MODERNAS RESUMIDAS) */}
         {activeTab === 'history' && (
-          <div className="space-y-4">
-            <h2 className="text-base sm:text-lg font-black text-slate-900 flex items-center">
-              <Clock className="w-5 h-5 mr-2 text-blue-600" />
-              Historial y Estado de Pedidos
-            </h2>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between px-1">
+              <h2 className="text-base sm:text-lg font-black text-slate-900 flex items-center">
+                <Clock className="w-5 h-5 mr-2 text-blue-600" />
+                Mis Pedidos
+              </h2>
+              <span className="text-xs text-slate-400 font-bold">
+                {clientOrders.length} {clientOrders.length === 1 ? 'pedido' : 'pedidos'}
+              </span>
+            </div>
 
             {clientOrders.length === 0 ? (
               <div className="text-center py-16 bg-white rounded-3xl border border-slate-200 p-8 space-y-3">
                 <Package className="w-12 h-12 text-slate-300 mx-auto" />
                 <h3 className="font-extrabold text-slate-800 text-base">No tienes pedidos registrados</h3>
-                <p className="text-xs sm:text-sm text-slate-500">
-                  Usa la pestaña de pedidos para armar tus javas de bebidas.
+                <p className="text-xs sm:text-sm text-slate-500 max-w-sm mx-auto">
+                  Usa la pestaña de Comprar para armar tus javas de bebidas con precio mayorista.
                 </p>
                 <button
                   type="button"
                   onClick={() => setActiveTab('order')}
-                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl font-black text-xs transition-all shadow-xs"
+                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl font-black text-xs transition-all shadow-xs cursor-pointer"
                 >
                   Hacer mi Primer Pedido
                 </button>
@@ -272,119 +360,192 @@ export default function ClientExperiencePage({
                 const orderInvoice = clientInvoices.find(
                   (i) => i.orderId === order.id || i.id === order.invoiceId
                 );
+                const isExpanded = !!expandedOrders[order.id];
 
                 return (
                   <div
                     key={order.id}
-                    className="bg-white rounded-3xl border border-slate-200 p-5 sm:p-6 shadow-xs space-y-4"
+                    className="bg-white rounded-2xl border border-slate-200/90 p-4 sm:p-5 shadow-xs hover:border-slate-300 transition-all space-y-3"
                   >
-                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                    {/* Header Fila 1: Número de orden, fecha y Estado */}
+                    <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center space-x-2">
-                        <span className="font-mono font-black text-sm text-slate-900 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
-                          #{order.orderNumber}
+                        <span className="font-mono font-bold text-xs sm:text-[13px] text-slate-800 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200/80 tracking-tight select-all">
+                          {formatOrderNumber(order.orderNumber)}
                         </span>
-                        <span className="text-slate-300">•</span>
-                        <span className="text-xs text-slate-500 font-medium">{formatDate(order.createdAt)}</span>
+                        <span className="text-xs text-slate-400 font-medium hidden sm:inline">
+                          {formatDate(order.createdAt)}
+                        </span>
+                        <span className="text-xs text-slate-400 font-medium sm:hidden">
+                          {formatSmartOrderTime(order.createdAt)}
+                        </span>
                       </div>
 
-                      <div>
+                      <div className="shrink-0">
                         {order.status === 'pending' && (
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900">
-                            <Clock className="w-3.5 h-3.5 mr-1.5" />
-                            Por Despachar
+                          <span className="inline-flex items-center text-xs font-semibold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200/70 shadow-2xs">
+                            <Clock className="w-3.5 h-3.5 mr-1 text-amber-600 shrink-0" />
+                            Preventa • Por Despachar
                           </span>
                         )}
                         {order.status === 'delivered' && (
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-900">
-                            <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
+                          <span className="inline-flex items-center text-xs font-semibold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200/70 shadow-2xs">
+                            <AppleCheckmarkSealIcon size={14} className="mr-1 text-emerald-600 shrink-0" />
                             Entregado
                           </span>
                         )}
                         {order.status === 'cancelled' && (
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-900">
-                            <XCircle className="w-3.5 h-3.5 mr-1.5" />
+                          <span className="inline-flex items-center text-xs font-semibold text-rose-800 bg-rose-50 px-2.5 py-1 rounded-full border border-rose-200/70 shadow-2xs">
+                            <XCircle className="w-3.5 h-3.5 mr-1 text-rose-600 shrink-0" />
                             Cancelado
                           </span>
                         )}
                       </div>
                     </div>
 
-                    {/* Items */}
-                    <div className="space-y-2 text-xs sm:text-sm">
-                      {order.items.map((it) => (
-                        <div
-                          key={it.id}
-                          className="flex justify-between items-center bg-slate-50 p-3 rounded-2xl"
-                        >
-                          <div>
-                            <span className="font-black text-slate-900">
-                              {it.quantityJavas}x Java
-                            </span>{' '}
-                            <span className="font-bold text-slate-800">
-                              {it.beverageType} • {it.size} {it.container}
-                            </span>
-                            <div className="text-xs text-slate-500 mt-0.5">
-                              {it.flavorType === 'single'
-                                ? `Sabor: ${it.selectedFlavor}`
-                                : `Surtido: ${
-                                    it.surtidoDetails &&
-                                    Object.entries(it.surtidoDetails)
-                                      .map(([f, q]) => `${q} ${f}`)
-                                      .join(', ')
-                                  }`}
-                            </div>
-                          </div>
-                          <span className="font-mono font-black text-slate-900 text-sm sm:text-base">
-                            {formatCurrency(it.subtotal)}
+                    {/* Centro Fila 2: Resumen del Pedido, Saldo y Total */}
+                    <div className="flex items-start justify-between gap-3 pt-0.5">
+                      <div className="space-y-1 min-w-0">
+                        {/* Resumen de cantidades */}
+                        <div className="text-sm font-bold text-slate-900 tracking-tight flex items-center gap-1.5 flex-wrap">
+                          <span>
+                            {order.totalJavas > 0 && `${order.totalJavas} ${order.totalJavas === 1 ? 'paq' : 'paqs'}`}
+                            {order.totalJavas > 0 && (order.totalUnits || 0) > 0 && ' + '}
+                            {(order.totalUnits || 0) > 0 && `${order.totalUnits} ${(order.totalUnits || 0) === 1 ? 'und' : 'unds'}`}
+                            {order.totalJavas === 0 && (order.totalUnits || 0) === 0 && `${order.totalBottles || order.items.length} bots`}
+                          </span>
+                          <span className="text-xs font-normal text-slate-400">
+                            • {order.items.length} {order.items.length === 1 ? 'producto' : 'productos'}
                           </span>
                         </div>
-                      ))}
-                    </div>
 
-                    <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100">
-                      <div>
-                        <span className="text-xs text-slate-500 font-bold block">
-                          Total {order.totalJavas} javas
-                        </span>
-                        <span className="text-lg sm:text-xl font-black font-mono text-blue-700">
+                        {/* Indicador de Pago y Saldo Deudor de la Orden */}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {order.debtBalance > 0 ? (
+                            <span className="inline-flex items-center text-[11px] sm:text-xs font-bold text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-md border border-amber-200/70">
+                              Saldo pendiente: {formatCurrency(order.debtBalance)}
+                            </span>
+                          ) : order.status === 'delivered' ? (
+                            <span className="inline-flex items-center text-[11px] sm:text-xs font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/70">
+                              Pagado completo
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center text-[11px] sm:text-xs font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/60">
+                              Por cobrar al entregar
+                            </span>
+                          )}
+
+                          {order.amountPaid > 0 && order.debtBalance > 0 && (
+                            <span className="text-[11px] text-slate-500 font-medium">
+                              (Abonado: {formatCurrency(order.amountPaid)})
+                            </span>
+                          )}
+                        </div>
+
+                        {order.scheduledDeliveryDate && order.status === 'pending' && (
+                          <div className="text-[11px] sm:text-xs text-slate-500 font-medium flex items-center gap-1 pt-0.5">
+                            <Calendar className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                            <span>Entrega: {formatDate(order.scheduledDeliveryDate)} {order.scheduledTimeSlot ? `• ${order.scheduledTimeSlot}` : ''}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Total */}
+                      <div className="text-right shrink-0">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">Total</span>
+                        <span className="text-lg sm:text-xl font-bold font-mono text-slate-900 leading-tight tracking-tight">
                           {formatCurrency(order.totalAmount)}
                         </span>
                       </div>
+                    </div>
 
-                      <div className="flex items-center space-x-2">
+                    {/* Desplegable: Ver / Ocultar Detalle */}
+                    <div className="pt-0.5">
+                      <button
+                        type="button"
+                        onClick={() => toggleOrderExpand(order.id)}
+                        className="text-xs font-bold text-blue-600 hover:text-blue-700 active:scale-98 flex items-center space-x-1 transition-colors cursor-pointer"
+                      >
+                        <span>{isExpanded ? 'Ocultar detalle de productos' : 'Ver detalle de productos'}</span>
+                        <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+                      </button>
+
+                      {isExpanded && (
+                        <div className="mt-2.5 space-y-2 pt-2 border-t border-slate-100 animate-in fade-in duration-150">
+                          {order.items.map((it) => (
+                            <div
+                              key={it.id}
+                              className="flex items-center justify-between p-2.5 bg-slate-50/80 rounded-xl border border-slate-100 text-xs"
+                            >
+                              <div className="min-w-0 pr-2">
+                                <div className="font-bold text-slate-900 truncate">
+                                  {it.quantityJavas > 0 && `${it.quantityJavas}x Java `}
+                                  {it.quantityUnits > 0 && `${it.quantityUnits}x Und `}
+                                  <span className="font-semibold text-slate-700">
+                                    {it.brand || 'Fructi'} {it.beverageType} • {it.size} {it.container}
+                                  </span>
+                                </div>
+                                <div className="text-[11px] text-slate-500 mt-0.5">
+                                  {it.flavorType === 'single'
+                                    ? `Sabor: ${it.selectedFlavor}`
+                                    : `Surtido: ${it.surtidoDetails && Object.entries(it.surtidoDetails).map(([f, q]) => `${q} ${f}`).join(', ')}`}
+                                </div>
+                              </div>
+                              <span className="font-mono font-bold text-slate-800 shrink-0">
+                                {formatCurrency(it.subtotal)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Footer Fila 3: Acciones permitidas al cliente (Recibo, Factura RIDE, Cancelar) - SIN WHATSAPP */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 pt-2.5 border-t border-slate-100/80">
+                      <div className="flex items-center space-x-2 flex-wrap gap-y-1.5">
+                        {/* Botón Recibo */}
+                        <button
+                          type="button"
+                          onClick={() => setSelectedOrderForThermal(order)}
+                          className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 border border-slate-200/80 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition-all shadow-2xs cursor-pointer"
+                          title="Ver o imprimir recibo"
+                        >
+                          <ApplePrinterIcon size={14} className="text-slate-600" />
+                          <span>Recibo</span>
+                        </button>
+
+                        {/* Botón Factura RIDE */}
                         {orderInvoice ? (
-                          <Link
-                            href={`/factura/${orderInvoice.invoiceNumber}`}
-                            className="px-3 py-2 bg-blue-50 hover:bg-blue-100 active:scale-95 text-blue-800 border border-blue-200 rounded-xl text-xs sm:text-sm font-black flex items-center space-x-1.5 transition-all shadow-2xs cursor-pointer"
+                          <button
+                            type="button"
+                            onClick={() => setSelectedInvoice(orderInvoice)}
+                            className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 active:scale-95 text-blue-800 border border-blue-200/80 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition-all shadow-2xs cursor-pointer"
+                            title="Ver factura electrónica RIDE"
                           >
                             <FileText className="w-3.5 h-3.5 text-blue-600" />
-                            <span>Factura #{orderInvoice.invoiceNumber}</span>
-                          </Link>
+                            <span>Factura RIDE #{orderInvoice.invoiceNumber}</span>
+                          </button>
                         ) : order.status === 'delivered' ? (
                           <span className="text-xs text-slate-400 font-medium">
                             Factura en proceso
                           </span>
-                        ) : null}
-
-                        <Link
-                          href={`/recibo/${order.orderNumber}`}
-                          className="px-3 py-2 bg-slate-50 hover:bg-slate-100 active:scale-95 text-slate-700 border border-slate-200 rounded-xl text-xs sm:text-sm font-bold flex items-center space-x-1.5 transition-all shadow-2xs cursor-pointer"
-                          title="Ver o imprimir recibo de entrega"
-                        >
-                          <ApplePrinterIcon size={14} className="text-slate-600" />
-                          <span>Recibo</span>
-                        </Link>
-
-                        {order.status === 'pending' && (
-                          <button
-                            type="button"
-                            onClick={() => handleOrderCancel(order.id)}
-                            className="px-3.5 py-1.5 text-xs sm:text-sm text-red-600 hover:bg-red-50 active:scale-95 border border-red-200 rounded-xl font-bold transition-all cursor-pointer"
-                          >
-                            Cancelar Pedido
-                          </button>
+                        ) : (
+                          <span className="text-[11px] sm:text-xs text-slate-400 font-medium">
+                            Factura disponible al entregar
+                          </span>
                         )}
                       </div>
+
+                      {/* Botón Cancelar (solo pedidos pendientes) */}
+                      {order.status === 'pending' && (
+                        <button
+                          type="button"
+                          onClick={() => handleOrderCancel(order.id)}
+                          className="px-3 py-1.5 text-xs text-rose-600 hover:bg-rose-50 active:scale-95 border border-rose-200 rounded-xl font-bold transition-all cursor-pointer"
+                        >
+                          Cancelar Pedido
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
@@ -424,11 +585,32 @@ export default function ClientExperiencePage({
         </div>
       )}
 
-      {/* Cart Drawer */}
+      {/* Cart Drawer - estrictamente Preventa en Portal de Clientes */}
       <CartDrawer
         isOpen={isCartOpen}
         onClose={() => setIsCartOpen(false)}
         clientId={client?.id}
+        saleType="preventa"
+        isClientPortal={true}
+        onOrderSuccess={() => {
+          setActiveTab('history');
+        }}
+      />
+
+      {/* Factura RIDE Modal (sin botón de WhatsApp para clientes) */}
+      <InvoiceModal
+        invoice={selectedInvoice}
+        isOpen={!!selectedInvoice}
+        onClose={() => setSelectedInvoice(null)}
+        showWhatsApp={false}
+      />
+
+      {/* Recibo Térmico Modal */}
+      <ThermalReceiptModal
+        isOpen={Boolean(selectedOrderForThermal)}
+        onClose={() => setSelectedOrderForThermal(null)}
+        order={selectedOrderForThermal}
+        client={client}
       />
     </div>
   );

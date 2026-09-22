@@ -28,9 +28,15 @@ interface InvoiceModalProps {
   invoice: Invoice | null;
   isOpen: boolean;
   onClose: () => void;
+  showWhatsApp?: boolean;
 }
 
-export function InvoiceModal({ invoice, isOpen, onClose }: InvoiceModalProps) {
+export function InvoiceModal({
+  invoice,
+  isOpen,
+  onClose,
+  showWhatsApp = true,
+}: InvoiceModalProps) {
   const { orders } = useDistribution();
   // Clave de acceso de 49 dígitos generada o existente
   const claveAcceso = useMemo(() => {
@@ -218,15 +224,17 @@ export function InvoiceModal({ invoice, isOpen, onClose }: InvoiceModalProps) {
               <Code className="w-3.5 h-3.5 text-slate-500" />
               <span>XML</span>
             </button>
-            <button
-              type="button"
-              onClick={handleShareWhatsApp}
-              className="inline-flex items-center gap-1 px-2 sm:px-2.5 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/15 active:scale-[0.97] border border-emerald-500/20 text-emerald-800 rounded-xl text-xs font-medium transition-all cursor-pointer"
-              title="Compartir por WhatsApp"
-            >
-              <AppleWhatsAppIcon size={15} alt="WhatsApp" />
-              <span className="hidden sm:inline">WhatsApp</span>
-            </button>
+            {showWhatsApp && (
+              <button
+                type="button"
+                onClick={handleShareWhatsApp}
+                className="inline-flex items-center gap-1 px-2 sm:px-2.5 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/15 active:scale-[0.97] border border-emerald-500/20 text-emerald-800 rounded-xl text-xs font-medium transition-all cursor-pointer"
+                title="Compartir por WhatsApp"
+              >
+                <AppleWhatsAppIcon size={15} alt="WhatsApp" />
+                <span className="hidden sm:inline">WhatsApp</span>
+              </button>
+            )}
             <button
               type="button"
               onClick={handlePrint}
