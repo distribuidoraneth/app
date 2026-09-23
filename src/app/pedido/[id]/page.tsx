@@ -174,10 +174,7 @@ export default function OrderDetailPage({
   };
 
   const handleShareWhatsApp = () => {
-    let inv = invoice;
-    if (!inv) {
-      inv = generateInvoice(order.id) || null;
-    }
+    const inv = invoice;
     const url = generateWhatsAppOrderLink({
       phone: order.whatsappNumber || client?.whatsappNumber || '',
       clientName: order.businessName || order.clientName,
@@ -187,7 +184,7 @@ export default function OrderDetailPage({
       debtBalance: order.debtBalance,
       promisedCollectionDate: order.promisedCollectionDate,
       promisedCollectionTime: order.promisedCollectionTime,
-      invoiceNumber: inv?.invoiceNumber,
+      invoiceNumber: inv?.invoiceNumber || order.invoiceNumber,
     });
     window.open(url, '_blank');
   };

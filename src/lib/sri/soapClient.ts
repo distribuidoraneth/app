@@ -48,7 +48,7 @@ const SRI_ENDPOINTS = {
  */
 export async function enviarRecepcionSRI(
   xmlFirmado: string,
-  ambiente: '1' | '2' = '1'
+  ambiente: '1' | '2' = '2'
 ): Promise<SriRecepcionResult> {
   const base64Xml = Buffer.from(xmlFirmado, 'utf8').toString('base64');
   const endpoint = ambiente === '2' ? SRI_ENDPOINTS.produccion.recepcion : SRI_ENDPOINTS.pruebas.recepcion;
@@ -111,7 +111,7 @@ export async function enviarRecepcionSRI(
  */
 export async function consultarAutorizacionSRI(
   claveAcceso: string,
-  ambiente: '1' | '2' = '1'
+  ambiente: '1' | '2' = '2'
 ): Promise<SriAutorizacionResult> {
   const endpoint = ambiente === '2' ? SRI_ENDPOINTS.produccion.autorizacion : SRI_ENDPOINTS.pruebas.autorizacion;
 

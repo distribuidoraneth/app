@@ -163,17 +163,14 @@ export function OrderDispatchBoard() {
   };
 
   const handleShareWhatsApp = (order: Order) => {
-    let inv = invoices.find((i) => i.orderId === order.id);
-    if (!inv) {
-      inv = generateInvoice(order.id) || undefined;
-    }
+    const inv = invoices.find((i) => i.orderId === order.id || i.id === order.invoiceId);
 
     const link = generateWhatsAppOrderLink({
       phone: order.whatsappNumber,
       clientName: order.clientName,
       orderNumber: order.orderNumber,
       total: order.totalAmount,
-      invoiceNumber: inv?.invoiceNumber,
+      invoiceNumber: inv?.invoiceNumber || order.invoiceNumber,
     });
     window.open(link, '_blank');
   };

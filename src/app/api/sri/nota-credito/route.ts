@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     }
 
     const fechaEmision = new Date();
-    const ambiente = taxProfile.ambiente || '1';
+    const ambiente: '1' | '2' = (taxProfile.ambiente || process.env.NEXT_PUBLIC_SRI_ENVIRONMENT || process.env.SRI_ENVIRONMENT || '2') === '1' ? '1' : '2';
 
     // 1. Generar Clave de Acceso para Nota de Crédito (Tipo 04 - Módulo 11)
     const claveAcceso = generarClaveAcceso({

@@ -804,7 +804,7 @@ function mapDbInvoice(i: any): Invoice {
     orderId: i.order_id || '',
     orderNumber: i.orders?.order_number || i.order_number || undefined,
     claveAcceso: i.clave_acceso,
-    ambiente: i.ambiente || '1',
+    ambiente: (i.ambiente || (process.env.NEXT_PUBLIC_SRI_ENVIRONMENT === '1' ? '1' : '2')) as '1' | '2',
     sriStatus: i.sri_status || 'PENDING',
     sriAuthorizationNumber: i.sri_authorization_number || undefined,
     sriAuthorizationDate: i.sri_authorization_date || undefined,
@@ -851,10 +851,11 @@ export function reconstructInvoiceFromOrder(order: Order): Invoice {
     invoiceNum = `001-001-${String(seqNumber).padStart(9, '0')}`;
   }
 
+  const ambienteDefault: '1' | '2' = ((DEFAULT_TAX_PROFILE.ambiente || '2') === '1' ? '1' : '2') as '1' | '2';
   const claveAcceso = generarClaveAcceso({
     fecha: order.createdAt ? new Date(order.createdAt) : new Date(),
     ruc: DEFAULT_TAX_PROFILE.ruc,
-    ambiente: '1',
+    ambiente: ambienteDefault,
     establecimiento: DEFAULT_TAX_PROFILE.establecimiento || '001',
     puntoEmision: DEFAULT_TAX_PROFILE.puntoEmision || '001',
     secuencial: seqNumber,
@@ -881,7 +882,7 @@ export function reconstructInvoiceFromOrder(order: Order): Invoice {
     tax: tax15,
     total: order.totalAmount,
     claveAcceso,
-    ambiente: '1',
+    ambiente: ambienteDefault,
     sriStatus: 'PENDING',
     status: order.paymentStatus === 'paid' ? 'pagada' : 'emitida',
     issuedAt: order.deliveredAt || order.createdAt || new Date().toISOString(),
@@ -903,7 +904,7 @@ export async function saveInvoiceToDb(
       invoice_number: invoice.invoiceNumber,
       order_id: orderId,
       clave_acceso: invoice.claveAcceso || '0'.repeat(49),
-      ambiente: invoice.ambiente || '1',
+      ambiente: invoice.ambiente || ((DEFAULT_TAX_PROFILE.ambiente || '2') === '1' ? '1' : '2'),
       sri_status: invoice.sriStatus || 'PENDING',
       sri_authorization_number: invoice.sriAuthorizationNumber || null,
       sri_authorization_date: invoice.sriAuthorizationDate || null,

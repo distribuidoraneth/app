@@ -23,7 +23,37 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const ambiente = taxProfile.ambiente || '1';
+    // 1. Obtener perfil tributario oficial desde Supabase con fallback a DEFAULT_TAX_PROFILE
+    let activeProfile = { ...DEFAULT_TAX_PROFILE, ...taxProfile };
+    try {
+      const sbAdmin = getServiceSupabase();
+      const { data: dbProfile } = await sbAdmin
+        .from('company_tax_profiles')
+        .select('*')
+        .eq('ruc', activeProfile.ruc)
+        .maybeSingle();
+
+      if (dbProfile) {
+        activeProfile = {
+          ...activeProfile,
+          ambiente: (dbProfile.ambiente || activeProfile.ambiente || '2') as '1' | '2',
+          establecimiento: dbProfile.establecimiento || activeProfile.establecimiento,
+          puntoEmision: dbProfile.punto_emision || activeProfile.puntoEmision,
+          razonSocial: dbProfile.razon_social || activeProfile.razonSocial,
+          nombreComercial: dbProfile.nombre_comercial || activeProfile.nombreComercial,
+          dirMatriz: dbProfile.dir_matriz || activeProfile.dirMatriz,
+          dirEstablecimiento: dbProfile.dir_establecimiento || activeProfile.dirEstablecimiento,
+          obligadoContabilidad: dbProfile.obligado_contabilidad || activeProfile.obligadoContabilidad,
+          regimenRimpe: dbProfile.regimen_rimpe ?? activeProfile.regimenRimpe,
+        };
+      }
+    } catch (profErr) {
+      console.warn('[API facturar] Error al consultar company_tax_profiles:', profErr);
+    }
+
+    const ambiente: '1' | '2' = (activeProfile.ambiente || process.env.NEXT_PUBLIC_SRI_ENVIRONMENT || process.env.SRI_ENVIRONMENT || '2') === '1' ? '1' : '2';
+    activeProfile.ambiente = ambiente;
+
     let claveAcceso = customClaveAcceso;
     let fechaEmision = new Date();
 
@@ -38,10 +68,10 @@ export async function POST(req: NextRequest) {
     } else {
       claveAcceso = generarClaveAcceso({
         fecha: fechaEmision,
-        ruc: taxProfile.ruc,
+        ruc: activeProfile.ruc,
         ambiente,
-        establecimiento: taxProfile.establecimiento,
-        puntoEmision: taxProfile.puntoEmision,
+        establecimiento: activeProfile.establecimiento,
+        puntoEmision: activeProfile.puntoEmision,
         secuencial,
       });
     }
@@ -51,7 +81,7 @@ export async function POST(req: NextRequest) {
       claveAcceso,
       secuencial,
       fechaEmision,
-      company: taxProfile,
+      company: activeProfile,
       cliente: {
         razonSocial: client.fullName || client.businessName,
         identificacion: client.taxId || '9999999999999',
@@ -119,7 +149,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: finalStatus === 'AUTORIZADO' || finalStatus === 'RECIBIDA' || finalStatus === 'EN PROCESO',
       claveAcceso,
-      secuencialCompleto: `${taxProfile.establecimiento}-${taxProfile.puntoEmision}-${String(secuencial).padStart(9, '0')}`,
+      secuencialCompleto: `${activeProfile.establecimiento}-${activeProfile.puntoEmision}-${String(secuencial).padStart(9, '0')}`,
       xml,
       sriStatus: finalStatus,
       numeroAutorizacion: sriAutorizacion?.numeroAutorizacion || claveAcceso,

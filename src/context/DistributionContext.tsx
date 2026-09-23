@@ -109,7 +109,7 @@ const DistributionContext = createContext<DistributionContextType | undefined>(u
 
 export const STORAGE_KEY = 'distribuidora_aneth_oficial_v12';
 export const MIN_INVOICE_SEQUENCE_BASE = 119;
-export const SEQUENCE_STORAGE_KEY = 'distribuidora_aneth_last_sequence';
+export const SEQUENCE_STORAGE_KEY = 'distribuidora_aneth_last_sequence_prod';
 
 export function getNextInvoiceSequence(invoicesList?: Invoice[], currentSecuencialBase?: number): number {
   let maxSeq = MIN_INVOICE_SEQUENCE_BASE;
@@ -134,6 +134,8 @@ export function getNextInvoiceSequence(invoicesList?: Invoice[], currentSecuenci
 
   if (Array.isArray(invoicesList)) {
     for (const inv of invoicesList) {
+      // No tomar en cuenta facturas emitidas en ambiente de pruebas (1) para calcular el secuencial oficial de producción (2)
+      if (inv.ambiente === '1') continue;
       const num = parseInt(inv.invoiceNumber?.replace(/\D/g, '')?.slice(-9) || '0', 10);
       if (num > maxSeq) {
         maxSeq = num;
@@ -790,110 +792,8 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
       );
     });
 
-    // Auto-generate Invoice ONLY for orders that are delivered immediately (Autoventa)
-    // For Preventa, the invoice is generated automatically at the exact moment of dispatch/delivery
-    if (saleType === 'autoventa') {
-      const seqNumber = getNextInvoiceSequence(invoices, currentSecuencial);
-      setCurrentSecuencial(seqNumber);
-      recordUsedInvoiceSequence(seqNumber);
-      updateCompanySecuencialInDb(seqNumber).catch(() => {});
-      const invoiceNum = `001-001-${String(seqNumber).padStart(9, '0')}`;
-      const facturaLines = expandCartItemsToFacturaLines(items, 15);
-      const subtotal15 = Number(facturaLines.reduce((s, l) => s + l.precioTotalSinImpuesto, 0).toFixed(2));
-      const tax = Number(facturaLines.reduce((s, l) => s + l.iva, 0).toFixed(2));
-      const claveAcceso = generarClaveAcceso({
-        fecha: new Date(),
-        ruc: DEFAULT_TAX_PROFILE.ruc,
-        ambiente: '1', // Ambiente de pruebas
-        establecimiento: DEFAULT_TAX_PROFILE.establecimiento || '001',
-        puntoEmision: DEFAULT_TAX_PROFILE.puntoEmision || '001',
-        secuencial: seqNumber,
-      });
-
-      const newInvoice: Invoice = {
-        id: generateUuid(),
-        invoiceNumber: invoiceNum,
-        orderId: newOrder.id,
-        orderNumber: newOrder.orderNumber,
-        clientId: client?.id || 'guest',
-        clientName: client?.fullName || 'Consumidor Final',
-        businessName: client?.businessName || newOrder.businessName || 'Local Registrado',
-        clientTaxId: client?.taxId || '9999999999999',
-        clientTaxIdType: client?.taxIdType || '07',
-        clientEmail: client?.email || '',
-        clientWhatsapp: client?.whatsappNumber || newOrder.whatsappNumber,
-        clientAddress: client?.addressReference || newOrder.addressReference,
-        items: [...items],
-        totalJavas,
-        totalUnits,
-        subtotal: subtotal15,
-        subtotal15,
-        subtotal0: 0,
-        tax,
-        total: totalAmount,
-        claveAcceso,
-        ambiente: '1',
-        sriStatus: 'PENDING',
-        status: 'emitida',
-        issuedAt: new Date().toISOString(),
-      };
-
-      newOrder.invoiceId = newInvoice.id;
-      newOrder.invoiceNumber = newInvoice.invoiceNumber;
-      setInvoices((prev) => [newInvoice, ...prev]);
-
-      if (typeof window !== 'undefined') {
-        try {
-          const rawLocal = localStorage.getItem(STORAGE_KEY);
-          const parsed = rawLocal ? JSON.parse(rawLocal) : {};
-          localStorage.setItem(
-            STORAGE_KEY,
-            JSON.stringify({
-              ...parsed,
-              invoices: [newInvoice, ...(parsed.invoices || [])],
-            })
-          );
-        } catch {}
-      }
-
-      // Guardar inmediatamente en Supabase
-      saveInvoiceToDb(newInvoice).catch((err) =>
-        console.warn('Error al guardar factura en Supabase:', err)
-      );
-
-      // Enviar a SRI y sincronizar estado oficial
-      fetch('/api/sri/facturar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          order: newOrder,
-          client,
-          secuencial: seqNumber,
-          claveAcceso,
-        }),
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data && data.sriStatus) {
-            const updatedInv: Invoice = {
-              ...newInvoice,
-              claveAcceso: data.claveAcceso || newInvoice.claveAcceso,
-              sriStatus: data.sriStatus,
-              sriAuthorizationNumber: data.numeroAutorizacion,
-              sriAuthorizationDate: data.fechaAutorizacion,
-              sriErrorMessage: data.error,
-              xmlContent: data.xml,
-            };
-            setInvoices((prev) =>
-              prev.map((inv) => (inv.id === newInvoice.id ? updatedInv : inv))
-            );
-            saveInvoiceToDb(updatedInv).catch((err) =>
-              console.warn('Error al actualizar factura SRI en Supabase:', err)
-            );
-          }
-        })
-        .catch((err) => console.warn('SRI background sync error:', err));
-    }
+    // Facturación: Los pedidos se crean sin factura automática.
+    // La factura se genera únicamente cuando el usuario presiona "Generar Factura" de forma explícita.
 
     setOrders((prev) => [newOrder, ...prev]);
     clearCart();
@@ -1023,100 +923,6 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
   };
 
   const updateOrderStatus = (orderId: string, status: OrderStatus) => {
-    const targetOrder = orders.find((o) => o.id === orderId);
-    let createdInvoiceId: string | undefined = targetOrder?.invoiceId;
-    let createdInvoiceNumber: string | undefined = targetOrder?.invoiceNumber;
-
-    // Facturación automática al momento del Despacho/Entrega si no tenía factura previa (Preventa)
-    if (status === 'delivered' && targetOrder && !targetOrder.invoiceId) {
-      const client = clients.find((c) => c.id === targetOrder.clientId);
-      const seqNumber = getNextInvoiceSequence(invoices, currentSecuencial);
-      setCurrentSecuencial(seqNumber);
-      recordUsedInvoiceSequence(seqNumber);
-      updateCompanySecuencialInDb(seqNumber).catch(() => {});
-      const invoiceNum = `001-001-${String(seqNumber).padStart(9, '0')}`;
-      const facturaLines = expandCartItemsToFacturaLines(targetOrder.items, 15);
-      const subtotal15 = Number(facturaLines.reduce((s, l) => s + l.precioTotalSinImpuesto, 0).toFixed(2));
-      const tax = Number(facturaLines.reduce((s, l) => s + l.iva, 0).toFixed(2));
-      const claveAcceso = generarClaveAcceso({
-        fecha: new Date(),
-        ruc: DEFAULT_TAX_PROFILE.ruc,
-        ambiente: '1', // Pruebas
-        establecimiento: DEFAULT_TAX_PROFILE.establecimiento || '001',
-        puntoEmision: DEFAULT_TAX_PROFILE.puntoEmision || '001',
-        secuencial: seqNumber,
-      });
-
-      const newInvoice: Invoice = {
-        id: generateUuid(),
-        invoiceNumber: invoiceNum,
-        orderId: targetOrder.id,
-        orderNumber: targetOrder.orderNumber,
-        clientId: client?.id || 'guest',
-        clientName: client?.fullName || 'Consumidor Final',
-        businessName: client?.businessName || targetOrder.businessName || 'Local Registrado',
-        clientTaxId: client?.taxId || '9999999999999',
-        clientTaxIdType: client?.taxIdType || '07',
-        clientEmail: client?.email || '',
-        clientWhatsapp: client?.whatsappNumber || targetOrder.whatsappNumber,
-        clientAddress: client?.addressReference || targetOrder.addressReference,
-        items: [...targetOrder.items],
-        totalJavas: targetOrder.totalJavas,
-        totalUnits: targetOrder.totalUnits,
-        subtotal: subtotal15,
-        subtotal15,
-        subtotal0: 0,
-        tax,
-        total: targetOrder.totalAmount,
-        claveAcceso,
-        ambiente: '1',
-        sriStatus: 'PENDING',
-        status: 'emitida',
-        issuedAt: new Date().toISOString(),
-      };
-
-      createdInvoiceId = newInvoice.id;
-      createdInvoiceNumber = newInvoice.invoiceNumber;
-      setInvoices((prev) => [newInvoice, ...prev]);
-
-      saveInvoiceToDb(newInvoice).catch((err) =>
-        console.warn('Error al guardar factura en Supabase:', err)
-      );
-
-      // Enviar a SRI y sincronizar estado oficial
-      fetch('/api/sri/facturar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          order: targetOrder,
-          client,
-          secuencial: seqNumber,
-          claveAcceso,
-        }),
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data && data.sriStatus) {
-            const updatedInv: Invoice = {
-              ...newInvoice,
-              claveAcceso: data.claveAcceso || newInvoice.claveAcceso,
-              sriStatus: data.sriStatus,
-              sriAuthorizationNumber: data.numeroAutorizacion,
-              sriAuthorizationDate: data.fechaAutorizacion,
-              sriErrorMessage: data.error,
-              xmlContent: data.xml,
-            };
-            setInvoices((prev) =>
-              prev.map((inv) => (inv.id === newInvoice.id ? updatedInv : inv))
-            );
-            saveInvoiceToDb(updatedInv).catch((err) =>
-              console.warn('Error al actualizar factura SRI en Supabase:', err)
-            );
-          }
-        })
-        .catch((err) => console.warn('SRI background sync error on delivery:', err));
-    }
-
     const deliveredAtTime = status === 'delivered' ? new Date().toISOString() : undefined;
 
     setOrders((prev) =>
@@ -1126,8 +932,6 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
             ...o,
             status,
             deliveredAt: deliveredAtTime || o.deliveredAt,
-            invoiceId: createdInvoiceId || o.invoiceId,
-            invoiceNumber: createdInvoiceNumber || o.invoiceNumber,
           };
         }
         return o;
@@ -1137,8 +941,6 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
     updateOrderStatusInDb(orderId, {
       status,
       deliveredAt: deliveredAtTime,
-      invoiceId: createdInvoiceId,
-      invoiceNumber: createdInvoiceNumber,
     }).catch((err) =>
       console.warn('Error al sincronizar estado de orden en Supabase:', err)
     );
@@ -1260,6 +1062,7 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
     const existing = invoices.find((inv) => inv.orderId === orderId);
     if (existing) return existing;
 
+    const client = clients.find((c) => c.id === order.clientId);
     const facturaLines = expandCartItemsToFacturaLines(order.items, 15);
     const subtotal15 = Number(facturaLines.reduce((s, l) => s + l.precioTotalSinImpuesto, 0).toFixed(2));
     const tax15 = Number(facturaLines.reduce((s, l) => s + l.iva, 0).toFixed(2));
@@ -1267,17 +1070,31 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
     setCurrentSecuencial(seqNumber);
     recordUsedInvoiceSequence(seqNumber);
     updateCompanySecuencialInDb(seqNumber).catch(() => {});
+
     const invoiceNum = `001-001-${String(seqNumber).padStart(9, '0')}`;
+    const ambienteVal: '1' | '2' = ((DEFAULT_TAX_PROFILE.ambiente || '2') === '1' ? '1' : '2') as '1' | '2';
+    const claveAcceso = generarClaveAcceso({
+      fecha: new Date(),
+      ruc: DEFAULT_TAX_PROFILE.ruc,
+      ambiente: ambienteVal,
+      establecimiento: DEFAULT_TAX_PROFILE.establecimiento || '001',
+      puntoEmision: DEFAULT_TAX_PROFILE.puntoEmision || '001',
+      secuencial: seqNumber,
+    });
+
     const newInvoice: Invoice = {
       id: generateUuid(),
       invoiceNumber: invoiceNum,
       orderId: order.id,
       orderNumber: order.orderNumber,
       clientId: order.clientId,
-      clientName: order.clientName,
-      businessName: order.businessName,
-      clientWhatsapp: order.whatsappNumber,
-      clientAddress: order.addressReference,
+      clientName: client?.fullName || order.clientName || 'Consumidor Final',
+      businessName: client?.businessName || order.businessName || 'Local Registrado',
+      clientTaxId: client?.taxId || '9999999999999',
+      clientTaxIdType: client?.taxIdType || '07',
+      clientEmail: client?.email || '',
+      clientWhatsapp: order.whatsappNumber || client?.whatsappNumber || '',
+      clientAddress: order.addressReference || client?.addressReference || '',
       items: order.items,
       totalJavas: order.totalJavas,
       totalUnits: order.totalUnits || 0,
@@ -1286,6 +1103,9 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
       subtotal0: 0,
       tax: tax15,
       total: order.totalAmount,
+      claveAcceso,
+      ambiente: ambienteVal,
+      sriStatus: 'PENDING',
       issuedAt: new Date().toISOString(),
       status: order.paymentStatus === 'paid' ? 'pagada' : 'emitida',
     };
@@ -1299,9 +1119,69 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
       )
     );
 
+    if (typeof window !== 'undefined') {
+      try {
+        const rawLocal = localStorage.getItem(STORAGE_KEY);
+        const parsed = rawLocal ? JSON.parse(rawLocal) : {};
+        localStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify({
+            ...parsed,
+            invoices: [newInvoice, ...(parsed.invoices || [])],
+          })
+        );
+      } catch {}
+    }
+
+    // Persistir factura en Supabase y vincular con la orden
     saveInvoiceToDb(newInvoice).catch((err) =>
       console.warn('Error al guardar factura en Supabase:', err)
     );
+    updateOrderStatusInDb(order.id, {
+      invoiceId: newInvoice.id,
+      invoiceNumber: newInvoice.invoiceNumber,
+    }).catch(() => {});
+
+    // Iniciar transmisión oficial al WebService del SRI en segundo plano
+    fetch('/api/sri/facturar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        order,
+        client: {
+          fullName: newInvoice.clientName,
+          businessName: newInvoice.businessName,
+          taxId: newInvoice.clientTaxId,
+          taxIdType: newInvoice.clientTaxIdType,
+          whatsappNumber: newInvoice.clientWhatsapp,
+          email: newInvoice.clientEmail,
+          addressReference: newInvoice.clientAddress,
+        },
+        secuencial: seqNumber,
+        claveAcceso,
+      }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data.sriStatus) {
+          const updatedInv: Invoice = {
+            ...newInvoice,
+            claveAcceso: data.claveAcceso || newInvoice.claveAcceso,
+            sriStatus: data.sriStatus,
+            sriAuthorizationNumber: data.numeroAutorizacion,
+            sriAuthorizationDate: data.fechaAutorizacion,
+            sriErrorMessage: data.error,
+            xmlContent: data.xml,
+          };
+          setInvoices((prev) =>
+            prev.map((inv) => (inv.id === newInvoice.id ? updatedInv : inv))
+          );
+          saveInvoiceToDb(updatedInv).catch((err) =>
+            console.warn('Error al actualizar factura SRI en Supabase:', err)
+          );
+        }
+      })
+      .catch((err) => console.warn('SRI background sync error on manual generation:', err));
 
     return newInvoice;
   };

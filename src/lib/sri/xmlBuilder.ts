@@ -11,9 +11,9 @@ export const DEFAULT_TAX_PROFILE: CompanyTaxProfile = {
   nombreComercial: 'ANETH DISTRIBUCIONES',
   dirMatriz: 'AV. ATAHUALPA S/N Y TEODORO SOLIS, AMBATO, TUNGURAHUA',
   dirEstablecimiento: 'AV. ATAHUALPA S/N Y TEODORO SOLIS, AMBATO, TUNGURAHUA',
-  establecimiento: '001',
-  puntoEmision: '001',
-  ambiente: '1', // Por defecto pruebas
+  establecimiento: process.env.SRI_ESTABLECIMIENTO || '001',
+  puntoEmision: process.env.SRI_PUNTO_EMISION || '001',
+  ambiente: ((process.env.NEXT_PUBLIC_SRI_ENVIRONMENT || process.env.SRI_ENVIRONMENT || process.env.SRI_AMBIENTE || '2') === '1' ? '1' : '2') as '1' | '2', // Producción (2)
   obligadoContabilidad: 'NO',
   regimenRimpe: false,
 };
