@@ -8,6 +8,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 // @ts-ignore
 import { signXml } from './osodreamerSigner.mjs';
+import { CERT_P12_FALLBACK_BASE64 } from './certFallback';
 
 export interface SigningOptions {
   p12Path?: string;
@@ -43,6 +44,15 @@ export async function signXmlXadesBes(xmlString: string, options?: SigningOption
           p12Buffer = fs.readFileSync(p);
           break;
         }
+      }
+    }
+
+    // 3. Respaldo directo a certificado oficial empaquetado (garantiza firma en Vercel Serverless)
+    if (!p12Buffer && CERT_P12_FALLBACK_BASE64) {
+      try {
+        p12Buffer = Buffer.from(CERT_P12_FALLBACK_BASE64, 'base64');
+      } catch (err) {
+        console.error('Error al decodificar CERT_P12_FALLBACK_BASE64:', err);
       }
     }
 

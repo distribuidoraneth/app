@@ -1070,16 +1070,95 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
     if (!order) return null;
 
     const existing = invoices.find((inv) => inv.orderId === orderId && inv.status !== 'anulada');
-    if (existing) return existing;
+    if (existing) {
+      if (existing.sriStatus === 'AUTORIZADO') {
+        return existing;
+      }
+
+      // Si la factura NO está autorizada y el secuencial esperado difiere del actual (ej: tenía 328 y debe ser 327)
+      const expectedSeq = getNextInvoiceSequence(invoices.filter((i) => i.id !== existing.id), currentSecuencial);
+      const existingSeq = parseInt(existing.invoiceNumber.replace(/\D/g, '').slice(-9), 10);
+      if (existingSeq !== expectedSeq) {
+        const invoiceNum = `001-001-${String(expectedSeq).padStart(9, '0')}`;
+        const ambienteVal: '1' | '2' = ((DEFAULT_TAX_PROFILE.ambiente || '2') === '1' ? '1' : '2') as '1' | '2';
+        const claveAcceso = generarClaveAcceso({
+          fecha: new Date(),
+          ruc: DEFAULT_TAX_PROFILE.ruc,
+          ambiente: ambienteVal,
+          establecimiento: DEFAULT_TAX_PROFILE.establecimiento || '001',
+          puntoEmision: DEFAULT_TAX_PROFILE.puntoEmision || '001',
+          secuencial: expectedSeq,
+        });
+        const corrected: Invoice = {
+          ...existing,
+          invoiceNumber: invoiceNum,
+          claveAcceso,
+          sriStatus: 'PENDING',
+          sriAuthorizationNumber: undefined,
+          sriAuthorizationDate: undefined,
+          sriErrorMessage: undefined,
+        };
+        setInvoices((prev) => prev.map((i) => (i.id === existing.id ? corrected : i)));
+        setOrders((prev) =>
+          prev.map((o) => (o.id === orderId ? { ...o, invoiceId: corrected.id, invoiceNumber: corrected.invoiceNumber } : o))
+        );
+        saveInvoiceToDb(corrected).catch(console.warn);
+
+        // Retransmitir en segundo plano al SRI con el nuevo secuencial oficial corregido
+        fetch('/api/sri/facturar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            order: {
+              ...order,
+              paymentMethod: order.paymentMethod || 'cash',
+            },
+            client: {
+              fullName: corrected.clientName,
+              businessName: corrected.businessName,
+              taxId: corrected.clientTaxId,
+              taxIdType: corrected.clientTaxIdType,
+              whatsappNumber: corrected.clientWhatsapp,
+              email: corrected.clientEmail,
+              addressReference: corrected.clientAddress,
+            },
+            secuencial: expectedSeq,
+            claveAcceso,
+          }),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data && data.sriStatus) {
+              const updatedInv: Invoice = {
+                ...corrected,
+                claveAcceso: data.claveAcceso || corrected.claveAcceso,
+                sriStatus: data.sriStatus,
+                sriAuthorizationNumber: data.numeroAutorizacion,
+                sriAuthorizationDate: data.fechaAutorizacion,
+                sriErrorMessage: data.error,
+                xmlContent: data.xml,
+              };
+              setInvoices((prev) => prev.map((inv) => (inv.id === corrected.id ? updatedInv : inv)));
+              saveInvoiceToDb(updatedInv).catch(console.warn);
+              if (data.sriStatus === 'AUTORIZADO' || data.sriStatus === 'RECIBIDA') {
+                setCurrentSecuencial(expectedSeq);
+                recordUsedInvoiceSequence(expectedSeq);
+                updateCompanySecuencialInDb(expectedSeq).catch(console.warn);
+              }
+            }
+          })
+          .catch((err) => console.warn('SRI sync error on re-sequence:', err));
+
+        return corrected;
+      }
+      return existing;
+    }
 
     const client = clients.find((c) => c.id === order.clientId);
     const facturaLines = expandCartItemsToFacturaLines(order.items, 15);
     const subtotal15 = Number(facturaLines.reduce((s, l) => s + l.precioTotalSinImpuesto, 0).toFixed(2));
     const tax15 = Number(facturaLines.reduce((s, l) => s + l.iva, 0).toFixed(2));
     const seqNumber = getNextInvoiceSequence(invoices, currentSecuencial);
-    setCurrentSecuencial(seqNumber);
-    recordUsedInvoiceSequence(seqNumber);
-    updateCompanySecuencialInDb(seqNumber).catch(() => {});
 
     const invoiceNum = `001-001-${String(seqNumber).padStart(9, '0')}`;
     const ambienteVal: '1' | '2' = ((DEFAULT_TAX_PROFILE.ambiente || '2') === '1' ? '1' : '2') as '1' | '2';
@@ -1193,6 +1272,13 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
           saveInvoiceToDb(updatedInv).catch((err) =>
             console.warn('Error al actualizar factura SRI en Supabase:', err)
           );
+
+          // ¡ÚNICAMENTE si fue AUTORIZADO o RECIBIDA por el SRI, avanzar el secuencial en la DB!
+          if (data.sriStatus === 'AUTORIZADO' || data.sriStatus === 'RECIBIDA') {
+            setCurrentSecuencial(seqNumber);
+            recordUsedInvoiceSequence(seqNumber);
+            updateCompanySecuencialInDb(seqNumber).catch(() => {});
+          }
         }
       })
       .catch((err) => console.warn('SRI background sync error on manual generation:', err));
@@ -1326,9 +1412,6 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
     };
 
     setInvoices((prev) => prev.map((i) => (i.id === inv.id ? updated : i)));
-    setCurrentSecuencial(newSeq);
-    recordUsedInvoiceSequence(newSeq);
-    await updateCompanySecuencialInDb(newSeq);
     await saveInvoiceToDb(updated);
 
     return updated;

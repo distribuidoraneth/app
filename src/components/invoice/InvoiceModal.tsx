@@ -157,37 +157,10 @@ export function InvoiceModal({
 
   const handleDownloadXml = async () => {
     const seq = parseInt(invoice.invoiceNumber.replace(/\D/g, '').slice(-9), 10) || 1;
-    let xmlContent = '';
+    let xmlContent = invoice.xmlContent || '';
 
-    const effectivePaymentMethod = invoice.paymentMethod || relatedOrder?.paymentMethod || 'cash';
-
-    try {
-      const res = await fetch('/api/sri/facturar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          order: {
-            id: invoice.orderId,
-            items: invoice.items,
-            paymentMethod: effectivePaymentMethod,
-          },
-          client: {
-            fullName: invoice.clientName,
-            businessName: invoice.businessName,
-            taxId: invoice.clientTaxId,
-            taxIdType: invoice.clientTaxIdType,
-            whatsappNumber: invoice.clientWhatsapp,
-            email: invoice.clientEmail,
-            addressReference: invoice.clientAddress,
-          },
-          secuencial: seq,
-        }),
-      });
-      const data = await res.json();
-      if (data.xml) {
-        xmlContent = data.xml;
-      }
-    } catch {
+    if (!xmlContent) {
+      const effectivePaymentMethod = invoice.paymentMethod || relatedOrder?.paymentMethod || 'cash';
       xmlContent = buildFacturaXml({
         claveAcceso,
         secuencial: seq,

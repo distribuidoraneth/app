@@ -143,7 +143,9 @@ export async function POST(req: NextRequest) {
         : undefined;
 
     // Si se emitió o procesó un secuencial válido, asegurar persistencia en company_tax_profiles
-    if (numericSeq && numericSeq >= 119) {
+    // ¡CRÍTICO! ÚNICAMENTE actualizar el secuencial en la base de datos si el comprobante fue AUTORIZADO o RECIBIDA por el SRI.
+    // Si la factura fue DEVUELTA o falló, JAMÁS avanzar la secuencia oficial en la base de datos.
+    if (numericSeq && numericSeq >= 119 && (finalStatus === 'AUTORIZADO' || finalStatus === 'RECIBIDA')) {
       try {
         const sbAdmin = getServiceSupabase();
         const { data: existing } = await sbAdmin

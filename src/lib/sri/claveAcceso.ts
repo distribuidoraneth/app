@@ -39,17 +39,24 @@ export function generarClaveAcceso(params: {
 }): string {
   const pad = (num: number | string, size: number) => String(num).padStart(size, '0');
 
-  const dia = pad(params.fecha.getDate(), 2);
-  const mes = pad(params.fecha.getMonth() + 1, 2);
-  const anio = params.fecha.getFullYear().toString();
+  const fechaObj =
+    params.fecha instanceof Date && !isNaN(params.fecha.getTime())
+      ? params.fecha
+      : typeof params.fecha === 'string' && !isNaN(new Date(params.fecha).getTime())
+      ? new Date(params.fecha)
+      : new Date();
+
+  const dia = pad(fechaObj.getDate(), 2);
+  const mes = pad(fechaObj.getMonth() + 1, 2);
+  const anio = fechaObj.getFullYear().toString();
   const fechaStr = `${dia}${mes}${anio}`;
 
   const tipoComp = pad(params.tipoComprobante || '01', 2);
-  const rucStr = pad(params.ruc.replace(/\D/g, ''), 13);
+  const rucStr = pad((params.ruc || '1803013810001').replace(/\D/g, ''), 13);
   const estabStr = pad(params.establecimiento || '001', 3);
   const ptoEmiStr = pad(params.puntoEmision || '001', 3);
   const serie = `${estabStr}${ptoEmiStr}`;
-  const secuencialStr = pad(params.secuencial, 9);
+  const secuencialStr = pad(params.secuencial || 1, 9);
   const codigoNum = params.codigoNumerico
     ? pad(params.codigoNumerico, 8)
     : pad(Math.floor(10000000 + Math.random() * 90000000), 8);

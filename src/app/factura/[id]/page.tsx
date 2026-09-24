@@ -53,7 +53,7 @@ export default function PublicInvoicePage({
 }) {
   const resolvedParams = use(params);
   const router = useRouter();
-  const { invoices, orders, currentSecuencial } = useDistribution();
+  const { invoices, orders, currentSecuencial, updateInvoiceSequence } = useDistribution();
 
   const cleanId = useMemo(
     () => decodeURIComponent(resolvedParams.id || '').trim(),
@@ -319,7 +319,6 @@ export default function PublicInvoicePage({
     }
   };
 
-
   const handleReintentarSri = async () => {
     if (!invoice) return;
     setIsRetryingSri(true);
@@ -333,12 +332,20 @@ export default function PublicInvoicePage({
       let seq = parseInt(invoice.invoiceNumber.replace(/\D/g, '').slice(-9), 10) || 1;
       let clave: string | undefined = claveAcceso;
 
+      // Si la factura nunca fue autorizada y en la base de datos se definió una secuencia base,
+      // asegurar que use automáticamente el siguiente secuencial oficial (currentSecuencial + 1)
+      if (invoice.sriStatus !== 'AUTORIZADO' && typeof currentSecuencial === 'number' && currentSecuencial >= 119) {
+        const expectedSeq = currentSecuencial + 1;
+        if (seq !== expectedSeq && !isSequenceDuplicate) {
+          seq = expectedSeq;
+          clave = undefined; // Forzar regeneración limpia de la clave para el secuencial oficial
+        }
+      }
+
       if (isSequenceDuplicate) {
         const nextValid = getNextInvoiceSequence(invoices, currentSecuencial);
         seq = nextValid;
         clave = undefined; // Forzar generación de nueva clave limpia para el nuevo secuencial
-        recordUsedInvoiceSequence(seq);
-        updateCompanySecuencialInDb(seq).catch(console.warn);
       }
 
       const effectivePaymentMethod = invoice.paymentMethod || orderFromContext?.paymentMethod || 'cash';
@@ -380,8 +387,11 @@ export default function PublicInvoicePage({
         setSriAuthDate(data.fechaAutorizacion);
         setSriErrorMsg(data.error);
 
-        recordUsedInvoiceSequence(seq);
-        updateCompanySecuencialInDb(seq).catch(console.warn);
+        // ¡ÚNICAMENTE si fue AUTORIZADO o RECIBIDA por el SRI, avanzar el secuencial en la DB!
+        if (data.sriStatus === 'AUTORIZADO' || data.sriStatus === 'RECIBIDA') {
+          recordUsedInvoiceSequence(seq);
+          updateCompanySecuencialInDb(seq).catch(console.warn);
+        }
 
         // Actualizar invoice en localStorage para que refleje el nuevo número y estado
         try {
@@ -517,38 +527,10 @@ export default function PublicInvoicePage({
   const handleDownloadXml = async () => {
     if (!invoice) return;
     const seq = parseInt(invoice.invoiceNumber.replace(/\D/g, '').slice(-9), 10) || 1;
-    let xmlContent = '';
+    let xmlContent = invoice.xmlContent || '';
 
-    const effectivePaymentMethod = invoice.paymentMethod || orderFromContext?.paymentMethod || 'cash';
-
-    try {
-      const res = await fetch('/api/sri/facturar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          order: {
-            id: invoice.orderId,
-            items: invoice.items,
-            paymentMethod: effectivePaymentMethod,
-          },
-          client: {
-            fullName: invoice.clientName,
-            businessName: invoice.businessName,
-            taxId: invoice.clientTaxId,
-            taxIdType: invoice.clientTaxIdType,
-            whatsappNumber: invoice.clientWhatsapp,
-            email: invoice.clientEmail,
-            addressReference: invoice.clientAddress,
-          },
-          secuencial: seq,
-        }),
-      });
-      const data = await res.json();
-      if (data.xml) {
-        xmlContent = data.xml;
-      }
-    } catch {
-      // Fallback a XML directo
+    if (!xmlContent) {
+      const effectivePaymentMethod = invoice.paymentMethod || orderFromContext?.paymentMethod || 'cash';
       xmlContent = buildFacturaXml({
         claveAcceso,
         secuencial: seq,
@@ -635,8 +617,6 @@ export default function PublicInvoicePage({
             </button>
           )}
 
-
-          {/* Consultar SRI (Compact, subtle) */}
           <button
             type="button"
             onClick={handleConsultarSri}
