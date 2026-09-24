@@ -53,7 +53,7 @@ export default function PublicInvoicePage({
 }) {
   const resolvedParams = use(params);
   const router = useRouter();
-  const { invoices, orders, currentSecuencial, updateInvoiceSequence } = useDistribution();
+  const { invoices, orders, currentSecuencial } = useDistribution();
 
   const cleanId = useMemo(
     () => decodeURIComponent(resolvedParams.id || '').trim(),
@@ -319,36 +319,6 @@ export default function PublicInvoicePage({
     }
   };
 
-  const handleCambiarSecuencial = async () => {
-    if (!invoice) return;
-    const currentNum = parseInt(invoice.invoiceNumber.replace(/\D/g, '').slice(-9), 10) || 1;
-    const promptVal = window.prompt(
-      `Ingrese el número de secuencial para esta factura:\n(Por ejemplo: si en la base de datos definió 326, aquí debe ir 327):`,
-      String(currentNum)
-    );
-    if (!promptVal) return;
-    const newSeq = parseInt(promptVal.trim(), 10);
-    if (isNaN(newSeq) || newSeq < 119) {
-      alert('El secuencial debe ser un número entero válido >= 119.');
-      return;
-    }
-
-    try {
-      setIsRetryingSri(true);
-      setSriFeedback(null);
-      const updated = await updateInvoiceSequence(invoice.id, newSeq);
-      if (updated) {
-        setDbInvoice(updated);
-        setSriStatus('PENDING');
-        setSriErrorMsg(null);
-        setSriFeedback(`Secuencial actualizado a #${newSeq}. Ahora puede pulsar "Reintentar" para emitir al SRI con este número.`);
-      }
-    } catch (err: any) {
-      alert('Error al actualizar secuencial: ' + err?.message);
-    } finally {
-      setIsRetryingSri(false);
-    }
-  };
 
   const handleReintentarSri = async () => {
     if (!invoice) return;
@@ -664,6 +634,7 @@ export default function PublicInvoicePage({
               <span className="hidden xs:inline">{isRetryingSri ? 'Reemitiendo...' : 'Reintentar'}</span>
             </button>
           )}
+
 
           {/* Consultar SRI (Compact, subtle) */}
           <button
