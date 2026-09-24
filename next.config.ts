@@ -1,11 +1,13 @@
 import type { NextConfig } from "next";
+import path from "path";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  serverExternalPackages: ['osodreamer-sri-xml-signer', 'node-forge'],
+  outputFileTracingRoot: path.join(__dirname),
   outputFileTracingIncludes: {
     '/api/**/*': ['./facturacion/**/*'],
   },
+  serverExternalPackages: ['osodreamer-sri-xml-signer', 'node-forge'],
   images: {
     remotePatterns: [
       {
