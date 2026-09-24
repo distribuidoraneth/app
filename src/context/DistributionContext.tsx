@@ -315,18 +315,26 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
           dbClients.some((c) => c.id === prev) ? prev : (dbClients[0]?.id || '')
         );
       }
+      if (dbInvoices !== null) {
+        setInvoices(dbInvoices);
+      }
       if (dbOrders !== null) {
+        const invList = dbInvoices || invoices;
+        const invoiceMap = new Map((invList || []).map((inv) => [inv.id, inv.invoiceNumber]));
+        const invoiceOrderMap = new Map((invList || []).map((inv) => [inv.orderId, inv.invoiceNumber]));
+
         setOrders((prev) => {
           const dbOrderIds = new Set(dbOrders.map((o) => o.id));
           // Solo preservar pedidos recién creados en los últimos 60 segundos (en vuelo / pendiente de sync)
           const recentInFlight = prev.filter(
             (o) => !dbOrderIds.has(o.id) && o.createdAt && Date.now() - new Date(o.createdAt).getTime() < 60000
           );
-          return [...dbOrders, ...recentInFlight];
+          const combined = [...dbOrders, ...recentInFlight];
+          return combined.map((o) => {
+            const foundNum = (o.invoiceId ? invoiceMap.get(o.invoiceId) : null) || invoiceOrderMap.get(o.id) || o.invoiceNumber;
+            return foundNum ? { ...o, invoiceNumber: foundNum } : o;
+          });
         });
-      }
-      if (dbInvoices !== null) {
-        setInvoices(dbInvoices);
       }
     } catch (err) {
       console.warn('Error al sincronizar datos desde Supabase:', err);
@@ -1087,6 +1095,7 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
       invoiceNumber: invoiceNum,
       orderId: order.id,
       orderNumber: order.orderNumber,
+      paymentMethod: order.paymentMethod || 'cash',
       clientId: order.clientId,
       clientName: client?.fullName || order.clientName || 'Consumidor Final',
       businessName: client?.businessName || order.businessName || 'Local Registrado',
@@ -1147,7 +1156,10 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        order,
+        order: {
+          ...order,
+          paymentMethod: order.paymentMethod || 'cash',
+        },
         client: {
           fullName: newInvoice.clientName,
           businessName: newInvoice.businessName,

@@ -53,6 +53,17 @@ export function InvoiceModal({
     });
   }, [invoice]);
 
+  const relatedOrder = useMemo(() => {
+    if (!invoice) return undefined;
+    return orders?.find(
+      (o) =>
+        o.id === invoice.orderId ||
+        (invoice.orderNumber && o.orderNumber === invoice.orderNumber) ||
+        o.invoiceId === invoice.id ||
+        o.invoiceNumber === invoice.invoiceNumber
+    );
+  }, [orders, invoice]);
+
   const facturaLines = useMemo(() => {
     if (!invoice?.items) return [];
     return expandCartItemsToFacturaLines(invoice.items, 15);
@@ -138,6 +149,8 @@ export function InvoiceModal({
     const seq = parseInt(invoice.invoiceNumber.replace(/\D/g, '').slice(-9), 10) || 1;
     let xmlContent = '';
 
+    const effectivePaymentMethod = invoice.paymentMethod || relatedOrder?.paymentMethod || 'cash';
+
     try {
       const res = await fetch('/api/sri/facturar', {
         method: 'POST',
@@ -146,7 +159,7 @@ export function InvoiceModal({
           order: {
             id: invoice.orderId,
             items: invoice.items,
-            paymentMethod: 'cash',
+            paymentMethod: effectivePaymentMethod,
           },
           client: {
             fullName: invoice.clientName,
@@ -179,7 +192,7 @@ export function InvoiceModal({
           email: invoice.clientEmail,
         },
         items: invoice.items,
-        paymentMethod: 'cash',
+        paymentMethod: effectivePaymentMethod,
         ivaRate: 15,
       });
     }
@@ -285,6 +298,7 @@ export function InvoiceModal({
               claveAcceso={claveAcceso}
               subtotal15={subtotal15}
               totalIva15={tax15}
+              paymentMethod={invoice.paymentMethod || relatedOrder?.paymentMethod}
             />
           </div>
         </div>

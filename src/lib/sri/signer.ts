@@ -18,7 +18,7 @@ export interface SigningOptions {
 export async function signXmlXadesBes(xmlString: string, options?: SigningOptions): Promise<string> {
   try {
     let p12Buffer: Buffer | null = options?.p12Buffer || null;
-    let password = options?.p12Password || process.env.SRI_P12_PASSWORD || '';
+    let password = options?.p12Password || process.env.SRI_P12_PASSWORD || '1234';
 
     // 1. Cargar desde variable de entorno base64 si existe (Vercel Serverless / Producción)
     if (!p12Buffer && process.env.SRI_P12_BASE64) {

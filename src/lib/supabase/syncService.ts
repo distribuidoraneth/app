@@ -374,6 +374,7 @@ function mapDbOrder(o: any): Order {
     createdAt: o.created_at,
     deliveredAt: o.delivered_at,
     invoiceId: o.invoice_id || undefined,
+    invoiceNumber: o.invoice_number || undefined,
   };
 }
 
@@ -405,7 +406,25 @@ export async function getOrderByIdFromDb(idOrNumber: string): Promise<Order | nu
     }
 
     if (!data) return null;
-    return mapDbOrder(data);
+    const mappedOrder = mapDbOrder(data);
+
+    // Anidar número de factura desde tabla invoices de forma confiable
+    try {
+      let invQuery = supabase.from('invoices').select('invoice_number');
+      if (isValidUuid(mappedOrder.invoiceId)) {
+        invQuery = invQuery.eq('id', mappedOrder.invoiceId);
+      } else if (isValidUuid(mappedOrder.id)) {
+        invQuery = invQuery.eq('order_id', mappedOrder.id);
+      }
+      const { data: invData } = await invQuery.maybeSingle();
+      if (invData?.invoice_number) {
+        mappedOrder.invoiceNumber = invData.invoice_number;
+      }
+    } catch {
+      // ignore
+    }
+
+    return mappedOrder;
   } catch (err) {
     console.warn('Excepción al buscar pedido en Supabase:', err);
     return null;
@@ -448,6 +467,7 @@ export async function saveOrderToDb(order: Order): Promise<{ success: boolean; d
       promised_collection_date: order.promisedCollectionDate || null,
       promised_collection_time: order.promisedCollectionTime || null,
       invoice_id: isValidUuid(order.invoiceId) ? order.invoiceId : null,
+      invoice_number: order.invoiceNumber || null,
       delivered_at: order.deliveredAt || null,
     };
 
@@ -463,9 +483,12 @@ export async function saveOrderToDb(order: Order): Promise<{ success: boolean; d
 
     // Si las columnas dedicadas no han sido creadas aún en Supabase (error 42703), reintentar sin ellas
     // garantizando que la información quede registrada en 'notes', 'debt_balance' y 'amount_paid'
-    if (orderErr && (orderErr.code === '42703' || orderErr.message?.includes('promised_collection'))) {
+    if (orderErr && (orderErr.code === '42703' || orderErr.message?.includes('promised_collection') || orderErr.message?.includes('invoice_number'))) {
       delete orderRecord.promised_collection_date;
       delete orderRecord.promised_collection_time;
+      if (orderErr.message?.includes('invoice_number')) {
+        delete orderRecord.invoice_number;
+      }
       const retryResult = await supabase
         .from('orders')
         .insert(orderRecord)
@@ -547,7 +570,6 @@ export async function updateOrderStatusInDb(
     if (rawPayload.invoiceId !== undefined) {
       dbPayload.invoice_id = isValidUuid(rawPayload.invoiceId) ? rawPayload.invoiceId : null;
     }
-    if (rawPayload.invoiceNumber !== undefined) dbPayload.invoice_number = rawPayload.invoiceNumber;
     if (rawPayload.amountPaid !== undefined) dbPayload.amount_paid = Number(rawPayload.amountPaid);
     if (rawPayload.debtBalance !== undefined) dbPayload.debt_balance = Number(rawPayload.debtBalance);
     if (rawPayload.paymentStatus !== undefined) dbPayload.payment_status = rawPayload.paymentStatus;
@@ -559,6 +581,7 @@ export async function updateOrderStatusInDb(
       dbPayload.scheduled_time_slot = rawPayload.scheduledTimeSlot;
     }
     if (rawPayload.notes !== undefined) dbPayload.notes = rawPayload.notes;
+    if (rawPayload.invoiceNumber !== undefined) dbPayload.invoice_number = rawPayload.invoiceNumber;
 
     let query = supabase.from('orders').update(dbPayload);
 
@@ -568,7 +591,20 @@ export async function updateOrderStatusInDb(
       query = query.eq('order_number', orderId);
     }
 
-    const { error } = await query;
+    let { error } = await query;
+
+    // Si la columna invoice_number aún no se refleja en el schema cache de PostgREST, reintentar sin ella
+    if (error && (error.code === '42703' || error.code === 'PGRST204' || error.message?.includes('invoice_number'))) {
+      delete dbPayload.invoice_number;
+      let retryQuery = supabase.from('orders').update(dbPayload);
+      if (isValidUuid(orderId)) {
+        retryQuery = retryQuery.eq('id', orderId);
+      } else {
+        retryQuery = retryQuery.eq('order_number', orderId);
+      }
+      const retryResult = await retryQuery;
+      error = retryResult.error;
+    }
 
     if (error) {
       console.warn('Advertencia al actualizar orden en Supabase:', error.message);

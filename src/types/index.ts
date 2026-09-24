@@ -156,6 +156,7 @@ export interface Invoice {
   total: number;
   xmlContent?: string;
   pdfDownloadUrl?: string;
+  paymentMethod?: PaymentMethod | string;
   issuedAt: string;
   status: 'emitida' | 'pagada' | 'anulada';
   creditNoteId?: string;

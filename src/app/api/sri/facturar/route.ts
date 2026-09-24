@@ -83,12 +83,12 @@ export async function POST(req: NextRequest) {
       fechaEmision,
       company: activeProfile,
       cliente: {
-        razonSocial: client.fullName || client.businessName,
+        razonSocial: client.fullName || client.businessName || 'CONSUMIDOR FINAL',
         identificacion: client.taxId || '9999999999999',
         tipoIdentificacion: client.taxIdType || '07',
-        direccion: client.addressReference,
-        telefono: client.whatsappNumber,
-        email: client.email,
+        direccion: client.addressReference || '',
+        telefono: client.whatsappNumber || '',
+        email: client.email || '',
       },
       items: order.items || [],
       paymentMethod: order.paymentMethod || 'cash',
@@ -151,7 +151,7 @@ export async function POST(req: NextRequest) {
         const { data: existing } = await sbAdmin
           .from('company_tax_profiles')
           .select('id, current_secuencial')
-          .eq('ruc', taxProfile.ruc)
+          .eq('ruc', activeProfile.ruc)
           .maybeSingle();
 
         if (existing && Number(secuencial) > (existing.current_secuencial || 0)) {

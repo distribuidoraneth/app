@@ -18,8 +18,94 @@ export const DEFAULT_TAX_PROFILE: CompanyTaxProfile = {
   regimenRimpe: false,
 };
 
-function escapeXml(unsafe: string): string {
-  return unsafe
+export interface SriPaymentMethodInfo {
+  code: string;
+  name: string;
+  isCash: boolean;
+}
+
+export function getSriPaymentMethodInfo(method?: string | null): SriPaymentMethodInfo {
+  const clean = (method || '').toLowerCase().trim();
+  // 1. Efectivo, Crédito directo (Fiado/Plazo) y Pagos Parciales:
+  // En Ecuador y normativa SRI, el crédito directo concedido por la distribuidora al cliente
+  // (sin banco ni financiera) es legalmente '01 - SIN UTILIZACION DEL SISTEMA FINANCIERO'.
+  if (
+    clean === 'cash' ||
+    clean === 'efectivo' ||
+    clean === 'contado' ||
+    clean === 'billete' ||
+    clean === 'credit' ||
+    clean === 'credito' ||
+    clean === 'crédito' ||
+    clean === 'fiado' ||
+    clean === 'plazo' ||
+    clean === 'parcial' ||
+    clean === 'pago_parcial' ||
+    clean === 'saldo' ||
+    clean === '01' ||
+    !clean
+  ) {
+    return {
+      code: '01',
+      name: '01 - SIN UTILIZACION DEL SISTEMA FINANCIERO',
+      isCash: true,
+    };
+  }
+
+  // 2. Transferencias bancarias, DeUna, Depósitos, Cheques:
+  if (
+    clean === 'transfer' ||
+    clean === 'transferencia' ||
+    clean === 'deuna' ||
+    clean === 'de una' ||
+    clean === 'deposito' ||
+    clean === 'depósito' ||
+    clean === 'cheque' ||
+    clean === 'banco' ||
+    clean === '20'
+  ) {
+    return {
+      code: '20',
+      name: '20 - OTROS CON UTILIZACION DEL SISTEMA FINANCIERO',
+      isCash: false,
+    };
+  }
+
+  // 3. Tarjeta de Débito Bancaria:
+  if (clean === 'debito' || clean === 'tarjeta_debito' || clean === 'tarjeta de debito' || clean === '16') {
+    return {
+      code: '16',
+      name: '16 - TARJETA DE DEBITO',
+      isCash: false,
+    };
+  }
+
+  // 4. Tarjeta de Crédito Bancaria (POS/Voucher Datafast/Medianet):
+  if (
+    clean === 'tarjeta_credito' ||
+    clean === 'tarjeta de credito' ||
+    clean === 'tarjeta de crédito' ||
+    clean === 'tc' ||
+    clean === 'voucher' ||
+    clean === '19'
+  ) {
+    return {
+      code: '19',
+      name: '19 - TARJETA DE CREDITO',
+      isCash: false,
+    };
+  }
+
+  return {
+    code: '01',
+    name: '01 - SIN UTILIZACION DEL SISTEMA FINANCIERO',
+    isCash: true,
+  };
+}
+
+export function escapeXml(unsafe: unknown): string {
+  if (unsafe === null || unsafe === undefined) return '';
+  return String(unsafe)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
@@ -46,7 +132,7 @@ export function buildFacturaXml(params: {
     email?: string;
   };
   items: CartItem[];
-  paymentMethod: 'cash' | 'transfer';
+  paymentMethod?: string;
   ivaRate?: number; // 0 o 15
 }): string {
   const {
@@ -56,7 +142,7 @@ export function buildFacturaXml(params: {
     company,
     cliente,
     items,
-    paymentMethod,
+    paymentMethod = 'cash',
     ivaRate = 15,
   } = params;
 
@@ -67,14 +153,35 @@ export function buildFacturaXml(params: {
   // Desglose oficial de ítems según Opción 1:
   // Si un ítem tiene tanto Packs como Unidades sueltas, se desglosa en líneas discretas
   // con SKUs estandarizados (ej: FRU-500-PAQ y FRU-500-UND) y sumas tributarias exactas.
-  const lines = expandCartItemsToFacturaLines(items, ivaRate);
+  let lines = expandCartItemsToFacturaLines(items, ivaRate);
+
+  // El esquema SRI v1.1.0 exige al menos 1 línea en <detalles>
+  if (!lines || lines.length === 0) {
+    const baseFallback = ivaRate > 0 ? Number((1.0 / (1 + ivaRate / 100)).toFixed(2)) : 1.0;
+    const ivaFallback = Number((1.0 - baseFallback).toFixed(2));
+    lines = [
+      {
+        codigoPrincipal: 'PROD-01',
+        descripcion: 'VENTA GENERAL / BEBIDAS',
+        cantidad: 1,
+        precioUnitarioSinIva: baseFallback,
+        descuento: 0,
+        precioTotalSinImpuesto: baseFallback,
+        iva: ivaFallback,
+        subtotalConIva: 1.0,
+        tipo: 'pack',
+        unidadMedida: 'pack',
+      },
+    ];
+  }
 
   const totalSinImpuestos = Number(lines.reduce((sum, l) => sum + l.precioTotalSinImpuesto, 0).toFixed(2));
   const totalIva = Number(lines.reduce((sum, l) => sum + l.iva, 0).toFixed(2));
   const importeTotal = Number((totalSinImpuestos + totalIva).toFixed(2));
 
-  // Forma de pago SRI: 01 = Efectivo, 20 = Otros con utilización del sistema financiero
-  const formaPagoSri = paymentMethod === 'cash' ? '01' : '20';
+  // Forma de pago SRI estricta: 01 = Efectivo (Sin utilización del sist. financiero), 20 = Transferencia/DeUna
+  const paymentInfo = getSriPaymentMethodInfo(paymentMethod);
+  const formaPagoSri = paymentInfo.code;
 
   // Código de porcentaje de IVA: 4 = 15% (vigente en Ecuador), 0 = 0%
   const codigoPorcentajeIva = ivaRate === 15 ? '4' : '0';
@@ -97,6 +204,12 @@ export function buildFacturaXml(params: {
     tipoIdComprador = '04';
   }
 
+  const razonSocialCliente = (
+    cliente.razonSocial ||
+    (idLimpia === '9999999999999' || !idLimpia ? 'CONSUMIDOR FINAL' : 'CLIENTE REGISTRADO')
+  ).trim() || 'CONSUMIDOR FINAL';
+  const identificacionCliente = (cliente.identificacion || '9999999999999').trim() || '9999999999999';
+
   let xml = `<?xml version="1.0" encoding="UTF-8"?>
 <factura id="comprobante" version="1.1.0">
   <infoTributaria>
@@ -118,8 +231,8 @@ export function buildFacturaXml(params: {
     <dirEstablecimiento>${escapeXml(company.dirEstablecimiento || company.dirMatriz)}</dirEstablecimiento>
     <obligadoContabilidad>${company.obligadoContabilidad}</obligadoContabilidad>
     <tipoIdentificacionComprador>${tipoIdComprador}</tipoIdentificacionComprador>
-    <razonSocialComprador>${escapeXml(cliente.razonSocial)}</razonSocialComprador>
-    <identificacionComprador>${escapeXml(cliente.identificacion)}</identificacionComprador>
+    <razonSocialComprador>${escapeXml(razonSocialCliente)}</razonSocialComprador>
+    <identificacionComprador>${escapeXml(identificacionCliente)}</identificacionComprador>
     ${cliente.direccion ? `<direccionComprador>${escapeXml(cliente.direccion)}</direccionComprador>` : ''}
     <totalSinImpuestos>${totalSinImpuestos.toFixed(2)}</totalSinImpuestos>
     <totalDescuento>0.00</totalDescuento>

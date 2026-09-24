@@ -341,6 +341,8 @@ export default function PublicInvoicePage({
         updateCompanySecuencialInDb(seq).catch(console.warn);
       }
 
+      const effectivePaymentMethod = invoice.paymentMethod || orderFromContext?.paymentMethod || 'cash';
+
       const res = await fetch('/api/sri/facturar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -348,7 +350,7 @@ export default function PublicInvoicePage({
           order: {
             id: invoice.orderId,
             items: invoice.items,
-            paymentMethod: 'cash',
+            paymentMethod: effectivePaymentMethod,
           },
           client: {
             fullName: invoice.clientName,
@@ -499,6 +501,8 @@ export default function PublicInvoicePage({
     const seq = parseInt(invoice.invoiceNumber.replace(/\D/g, '').slice(-9), 10) || 1;
     let xmlContent = '';
 
+    const effectivePaymentMethod = invoice.paymentMethod || orderFromContext?.paymentMethod || 'cash';
+
     try {
       const res = await fetch('/api/sri/facturar', {
         method: 'POST',
@@ -507,7 +511,7 @@ export default function PublicInvoicePage({
           order: {
             id: invoice.orderId,
             items: invoice.items,
-            paymentMethod: 'cash',
+            paymentMethod: effectivePaymentMethod,
           },
           client: {
             fullName: invoice.clientName,
@@ -541,7 +545,7 @@ export default function PublicInvoicePage({
           email: invoice.clientEmail,
         },
         items: invoice.items,
-        paymentMethod: 'cash',
+        paymentMethod: effectivePaymentMethod,
         ivaRate: 15,
       });
     }
@@ -721,6 +725,7 @@ export default function PublicInvoicePage({
         claveAcceso={claveAcceso}
         subtotal15={subtotal15}
         totalIva15={tax15}
+        paymentMethod={invoice.paymentMethod || orderFromContext?.paymentMethod}
       />
     </div>
   );

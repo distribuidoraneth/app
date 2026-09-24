@@ -11,14 +11,10 @@
     --foreground: #0f172a;
   }
 
-  *, *::before, *::after {
-    font-family: 'Google Sans', 'Product Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-  }
-
   html, body {
     color: var(--foreground);
     background-color: var(--background);
-    font-family: 'Google Sans', 'Product Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    font-family: 'Google Sans', 'Product Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     letter-spacing: -0.015em;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -27,17 +23,31 @@
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Google Sans', 'Product Sans', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    font-family: 'Google Sans', 'Product Sans', -apple-system, BlinkMacSystemFont, sans-serif;
     letter-spacing: -0.025em;
     font-weight: 700;
   }
 
   button, input, select, textarea {
-    font-family: 'Google Sans', 'Product Sans', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    font-family: 'Google Sans', 'Product Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   }
 
   /* Tabular figures for monetary amounts */
   .font-mono, [data-tabular] {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Tipografía oficial de alta precisión para el RIDE / Documento Factura SRI */
+  .invoice-ride-document,
+  .invoice-ride-document table,
+  .invoice-ride-document th,
+  .invoice-ride-document td {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+  }
+
+  .invoice-ride-document .font-mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
     font-variant-numeric: tabular-nums;
   }
 
