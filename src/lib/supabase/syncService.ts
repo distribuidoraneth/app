@@ -868,7 +868,7 @@ function mapDbInvoice(i: any): Invoice {
   };
 }
 
-export function reconstructInvoiceFromOrder(order: Order): Invoice {
+export function reconstructInvoiceFromOrder(order: Order, fallbackSeq?: number): Invoice {
   const facturaLines = expandCartItemsToFacturaLines(order.items, 15);
   const subtotal15 = Number(facturaLines.reduce((s, l) => s + l.precioTotalSinImpuesto, 0).toFixed(2));
   const tax15 = Number(facturaLines.reduce((s, l) => s + l.iva, 0).toFixed(2));
@@ -880,22 +880,26 @@ export function reconstructInvoiceFromOrder(order: Order): Invoice {
     if (!isNaN(parsed) && parsed > 0) {
       seqNumber = parsed;
     }
-  } else {
-    const numDigits = order.orderNumber?.replace(/\D/g, '') || '';
-    const lastDigits = parseInt(numDigits.slice(-4), 10);
-    seqNumber = !isNaN(lastDigits) && lastDigits >= 120 ? lastDigits : 120;
+  } else if (typeof fallbackSeq === 'number' && fallbackSeq >= 119) {
+    seqNumber = fallbackSeq;
     invoiceNum = `001-001-${String(seqNumber).padStart(9, '0')}`;
+  } else {
+    // Si la orden no tiene número de factura ni secuencial asignado, jamás extraer dígitos de timestamps (evita saltos absurdos a 7369, 3737, etc.)
+    seqNumber = 120;
+    invoiceNum = 'PENDIENTE';
   }
 
   const ambienteDefault: '1' | '2' = ((DEFAULT_TAX_PROFILE.ambiente || '2') === '1' ? '1' : '2') as '1' | '2';
-  const claveAcceso = generarClaveAcceso({
-    fecha: order.createdAt ? new Date(order.createdAt) : new Date(),
-    ruc: DEFAULT_TAX_PROFILE.ruc,
-    ambiente: ambienteDefault,
-    establecimiento: DEFAULT_TAX_PROFILE.establecimiento || '001',
-    puntoEmision: DEFAULT_TAX_PROFILE.puntoEmision || '001',
-    secuencial: seqNumber,
-  });
+  const claveAcceso = seqNumber >= 119 && invoiceNum !== 'PENDIENTE'
+    ? generarClaveAcceso({
+        fecha: order.createdAt ? new Date(order.createdAt) : new Date(),
+        ruc: DEFAULT_TAX_PROFILE.ruc,
+        ambiente: ambienteDefault,
+        establecimiento: DEFAULT_TAX_PROFILE.establecimiento || '001',
+        puntoEmision: DEFAULT_TAX_PROFILE.puntoEmision || '001',
+        secuencial: seqNumber,
+      })
+    : '';
 
   const reconstructedInvoice: Invoice = {
     id: order.invoiceId && isValidUuid(order.invoiceId) ? order.invoiceId : generateUuid(),
@@ -1045,9 +1049,13 @@ export async function saveInvoiceToDb(
     }
 
     // Proteger y registrar secuencial de factura en company_tax_profiles
-    const seq = parseInt(invoice.invoiceNumber?.replace(/\D/g, '')?.slice(-9) || '0', 10);
-    if (seq >= 119) {
-      updateCompanySecuencialInDb(seq).catch(() => {});
+    // ¡CRÍTICO: Únicamente actualizar el secuencial oficial si la factura está AUTORIZADA por el SRI!
+    // Las facturas en borrador, pendientes o con errores JAMÁS deben alterar la secuencia oficial.
+    if (invoice.sriStatus === 'AUTORIZADO') {
+      const seq = parseInt(invoice.invoiceNumber?.replace(/\D/g, '')?.slice(-9) || '0', 10);
+      if (seq >= 119 && seq < 3000) {
+        updateCompanySecuencialInDb(seq).catch(() => {});
+      }
     }
 
     return { success: true, data: savedInvoice };
@@ -1109,7 +1117,7 @@ export async function getInvoiceByIdOrNumberFromDb(
                 o.invoiceId === clean ||
                 o.invoiceNumber === clean
             );
-            if (foundOrder) {
+            if (foundOrder && foundOrder.invoiceNumber && foundOrder.invoiceNumber.includes('001-001-')) {
               return reconstructInvoiceFromOrder(foundOrder);
             }
           }
@@ -1147,7 +1155,7 @@ export async function getInvoiceByIdOrNumberFromDb(
           .order('created_at', { ascending: false })
           .limit(1);
 
-        if (nearOrders && nearOrders.length > 0) {
+        if (nearOrders && nearOrders.length > 0 && nearOrders[0].invoice_number) {
           return reconstructInvoiceFromOrder(mapDbOrder(nearOrders[0]));
         }
       }
@@ -1166,8 +1174,13 @@ export async function getInvoiceByIdOrNumberFromDb(
         if (linkedInv) return mapDbInvoice(linkedInv);
       }
 
-      // Reconstruir la factura en caliente para garantizar disponibilidad inmediata
-      return reconstructInvoiceFromOrder(order);
+      // Si la orden tiene un número de factura oficial asignado, recuperarla
+      if (order.invoiceNumber && order.invoiceNumber.includes('001-001-')) {
+        return reconstructInvoiceFromOrder(order);
+      }
+
+      // Si el pedido aún no tiene factura emitida, no inventar datos
+      return null;
     }
 
     return null;

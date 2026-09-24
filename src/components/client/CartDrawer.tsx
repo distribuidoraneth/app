@@ -321,7 +321,6 @@ export function CartDrawer({
 
     const invoiceRef =
       createdOrderSummary.invoiceNumber ||
-      createdOrderSummary.orderNumber ||
       createdOrderSummary.invoiceId;
 
     const invoiceLink = invoiceRef
@@ -496,9 +495,9 @@ export function CartDrawer({
                   <span>{isClientPortal ? 'Ver Recibo de Pedido' : 'Imprimir Recibo'}</span>
                 </button>
 
-                {!isClientPortal && (createdOrderSummary.invoiceNumber || createdOrderSummary.invoiceId || createdOrderSummary.orderNumber) && (
+                {!isClientPortal && (createdOrderSummary.invoiceNumber || createdOrderSummary.invoiceId) && (
                   <Link
-                    href={`/factura/${createdOrderSummary.invoiceNumber || createdOrderSummary.orderNumber || createdOrderSummary.invoiceId}`}
+                    href={`/factura/${createdOrderSummary.invoiceNumber || createdOrderSummary.invoiceId}`}
                     target="_blank"
                     className="w-full py-3.5 px-4 bg-slate-900 hover:bg-slate-800 active:scale-98 text-white rounded-2xl font-black text-sm flex items-center justify-center space-x-2 shadow-xs transition-all"
                   >

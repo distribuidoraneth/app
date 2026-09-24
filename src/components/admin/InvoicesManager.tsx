@@ -9,9 +9,29 @@ import { formatCurrency, formatDate } from '@/lib/utils/formatters';
 import { FileText, Search, X, Receipt, CheckCircle2, Clock } from 'lucide-react';
 
 export function InvoicesManager() {
-  const { invoices } = useDistribution();
+  const { invoices, currentSecuencial, setManualSecuencial, refreshData } = useDistribution();
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
+
+  const handleEditSequence = async () => {
+    const val = window.prompt(
+      `Secuencial actual en base de datos: #${currentSecuencial}\n(La próxima factura emitida será la #${currentSecuencial + 1})\n\nIngrese el nuevo número de secuencial base:`,
+      String(currentSecuencial)
+    );
+    if (!val) return;
+    const num = parseInt(val.trim(), 10);
+    if (isNaN(num) || num < 119) {
+      alert('El secuencial debe ser un número entero válido >= 119.');
+      return;
+    }
+    const ok = await setManualSecuencial(num);
+    if (ok) {
+      alert(`Secuencial actualizado con éxito a #${num}. La próxima factura emitida será la #${num + 1}.`);
+      await refreshData();
+    } else {
+      alert('Error al actualizar el secuencial en la base de datos.');
+    }
+  };
 
   // Estados para pruebas de secuencia ante el SRI
   const [showSequenceTester, setShowSequenceTester] = useState<boolean>(false);
@@ -94,13 +114,22 @@ export function InvoicesManager() {
               Facturación automática al despachar • Anulación legal mediante Nota de Crédito (Doc 04).
             </p>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={handleEditSequence}
+              title="Clic para ver o cambiar el secuencial base oficial en la base de datos"
+              className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
+            >
+              <span>Base: #{currentSecuencial}</span>
+              <span className="text-[10px] text-amber-800 bg-amber-200/80 px-1.5 py-0.5 rounded-md font-extrabold">Próx: #{currentSecuencial + 1}</span>
+            </button>
             <button
               type="button"
               onClick={() => setShowSequenceTester(!showSequenceTester)}
               className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-all border border-slate-200 cursor-pointer"
             >
-              {showSequenceTester ? 'Ocultar Pruebas SRI' : '🔍 Probar Secuencias SRI'}
+              {showSequenceTester ? 'Ocultar Pruebas SRI' : '🔍 Probar SRI'}
             </button>
             <span className="text-xs font-black bg-blue-50 text-blue-700 px-3 py-1.5 rounded-xl border border-blue-200">
               {invoices.length} Factura{invoices.length !== 1 ? 's' : ''}

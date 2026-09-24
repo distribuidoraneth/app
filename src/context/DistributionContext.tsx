@@ -127,7 +127,7 @@ export function getNextInvoiceSequence(invoicesList?: Invoice[], currentSecuenci
       const stored = localStorage.getItem(SEQUENCE_STORAGE_KEY);
       if (stored) {
         const parsed = parseInt(stored, 10);
-        if (!isNaN(parsed) && parsed > maxSeq) {
+        if (!isNaN(parsed) && parsed > maxSeq && parsed < 3000) {
           maxSeq = parsed;
         }
       }
@@ -145,7 +145,7 @@ export function getNextInvoiceSequence(invoicesList?: Invoice[], currentSecuenci
       if (inv.sriStatus && inv.sriStatus !== 'AUTORIZADO') continue;
 
       const num = parseInt(inv.invoiceNumber?.replace(/\D/g, '')?.slice(-9) || '0', 10);
-      if (num > maxSeq) {
+      if (num > maxSeq && (num < 3000 || inv.sriStatus === 'AUTORIZADO')) {
         maxSeq = num;
       }
     }
@@ -235,7 +235,7 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
         const stored = localStorage.getItem(SEQUENCE_STORAGE_KEY);
         if (stored) {
           const parsed = parseInt(stored, 10);
-          if (!isNaN(parsed) && parsed >= MIN_INVOICE_SEQUENCE_BASE) {
+          if (!isNaN(parsed) && parsed >= MIN_INVOICE_SEQUENCE_BASE && parsed < 3000) {
             return parsed;
           }
         }
@@ -353,7 +353,14 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
           const parsed = JSON.parse(saved);
           if (Array.isArray(parsed.clients)) setClients(parsed.clients);
           if (Array.isArray(parsed.catalog) && parsed.catalog.length > 0) setCatalog(parsed.catalog);
-          if (Array.isArray(parsed.invoices)) setInvoices(parsed.invoices);
+          if (Array.isArray(parsed.invoices)) {
+            // Filtrar facturas corruptas o huérfanas con números >= 3000 que no estén autorizadas
+            const cleanInvs = parsed.invoices.filter((inv: Invoice) => {
+              const num = parseInt(inv.invoiceNumber?.replace(/\D/g, '')?.slice(-9) || '0', 10);
+              return num < 3000 || inv.sriStatus === 'AUTORIZADO';
+            });
+            setInvoices(cleanInvs);
+          }
           if (Array.isArray(parsed.orders)) {
             const now = new Date();
             const todayOrders = parsed.orders.filter((o: Order) => {
