@@ -274,33 +274,33 @@ export const InvoiceRideDocument: React.FC<InvoiceRideDocumentProps> = ({
           <table className="w-full min-w-[500px] sm:min-w-0 text-xs text-left border-collapse">
             <thead>
               <tr className="bg-blue-50/70 border-b border-blue-200/80 text-blue-950 text-[10px] sm:text-[10.5px] font-bold tracking-tight">
-                <th className="py-2.5 px-3 border-r border-blue-200/60 w-24 sm:w-28">Cod. Principal</th>
-                <th className="py-2.5 px-2 border-r border-blue-200/60 text-right w-14 sm:w-16">Cantidad</th>
-                <th className="py-2.5 px-3 border-r border-blue-200/60">Descripción</th>
-                <th className="py-2.5 px-2.5 border-r border-blue-200/60 text-right w-20 sm:w-24">Precio Unitario</th>
-                <th className="py-2.5 px-2 border-r border-blue-200/60 text-right w-14 sm:w-16">Descuento</th>
-                <th className="py-2.5 px-3 text-right w-20 sm:w-24">Precio Total</th>
+                <th className="pt-2 pb-2.5 px-3 border-r border-blue-200/60 w-24 sm:w-28 align-middle leading-tight">Cod. Principal</th>
+                <th className="pt-2 pb-2.5 px-2 border-r border-blue-200/60 text-right w-14 sm:w-16 align-middle leading-tight">Cantidad</th>
+                <th className="pt-2 pb-2.5 px-3 border-r border-blue-200/60 align-middle leading-tight">Descripción</th>
+                <th className="pt-2 pb-2.5 px-2.5 border-r border-blue-200/60 text-right w-20 sm:w-24 align-middle leading-tight">Precio Unitario</th>
+                <th className="pt-2 pb-2.5 px-2 border-r border-blue-200/60 text-right w-14 sm:w-16 align-middle leading-tight">Descuento</th>
+                <th className="pt-2 pb-2.5 px-3 text-right w-20 sm:w-24 align-middle leading-tight">Precio Total</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 text-slate-800">
               {facturaLines.map((line, idx) => (
                 <tr key={idx} className="hover:bg-slate-50/50">
-                  <td className="py-2 px-3 border-r border-slate-200 font-mono text-[10.5px] sm:text-[11px] font-semibold text-slate-800 align-middle leading-normal">
+                  <td className="pt-2 pb-2.5 px-3 border-r border-slate-200 font-mono text-[10.5px] sm:text-[11px] font-semibold text-slate-800 align-middle leading-tight">
                     {line.codigoPrincipal}
                   </td>
-                  <td className="py-2 px-2 border-r border-slate-200 text-right font-mono text-[10.5px] sm:text-[11px] align-middle leading-normal">
+                  <td className="pt-2 pb-2.5 px-2 border-r border-slate-200 text-right font-mono text-[10.5px] sm:text-[11px] align-middle leading-tight">
                     {line.cantidad.toFixed(2)}
                   </td>
-                  <td className="py-2 px-3 border-r border-slate-200 text-slate-900 text-xs font-medium align-middle leading-normal">
+                  <td className="pt-2 pb-2.5 px-3 border-r border-slate-200 text-slate-900 text-xs font-medium align-middle leading-snug">
                     {line.descripcion}
                   </td>
-                  <td className="py-2 px-2.5 border-r border-slate-200 text-right font-mono text-[10.5px] sm:text-[11px] align-middle leading-normal">
+                  <td className="pt-2 pb-2.5 px-2.5 border-r border-slate-200 text-right font-mono text-[10.5px] sm:text-[11px] align-middle leading-tight">
                     {line.precioUnitarioSinIva.toFixed(4)}
                   </td>
-                  <td className="py-2 px-2 border-r border-slate-200 text-right font-mono text-[10.5px] sm:text-[11px] text-slate-500 align-middle leading-normal">
+                  <td className="pt-2 pb-2.5 px-2 border-r border-slate-200 text-right font-mono text-[10.5px] sm:text-[11px] text-slate-500 align-middle leading-tight">
                     0.00
                   </td>
-                  <td className="py-2 px-3 text-right font-mono font-semibold text-slate-900 text-[10.5px] sm:text-[11px] align-middle leading-normal">
+                  <td className="pt-2 pb-2.5 px-3 text-right font-mono font-semibold text-slate-900 text-[10.5px] sm:text-[11px] align-middle leading-tight">
                     {line.precioTotalSinImpuesto.toFixed(2)}
                   </td>
                 </tr>
@@ -337,16 +337,16 @@ export const InvoiceRideDocument: React.FC<InvoiceRideDocumentProps> = ({
               <table className="w-full text-xs text-left border-collapse">
                 <thead>
                   <tr className="bg-blue-50/70 border-b border-blue-200/80 text-blue-950 text-[10.5px] font-bold tracking-tight">
-                    <th className="py-2 px-3 border-r border-blue-200/60">Forma de pago</th>
-                    <th className="py-2 px-3 text-right w-24">Valor</th>
+                    <th className="pt-2 pb-2.5 px-3 border-r border-blue-200/60 align-middle leading-tight">Forma de pago</th>
+                    <th className="pt-2 pb-2.5 px-3 text-right w-24 align-middle leading-tight">Valor</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
-                    <td className="py-2 px-3 border-r border-slate-200 text-[11px] text-slate-800">
+                    <td className="pt-2.5 pb-3 px-3 border-r border-slate-200 text-[11px] text-slate-800 align-middle leading-snug">
                       20 - OTROS CON UTILIZACION DEL SISTEMA FINANCIERO
                     </td>
-                    <td className="py-2 px-3 text-right font-mono font-bold text-slate-900">
+                    <td className="pt-2.5 pb-3 px-3 text-right font-mono font-bold text-slate-900 align-middle leading-tight">
                       {formatCurrency(invoice.total)}
                     </td>
                   </tr>
@@ -360,66 +360,66 @@ export const InvoiceRideDocument: React.FC<InvoiceRideDocumentProps> = ({
             <table className="w-full text-xs border-collapse">
               <tbody className="divide-y divide-slate-200">
                 <tr>
-                  <td className="py-1.5 px-3 font-semibold text-slate-700 border-r border-slate-200 text-[11px]">
+                  <td className="pt-2 pb-2.5 px-3 font-semibold text-slate-700 border-r border-slate-200 text-[11px] align-middle leading-tight">
                     SUBTOTAL 15%
                   </td>
-                  <td className="py-1.5 px-3 text-right font-mono font-medium text-slate-900 w-28">
+                  <td className="pt-2 pb-2.5 px-3 text-right font-mono font-medium text-slate-900 w-28 align-middle leading-tight">
                     {subtotal15.toFixed(2)}
                   </td>
                 </tr>
                 <tr>
-                  <td className="py-1.5 px-3 font-semibold text-slate-700 border-r border-slate-200 text-[11px]">
+                  <td className="pt-2 pb-2.5 px-3 font-semibold text-slate-700 border-r border-slate-200 text-[11px] align-middle leading-tight">
                     SUBTOTAL 0%
                   </td>
-                  <td className="py-1.5 px-3 text-right font-mono text-slate-500 w-28">
+                  <td className="pt-2 pb-2.5 px-3 text-right font-mono text-slate-500 w-28 align-middle leading-tight">
                     0.00
                   </td>
                 </tr>
                 <tr>
-                  <td className="py-1.5 px-3 font-semibold text-slate-700 border-r border-slate-200 text-[11px]">
+                  <td className="pt-2 pb-2.5 px-3 font-semibold text-slate-700 border-r border-slate-200 text-[11px] align-middle leading-tight">
                     SUBTOTAL NO OBJETO DE IVA
                   </td>
-                  <td className="py-1.5 px-3 text-right font-mono text-slate-500 w-28">
+                  <td className="pt-2 pb-2.5 px-3 text-right font-mono text-slate-500 w-28 align-middle leading-tight">
                     0.00
                   </td>
                 </tr>
                 <tr>
-                  <td className="py-1.5 px-3 font-semibold text-slate-700 border-r border-slate-200 text-[11px]">
+                  <td className="pt-2 pb-2.5 px-3 font-semibold text-slate-700 border-r border-slate-200 text-[11px] align-middle leading-tight">
                     SUBTOTAL EXENTO DE IVA
                   </td>
-                  <td className="py-1.5 px-3 text-right font-mono text-slate-500 w-28">
+                  <td className="pt-2 pb-2.5 px-3 text-right font-mono text-slate-500 w-28 align-middle leading-tight">
                     0.00
                   </td>
                 </tr>
                 <tr>
-                  <td className="py-1.5 px-3 font-semibold text-slate-700 border-r border-slate-200 text-[11px]">
+                  <td className="pt-2 pb-2.5 px-3 font-semibold text-slate-700 border-r border-slate-200 text-[11px] align-middle leading-tight">
                     SUBTOTAL SIN IMPUESTOS
                   </td>
-                  <td className="py-1.5 px-3 text-right font-mono font-medium text-slate-900 w-28">
+                  <td className="pt-2 pb-2.5 px-3 text-right font-mono font-medium text-slate-900 w-28 align-middle leading-tight">
                     {subtotal15.toFixed(2)}
                   </td>
                 </tr>
                 <tr>
-                  <td className="py-1.5 px-3 font-semibold text-slate-700 border-r border-slate-200 text-[11px]">
+                  <td className="pt-2 pb-2.5 px-3 font-semibold text-slate-700 border-r border-slate-200 text-[11px] align-middle leading-tight">
                     TOTAL DESCUENTO
                   </td>
-                  <td className="py-1.5 px-3 text-right font-mono text-slate-500 w-28">
+                  <td className="pt-2 pb-2.5 px-3 text-right font-mono text-slate-500 w-28 align-middle leading-tight">
                     0.00
                   </td>
                 </tr>
                 <tr>
-                  <td className="py-1.5 px-3 font-semibold text-slate-700 border-r border-slate-200 text-[11px]">
+                  <td className="pt-2 pb-2.5 px-3 font-semibold text-slate-700 border-r border-slate-200 text-[11px] align-middle leading-tight">
                     IVA 15%
                   </td>
-                  <td className="py-1.5 px-3 text-right font-mono font-medium text-slate-900 w-28">
+                  <td className="pt-2 pb-2.5 px-3 text-right font-mono font-medium text-slate-900 w-28 align-middle leading-tight">
                     {totalIva15.toFixed(2)}
                   </td>
                 </tr>
                 <tr className="bg-blue-50/70 font-black text-slate-900 text-xs sm:text-sm">
-                  <td className="py-2.5 px-3 text-blue-950 font-black border-r border-blue-200/80">
+                  <td className="pt-2.5 pb-3 px-3 text-blue-950 font-black border-r border-blue-200/80 align-middle leading-tight">
                     VALOR TOTAL
                   </td>
-                  <td className="py-2.5 px-3 text-right font-mono font-black text-blue-900 text-sm sm:text-base w-28">
+                  <td className="pt-2.5 pb-3 px-3 text-right font-mono font-black text-blue-900 text-sm sm:text-base w-28 align-middle leading-tight">
                     ${invoice.total.toFixed(2)}
                   </td>
                 </tr>
@@ -621,33 +621,33 @@ export const InvoiceRideDocument: React.FC<InvoiceRideDocumentProps> = ({
               <table className="w-full text-xs text-left border-collapse">
                 <thead>
                   <tr className="bg-blue-50/70 border-b border-blue-200/80 text-blue-950 text-[10px] font-bold tracking-tight">
-                    <th className="py-1.5 px-2.5 border-r border-blue-200/60 w-24">Cod. Principal</th>
-                    <th className="py-1.5 px-2 border-r border-blue-200/60 text-right w-14">Cantidad</th>
-                    <th className="py-1.5 px-2.5 border-r border-blue-200/60">Descripción</th>
-                    <th className="py-1.5 px-2 border-r border-blue-200/60 text-right w-20">Precio Unitario</th>
-                    <th className="py-1.5 px-2 border-r border-blue-200/60 text-right w-14">Descuento</th>
-                    <th className="py-1.5 px-2.5 text-right w-20">Precio Total</th>
+                    <th className="pt-2 pb-2.5 px-2.5 border-r border-blue-200/60 w-24 align-middle leading-tight">Cod. Principal</th>
+                    <th className="pt-2 pb-2.5 px-2 border-r border-blue-200/60 text-right w-14 align-middle leading-tight">Cantidad</th>
+                    <th className="pt-2 pb-2.5 px-2.5 border-r border-blue-200/60 align-middle leading-tight">Descripción</th>
+                    <th className="pt-2 pb-2.5 px-2 border-r border-blue-200/60 text-right w-20 align-middle leading-tight">Precio Unitario</th>
+                    <th className="pt-2 pb-2.5 px-2 border-r border-blue-200/60 text-right w-14 align-middle leading-tight">Descuento</th>
+                    <th className="pt-2 pb-2.5 px-2.5 text-right w-20 align-middle leading-tight">Precio Total</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 text-slate-800">
                   {page.lines.map((line, idx) => (
                     <tr key={idx} className="hover:bg-slate-50/50">
-                      <td className="py-1.5 px-2.5 border-r border-slate-200 font-mono text-[10.5px] font-semibold text-slate-800 leading-normal align-middle">
+                      <td className="pt-2 pb-2.5 px-2.5 border-r border-slate-200 font-mono text-[10.5px] font-semibold text-slate-800 leading-tight align-middle">
                         {line.codigoPrincipal}
                       </td>
-                      <td className="py-1.5 px-2 border-r border-slate-200 text-right font-mono text-[10.5px] leading-normal align-middle">
+                      <td className="pt-2 pb-2.5 px-2 border-r border-slate-200 text-right font-mono text-[10.5px] leading-tight align-middle">
                         {line.cantidad.toFixed(2)}
                       </td>
-                      <td className="py-1.5 px-2.5 border-r border-slate-200 text-slate-900 text-[11px] font-medium leading-normal align-middle">
+                      <td className="pt-2 pb-2.5 px-2.5 border-r border-slate-200 text-slate-900 text-[11px] font-medium leading-snug align-middle">
                         {line.descripcion}
                       </td>
-                      <td className="py-1.5 px-2 border-r border-slate-200 text-right font-mono text-[10.5px] leading-normal align-middle">
+                      <td className="pt-2 pb-2.5 px-2 border-r border-slate-200 text-right font-mono text-[10.5px] leading-tight align-middle">
                         {line.precioUnitarioSinIva.toFixed(4)}
                       </td>
-                      <td className="py-1.5 px-2 border-r border-slate-200 text-right font-mono text-[10.5px] text-slate-500 leading-normal align-middle">
+                      <td className="pt-2 pb-2.5 px-2 border-r border-slate-200 text-right font-mono text-[10.5px] text-slate-500 leading-tight align-middle">
                         0.00
                       </td>
-                      <td className="py-1.5 px-2.5 text-right font-mono font-semibold text-slate-900 text-[10.5px] leading-normal align-middle">
+                      <td className="pt-2 pb-2.5 px-2.5 text-right font-mono font-semibold text-slate-900 text-[10.5px] leading-tight align-middle">
                         {line.precioTotalSinImpuesto.toFixed(2)}
                       </td>
                     </tr>
@@ -690,16 +690,16 @@ export const InvoiceRideDocument: React.FC<InvoiceRideDocumentProps> = ({
                     <table className="w-full text-xs text-left border-collapse">
                       <thead>
                         <tr className="bg-blue-50/70 border-b border-blue-200/80 text-blue-950 text-[10px] font-bold tracking-tight">
-                          <th className="py-1.5 px-3 border-r border-blue-200/60">Forma de pago</th>
-                          <th className="py-1.5 px-3 text-right w-24">Valor</th>
+                          <th className="pt-2 pb-2.5 px-3 border-r border-blue-200/60 align-middle leading-tight">Forma de pago</th>
+                          <th className="pt-2 pb-2.5 px-3 text-right w-24 align-middle leading-tight">Valor</th>
                         </tr>
                       </thead>
                       <tbody>
                         <tr>
-                          <td className="py-1.5 px-3 border-r border-slate-200 text-[10.5px] text-slate-800 leading-normal">
+                          <td className="pt-2 pb-2.5 px-3 border-r border-slate-200 text-[10.5px] text-slate-800 leading-snug align-middle">
                             20 - OTROS CON UTILIZACION DEL SISTEMA FINANCIERO
                           </td>
-                          <td className="py-1.5 px-3 text-right font-mono font-bold text-slate-900 leading-normal">
+                          <td className="pt-2 pb-2.5 px-3 text-right font-mono font-bold text-slate-900 leading-tight align-middle">
                             {formatCurrency(invoice.total)}
                           </td>
                         </tr>
@@ -713,66 +713,66 @@ export const InvoiceRideDocument: React.FC<InvoiceRideDocumentProps> = ({
                   <table className="w-full text-xs border-collapse">
                     <tbody className="divide-y divide-slate-200">
                       <tr>
-                        <td className="py-1 px-2.5 font-semibold text-slate-700 border-r border-slate-200 text-[10.5px] leading-normal">
+                        <td className="pt-1.5 pb-2 px-2.5 font-semibold text-slate-700 border-r border-slate-200 text-[10.5px] leading-tight align-middle">
                           SUBTOTAL 15%
                         </td>
-                        <td className="py-1 px-2.5 text-right font-mono font-medium text-slate-900 w-24 leading-normal">
+                        <td className="pt-1.5 pb-2 px-2.5 text-right font-mono font-medium text-slate-900 w-24 leading-tight align-middle">
                           {subtotal15.toFixed(2)}
                         </td>
                       </tr>
                       <tr>
-                        <td className="py-1 px-2.5 font-semibold text-slate-700 border-r border-slate-200 text-[10.5px] leading-normal">
+                        <td className="pt-1.5 pb-2 px-2.5 font-semibold text-slate-700 border-r border-slate-200 text-[10.5px] leading-tight align-middle">
                           SUBTOTAL 0%
                         </td>
-                        <td className="py-1 px-2.5 text-right font-mono text-slate-500 w-24 leading-normal">
+                        <td className="pt-1.5 pb-2 px-2.5 text-right font-mono text-slate-500 w-24 leading-tight align-middle">
                           0.00
                         </td>
                       </tr>
                       <tr>
-                        <td className="py-1 px-2.5 font-semibold text-slate-700 border-r border-slate-200 text-[10.5px] leading-normal">
+                        <td className="pt-1.5 pb-2 px-2.5 font-semibold text-slate-700 border-r border-slate-200 text-[10.5px] leading-tight align-middle">
                           SUBTOTAL NO OBJETO DE IVA
                         </td>
-                        <td className="py-1 px-2.5 text-right font-mono text-slate-500 w-24 leading-normal">
+                        <td className="pt-1.5 pb-2 px-2.5 text-right font-mono text-slate-500 w-24 leading-tight align-middle">
                           0.00
                         </td>
                       </tr>
                       <tr>
-                        <td className="py-1 px-2.5 font-semibold text-slate-700 border-r border-slate-200 text-[10.5px] leading-normal">
+                        <td className="pt-1.5 pb-2 px-2.5 font-semibold text-slate-700 border-r border-slate-200 text-[10.5px] leading-tight align-middle">
                           SUBTOTAL EXENTO DE IVA
                         </td>
-                        <td className="py-1 px-2.5 text-right font-mono text-slate-500 w-24 leading-normal">
+                        <td className="pt-1.5 pb-2 px-2.5 text-right font-mono text-slate-500 w-24 leading-tight align-middle">
                           0.00
                         </td>
                       </tr>
                       <tr>
-                        <td className="py-1 px-2.5 font-semibold text-slate-700 border-r border-slate-200 text-[10.5px] leading-normal">
+                        <td className="pt-1.5 pb-2 px-2.5 font-semibold text-slate-700 border-r border-slate-200 text-[10.5px] leading-tight align-middle">
                           SUBTOTAL SIN IMPUESTOS
                         </td>
-                        <td className="py-1 px-2.5 text-right font-mono font-medium text-slate-900 w-24 leading-normal">
+                        <td className="pt-1.5 pb-2 px-2.5 text-right font-mono font-medium text-slate-900 w-24 leading-tight align-middle">
                           {subtotal15.toFixed(2)}
                         </td>
                       </tr>
                       <tr>
-                        <td className="py-1 px-2.5 font-semibold text-slate-700 border-r border-slate-200 text-[10.5px] leading-normal">
+                        <td className="pt-1.5 pb-2 px-2.5 font-semibold text-slate-700 border-r border-slate-200 text-[10.5px] leading-tight align-middle">
                           TOTAL DESCUENTO
                         </td>
-                        <td className="py-1 px-2.5 text-right font-mono text-slate-500 w-24 leading-normal">
+                        <td className="pt-1.5 pb-2 px-2.5 text-right font-mono text-slate-500 w-24 leading-tight align-middle">
                           0.00
                         </td>
                       </tr>
                       <tr>
-                        <td className="py-1 px-2.5 font-semibold text-slate-700 border-r border-slate-200 text-[10.5px] leading-normal">
+                        <td className="pt-1.5 pb-2 px-2.5 font-semibold text-slate-700 border-r border-slate-200 text-[10.5px] leading-tight align-middle">
                           IVA 15%
                         </td>
-                        <td className="py-1 px-2.5 text-right font-mono font-medium text-slate-900 w-24 leading-normal">
+                        <td className="pt-1.5 pb-2 px-2.5 text-right font-mono font-medium text-slate-900 w-24 leading-tight align-middle">
                           {totalIva15.toFixed(2)}
                         </td>
                       </tr>
                       <tr className="bg-blue-50/70 font-black text-slate-900 text-xs">
-                        <td className="py-1.5 px-2.5 text-blue-950 font-black border-r border-blue-200/80 leading-normal">
+                        <td className="pt-2 pb-2 px-2.5 text-blue-950 font-black border-r border-blue-200/80 leading-tight align-middle">
                           VALOR TOTAL
                         </td>
-                        <td className="py-1.5 px-2.5 text-right font-mono font-black text-blue-900 text-xs sm:text-sm w-24 leading-normal">
+                        <td className="pt-2 pb-2 px-2.5 text-right font-mono font-black text-blue-900 text-xs sm:text-sm w-24 leading-tight align-middle">
                           ${invoice.total.toFixed(2)}
                         </td>
                       </tr>
