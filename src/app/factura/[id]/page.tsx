@@ -44,7 +44,6 @@ import {
   AlertCircle,
   Info,
   X,
-  Send,
 } from 'lucide-react';
 
 export default function PublicInvoicePage({
@@ -211,8 +210,16 @@ export default function PublicInvoicePage({
       setSriAuthNum(invoice.sriAuthorizationNumber || null);
       setSriAuthDate(invoice.sriAuthorizationDate || null);
       setSriErrorMsg(invoice.sriErrorMessage || null);
+
+      // Si el comprobante está en cola de autorización del SRI, consultar automáticamente para resolverlo
+      if (
+        invoice.claveAcceso &&
+        (invoice.sriStatus === 'EN PROCESO' || invoice.sriStatus === 'RECIBIDA')
+      ) {
+        handleConsultarSri();
+      }
     }
-  }, [invoice]);
+  }, [invoice?.id, invoice?.sriStatus]);
 
   const handleConsultarSri = async () => {
     if (!claveAcceso) return;
@@ -541,20 +548,6 @@ export default function PublicInvoicePage({
 
         {/* Action Controls */}
         <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-          {/* Transmitir al SRI si está pendiente */}
-          {(!sriStatus || sriStatus === 'PENDING') && (
-            <button
-              type="button"
-              onClick={handleReintentarSri}
-              disabled={isRetryingSri}
-              title="Transmitir comprobante al SRI para autorización oficial"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 active:scale-[0.97] text-white rounded-xl text-xs font-bold shadow-xs transition-all disabled:opacity-50 cursor-pointer"
-            >
-              <Send className={`w-3.5 h-3.5 ${isRetryingSri ? 'animate-spin' : ''}`} />
-              <span>{isRetryingSri ? 'Transmitiendo...' : 'Transmitir al SRI'}</span>
-            </button>
-          )}
-
           {/* Reintentar en caso de devolución */}
           {(sriStatus === 'DEVUELTA' || sriStatus === 'NO AUTORIZADO') && (
             <button
@@ -562,10 +555,10 @@ export default function PublicInvoicePage({
               onClick={handleReintentarSri}
               disabled={isRetryingSri}
               title="Reintentar emisión SRI"
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-rose-600 hover:bg-rose-700 active:scale-[0.97] text-white rounded-xl text-xs font-semibold shadow-xs transition-all disabled:opacity-50 cursor-pointer"
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-rose-600 hover:bg-rose-700 active:scale-[0.97] text-white rounded-xl text-xs font-semibold shadow-xs transition-all disabled:opacity-50 cursor-pointer"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isRetryingSri ? 'animate-spin' : ''}`} />
-              <span className="hidden xs:inline">{isRetryingSri ? 'Reemitiendo...' : 'Reintentar SRI'}</span>
+              <span className="hidden xs:inline">{isRetryingSri ? 'Reemitiendo...' : 'Reintentar'}</span>
             </button>
           )}
 

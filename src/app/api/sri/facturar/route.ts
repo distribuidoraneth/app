@@ -102,10 +102,19 @@ export async function POST(req: NextRequest) {
     let sriRecepcion = await enviarRecepcionSRI(xml, ambiente);
     let sriAutorizacion = null;
 
-    // Si fue recibida, esperar 1.5s y consultar autorización
+    // Si fue recibida, consultar autorización con reintentos para dar tiempo al SRI
     if (sriRecepcion.estado === 'RECIBIDA') {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      sriAutorizacion = await consultarAutorizacionSRI(claveAcceso, ambiente);
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        await new Promise((resolve) => setTimeout(resolve, attempt === 1 ? 2500 : 2000));
+        sriAutorizacion = await consultarAutorizacionSRI(claveAcceso, ambiente);
+        if (
+          sriAutorizacion?.estado === 'AUTORIZADO' ||
+          sriAutorizacion?.estado === 'DEVUELTA' ||
+          sriAutorizacion?.estado === 'NO AUTORIZADO'
+        ) {
+          break;
+        }
+      }
     }
 
     const finalStatus =
