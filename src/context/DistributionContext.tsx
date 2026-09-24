@@ -103,6 +103,8 @@ interface DistributionContextType {
     invoices: Invoice[];
   }>;
   currentSecuencial: number;
+  setManualSecuencial: (newSeq: number) => Promise<boolean>;
+  updateInvoiceSequence: (invoiceId: string, newSeq: number) => Promise<Invoice | null>;
 }
 
 const DistributionContext = createContext<DistributionContextType | undefined>(undefined);
@@ -112,11 +114,13 @@ export const MIN_INVOICE_SEQUENCE_BASE = 119;
 export const SEQUENCE_STORAGE_KEY = 'distribuidora_aneth_last_sequence_prod';
 
 export function getNextInvoiceSequence(invoicesList?: Invoice[], currentSecuencialBase?: number): number {
-  let maxSeq = MIN_INVOICE_SEQUENCE_BASE;
-
-  if (typeof currentSecuencialBase === 'number' && currentSecuencialBase > maxSeq) {
-    maxSeq = currentSecuencialBase;
+  // 1. Si currentSecuencialBase fue provisto y es un número válido (e.g. 326 configurado en la base de datos),
+  // la base de datos es la autoridad oficial y el siguiente secuencial es exactamente base + 1 (ej: 327).
+  if (typeof currentSecuencialBase === 'number' && currentSecuencialBase >= MIN_INVOICE_SEQUENCE_BASE) {
+    return currentSecuencialBase + 1;
   }
+
+  let maxSeq = MIN_INVOICE_SEQUENCE_BASE;
 
   if (typeof window !== 'undefined') {
     try {
@@ -134,8 +138,12 @@ export function getNextInvoiceSequence(invoicesList?: Invoice[], currentSecuenci
 
   if (Array.isArray(invoicesList)) {
     for (const inv of invoicesList) {
-      // No tomar en cuenta facturas emitidas en ambiente de pruebas (1) para calcular el secuencial oficial de producción (2)
+      // No tomar en cuenta facturas emitidas en ambiente de pruebas (1)
       if (inv.ambiente === '1') continue;
+      // No tomar en cuenta facturas anuladas ni aquellas que fallaron/fueron devueltas sin autorización
+      if (inv.status === 'anulada') continue;
+      if (inv.sriStatus && inv.sriStatus !== 'AUTORIZADO') continue;
+
       const num = parseInt(inv.invoiceNumber?.replace(/\D/g, '')?.slice(-9) || '0', 10);
       if (num > maxSeq) {
         maxSeq = num;
@@ -149,10 +157,7 @@ export function getNextInvoiceSequence(invoicesList?: Invoice[], currentSecuenci
 export function recordUsedInvoiceSequence(seq: number): void {
   if (typeof window !== 'undefined' && seq >= MIN_INVOICE_SEQUENCE_BASE) {
     try {
-      const current = parseInt(localStorage.getItem(SEQUENCE_STORAGE_KEY) || '0', 10);
-      if (seq > current) {
-        localStorage.setItem(SEQUENCE_STORAGE_KEY, String(seq));
-      }
+      localStorage.setItem(SEQUENCE_STORAGE_KEY, String(seq));
     } catch {
       // ignore
     }
@@ -292,11 +297,8 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
 
       if (dbTaxProfile && typeof dbTaxProfile.current_secuencial === 'number') {
         const profileSeq = Math.max(dbTaxProfile.current_secuencial, MIN_INVOICE_SEQUENCE_BASE);
-        setCurrentSecuencial((prev) => {
-          const updated = Math.max(prev, profileSeq);
-          recordUsedInvoiceSequence(updated);
-          return updated;
-        });
+        setCurrentSecuencial(profileSeq);
+        recordUsedInvoiceSequence(profileSeq);
       }
 
       if (dbProducts !== null) {
@@ -1288,6 +1290,50 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
     return null;
   };
 
+  const setManualSecuencial = async (newSeq: number): Promise<boolean> => {
+    if (!newSeq || newSeq < MIN_INVOICE_SEQUENCE_BASE) return false;
+    setCurrentSecuencial(newSeq);
+    recordUsedInvoiceSequence(newSeq);
+    return await updateCompanySecuencialInDb(newSeq);
+  };
+
+  const updateInvoiceSequence = async (invoiceId: string, newSeq: number): Promise<Invoice | null> => {
+    if (!invoiceId || !newSeq || newSeq < MIN_INVOICE_SEQUENCE_BASE) return null;
+    const inv = invoices.find(
+      (i) => i.id === invoiceId || i.invoiceNumber === invoiceId || i.invoiceNumber.endsWith(String(newSeq).padStart(9, '0'))
+    );
+    if (!inv) return null;
+
+    const formattedNum = `001-001-${String(newSeq).padStart(9, '0')}`;
+    const ambienteVal: '1' | '2' = ((DEFAULT_TAX_PROFILE.ambiente || '2') === '1' ? '1' : '2') as '1' | '2';
+    const nuevaClave = generarClaveAcceso({
+      fecha: new Date(),
+      ruc: DEFAULT_TAX_PROFILE.ruc,
+      ambiente: ambienteVal,
+      establecimiento: DEFAULT_TAX_PROFILE.establecimiento || '001',
+      puntoEmision: DEFAULT_TAX_PROFILE.puntoEmision || '001',
+      secuencial: newSeq,
+    });
+
+    const updated: Invoice = {
+      ...inv,
+      invoiceNumber: formattedNum,
+      claveAcceso: nuevaClave,
+      sriStatus: 'PENDING',
+      sriAuthorizationNumber: undefined,
+      sriAuthorizationDate: undefined,
+      sriErrorMessage: undefined,
+    };
+
+    setInvoices((prev) => prev.map((i) => (i.id === inv.id ? updated : i)));
+    setCurrentSecuencial(newSeq);
+    recordUsedInvoiceSequence(newSeq);
+    await updateCompanySecuencialInDb(newSeq);
+    await saveInvoiceToDb(updated);
+
+    return updated;
+  };
+
   return (
     <DistributionContext.Provider
       value={{
@@ -1326,6 +1372,8 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
         ensureOrderLoaded,
         loadClientPortalData,
         currentSecuencial,
+        setManualSecuencial,
+        updateInvoiceSequence,
       }}
     >
       {children}

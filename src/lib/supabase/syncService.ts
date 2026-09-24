@@ -1230,7 +1230,7 @@ export async function updateCompanySecuencialInDb(newSecuencial: number): Promis
       .eq('ruc', DEFAULT_TAX_PROFILE.ruc)
       .maybeSingle();
 
-    if (existing && newSecuencial > (existing.current_secuencial || 0)) {
+    if (existing) {
       await supabase
         .from('company_tax_profiles')
         .update({

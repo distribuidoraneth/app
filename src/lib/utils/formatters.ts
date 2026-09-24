@@ -519,8 +519,7 @@ export function expandCartItemsToFacturaLines(
   return lines;
 }
 
-export function generateWhatsAppOrderLink(params: {
-  phone: string;
+export function formatWhatsAppOrderMessage(params: {
   clientName: string;
   orderNumber: string;
   total: number;
@@ -531,13 +530,6 @@ export function generateWhatsAppOrderLink(params: {
   invoiceNumber?: string;
   invoiceUrl?: string;
 }): string {
-  let cleanPhone = params.phone.replace(/[^0-9]/g, '');
-  if (cleanPhone.startsWith('0')) {
-    cleanPhone = '593' + cleanPhone.slice(1);
-  } else if (!cleanPhone.startsWith('593')) {
-    cleanPhone = '593' + cleanPhone;
-  }
-
   const invoiceRef = params.invoiceNumber || params.orderNumber;
   const invLink =
     params.invoiceUrl ||
@@ -577,8 +569,43 @@ export function generateWhatsAppOrderLink(params: {
   }
 
   message += `\n¡Gracias por su preferencia!`;
+  return message;
+}
 
-  return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+export function generateWhatsAppOrderLink(params: {
+  phone?: string | null;
+  clientName: string;
+  orderNumber: string;
+  total: number;
+  amountPaid?: number;
+  debtBalance?: number;
+  promisedCollectionDate?: string;
+  promisedCollectionTime?: string;
+  invoiceNumber?: string;
+  invoiceUrl?: string;
+}): string {
+  const rawDigits = (params.phone || '').replace(/[^0-9]/g, '');
+  let cleanPhone = '';
+
+  if (rawDigits.length >= 8) {
+    if (rawDigits.startsWith('0')) {
+      cleanPhone = '593' + rawDigits.slice(1);
+    } else if (rawDigits.startsWith('593')) {
+      cleanPhone = rawDigits;
+    } else {
+      cleanPhone = '593' + rawDigits;
+    }
+  }
+
+  const message = formatWhatsAppOrderMessage(params);
+
+  // Si tiene número válido, abre el chat directo con el cliente
+  if (cleanPhone) {
+    return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+  }
+
+  // Si no tiene número registrado, abre WhatsApp permitiendo seleccionar cualquier contacto/grupo
+  return `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
 }
 
 export function getWazeNavigationUrl(lat: number, lng: number): string {

@@ -78,18 +78,7 @@ export async function downloadInvoicePdf(
           clonedPage.style.boxShadow = 'none';
           clonedPage.style.borderRadius = '0';
           clonedPage.style.border = 'none';
-          clonedPage.style.fontFamily = 'Arial, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
         }
-
-        // Asegurar que ninguna celda ni bloque corte las letras o desbordes verticales
-        const tableCells = clonedDoc.querySelectorAll('td, th, span');
-        tableCells.forEach((node) => {
-          if (node instanceof HTMLElement) {
-            node.style.overflow = 'visible';
-            node.style.lineHeight = '1.35';
-            node.style.verticalAlign = 'middle';
-          }
-        });
 
         // Eliminar enlaces generados automáticamente por iOS WebKit Data Detectors
         const links = clonedDoc.querySelectorAll('a');

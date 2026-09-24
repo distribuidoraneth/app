@@ -3,6 +3,7 @@ import { getServiceSupabase } from '@/lib/supabase/admin';
 import { DEFAULT_TAX_PROFILE } from '@/lib/sri/xmlBuilder';
 
 export const dynamic = 'force-dynamic';
+export const maxDuration = 30;
 
 const MIN_BASE_SEQUENCE = 119;
 
@@ -96,19 +97,17 @@ export async function POST(req: NextRequest) {
       .eq('ruc', ruc)
       .maybeSingle();
 
-    const currentInDb = existing?.current_secuencial ? Number(existing.current_secuencial) : MIN_BASE_SEQUENCE;
-    const finalSeq = Math.max(currentInDb, newSeq);
+    const force = Boolean(body?.force);
+    const finalSeq = force ? newSeq : newSeq; // Respetar el número indicado explícitamente
 
     if (existing) {
-      if (newSeq > currentInDb) {
-        await sbAdmin
-          .from('company_tax_profiles')
-          .update({
-            current_secuencial: finalSeq,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', existing.id);
-      }
+      await sbAdmin
+        .from('company_tax_profiles')
+        .update({
+          current_secuencial: finalSeq,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', existing.id);
     } else {
       await sbAdmin.from('company_tax_profiles').insert({
         ruc,

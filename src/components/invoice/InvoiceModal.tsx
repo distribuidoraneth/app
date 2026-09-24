@@ -131,8 +131,18 @@ export function InvoiceModal({
       }
     }
 
+    let targetPhone = invoice.clientWhatsapp?.trim();
+    if (!targetPhone) {
+      const input = window.prompt(
+        'El cliente no tiene teléfono guardado.\n\n• Ingrese un número para enviárselo directamente, o\n• Presione "Aceptar" para elegir a cualquier contacto en su WhatsApp:',
+        ''
+      );
+      if (input === null) return;
+      targetPhone = input.trim();
+    }
+
     const link = generateWhatsAppOrderLink({
-      phone: invoice.clientWhatsapp,
+      phone: targetPhone,
       clientName: invoice.clientName,
       orderNumber: safeOrderNum,
       total: invoice.total,

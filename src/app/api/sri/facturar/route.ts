@@ -5,9 +5,12 @@ import { signXmlXadesBes } from '@/lib/sri/signer';
 import { enviarRecepcionSRI, consultarAutorizacionSRI } from '@/lib/sri/soapClient';
 import { getServiceSupabase } from '@/lib/supabase/admin';
 
+export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
+
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const body = await req.json().catch(() => ({}));
     const {
       order,
       client,
@@ -22,6 +25,8 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+
+    const numericSeq = parseInt(String(secuencial || 1), 10) || 1;
 
     // 1. Obtener perfil tributario oficial desde Supabase con fallback a DEFAULT_TAX_PROFILE
     let activeProfile = { ...DEFAULT_TAX_PROFILE, ...taxProfile };
@@ -72,14 +77,14 @@ export async function POST(req: NextRequest) {
         ambiente,
         establecimiento: activeProfile.establecimiento,
         puntoEmision: activeProfile.puntoEmision,
-        secuencial,
+        secuencial: numericSeq,
       });
     }
 
     // 2. Construir XML Oficial SRI v1.1.0
     const rawXml = buildFacturaXml({
       claveAcceso,
-      secuencial,
+      secuencial: numericSeq,
       fechaEmision,
       company: activeProfile,
       cliente: {
@@ -106,23 +111,16 @@ export async function POST(req: NextRequest) {
       sriRecepcion.error?.includes('REGISTRADA') ||
       sriRecepcion.error?.includes('43');
 
-    // Si fue recibida o si ya estaba previamente registrada en el SRI, consultar autorización
+    // Si fue recibida o si ya estaba previamente registrada en el SRI, consultar autorización una vez rápida
+    // (el cliente continúa consultando automáticamente en segundo plano para evitar timeouts de servidor)
     if (sriRecepcion.estado === 'RECIBIDA' || isAlreadyRegistered) {
-      for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
         if (!isAlreadyRegistered) {
-          await new Promise((resolve) => setTimeout(resolve, attempt === 1 ? 2500 : 2000));
-        }
-        sriAutorizacion = await consultarAutorizacionSRI(claveAcceso, ambiente);
-        if (
-          sriAutorizacion?.estado === 'AUTORIZADO' ||
-          sriAutorizacion?.estado === 'DEVUELTA' ||
-          sriAutorizacion?.estado === 'NO AUTORIZADO'
-        ) {
-          break;
-        }
-        if (isAlreadyRegistered && attempt < 3) {
           await new Promise((resolve) => setTimeout(resolve, 1500));
         }
+        sriAutorizacion = await consultarAutorizacionSRI(claveAcceso, ambiente);
+      } catch (authErr) {
+        console.warn('[API facturar] Consulta inmediata de autorización en espera:', authErr);
       }
     }
 
@@ -145,7 +143,7 @@ export async function POST(req: NextRequest) {
         : undefined;
 
     // Si se emitió o procesó un secuencial válido, asegurar persistencia en company_tax_profiles
-    if (secuencial && Number(secuencial) >= 119) {
+    if (numericSeq && numericSeq >= 119) {
       try {
         const sbAdmin = getServiceSupabase();
         const { data: existing } = await sbAdmin
@@ -154,11 +152,11 @@ export async function POST(req: NextRequest) {
           .eq('ruc', activeProfile.ruc)
           .maybeSingle();
 
-        if (existing && Number(secuencial) > (existing.current_secuencial || 0)) {
+        if (existing) {
           await sbAdmin
             .from('company_tax_profiles')
             .update({
-              current_secuencial: Number(secuencial),
+              current_secuencial: numericSeq,
               updated_at: new Date().toISOString(),
             })
             .eq('id', existing.id);
@@ -171,7 +169,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: finalStatus === 'AUTORIZADO' || finalStatus === 'RECIBIDA' || finalStatus === 'EN PROCESO',
       claveAcceso,
-      secuencialCompleto: `${activeProfile.establecimiento}-${activeProfile.puntoEmision}-${String(secuencial).padStart(9, '0')}`,
+      secuencialCompleto: `${activeProfile.establecimiento}-${activeProfile.puntoEmision}-${String(numericSeq).padStart(9, '0')}`,
       xml,
       sriStatus: finalStatus,
       numeroAutorizacion: sriAutorizacion?.numeroAutorizacion || claveAcceso,
@@ -183,7 +181,11 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     console.error('Error en API Facturación SRI:', error);
     return NextResponse.json(
-      { error: error?.message || 'Error interno en emisión de factura SRI' },
+      {
+        success: false,
+        error: error?.message || 'Error interno en emisión de factura SRI',
+        sriStatus: 'DEVUELTA',
+      },
       { status: 500 }
     );
   }

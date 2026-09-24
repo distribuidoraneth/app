@@ -53,7 +53,7 @@ export default function PublicInvoicePage({
 }) {
   const resolvedParams = use(params);
   const router = useRouter();
-  const { invoices, orders, currentSecuencial } = useDistribution();
+  const { invoices, orders, currentSecuencial, updateInvoiceSequence } = useDistribution();
 
   const cleanId = useMemo(
     () => decodeURIComponent(resolvedParams.id || '').trim(),
@@ -319,22 +319,52 @@ export default function PublicInvoicePage({
     }
   };
 
+  const handleCambiarSecuencial = async () => {
+    if (!invoice) return;
+    const currentNum = parseInt(invoice.invoiceNumber.replace(/\D/g, '').slice(-9), 10) || 1;
+    const promptVal = window.prompt(
+      `Ingrese el número de secuencial para esta factura:\n(Por ejemplo: si en la base de datos definió 326, aquí debe ir 327):`,
+      String(currentNum)
+    );
+    if (!promptVal) return;
+    const newSeq = parseInt(promptVal.trim(), 10);
+    if (isNaN(newSeq) || newSeq < 119) {
+      alert('El secuencial debe ser un número entero válido >= 119.');
+      return;
+    }
+
+    try {
+      setIsRetryingSri(true);
+      setSriFeedback(null);
+      const updated = await updateInvoiceSequence(invoice.id, newSeq);
+      if (updated) {
+        setDbInvoice(updated);
+        setSriStatus('PENDING');
+        setSriErrorMsg(null);
+        setSriFeedback(`Secuencial actualizado a #${newSeq}. Ahora puede pulsar "Reintentar" para emitir al SRI con este número.`);
+      }
+    } catch (err: any) {
+      alert('Error al actualizar secuencial: ' + err?.message);
+    } finally {
+      setIsRetryingSri(false);
+    }
+  };
+
   const handleReintentarSri = async () => {
     if (!invoice) return;
     setIsRetryingSri(true);
     setSriFeedback(null);
     try {
+      // Solo considerar duplicado si el SRI explícitamente reporta error 45 (SECUENCIAL REGISTRADO)
       const isSequenceDuplicate =
-        sriErrorMsg?.includes('SECUENCIAL') ||
         sriErrorMsg?.includes('45') ||
-        sriErrorMsg?.includes('REGISTRADO') ||
-        sriStatus === 'DEVUELTA';
+        (sriErrorMsg?.toLowerCase().includes('secuencial') && sriErrorMsg?.toLowerCase().includes('registrado'));
 
       let seq = parseInt(invoice.invoiceNumber.replace(/\D/g, '').slice(-9), 10) || 1;
       let clave: string | undefined = claveAcceso;
 
       if (isSequenceDuplicate) {
-        const nextValid = getNextInvoiceSequence(invoices, Math.max(seq, currentSecuencial || 119));
+        const nextValid = getNextInvoiceSequence(invoices, currentSecuencial);
         seq = nextValid;
         clave = undefined; // Forzar generación de nueva clave limpia para el nuevo secuencial
         recordUsedInvoiceSequence(seq);
@@ -365,7 +395,15 @@ export default function PublicInvoicePage({
           claveAcceso: clave,
         }),
       });
-      const data = await res.json();
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setSriStatus('DEVUELTA');
+        setSriErrorMsg(data?.error || `Error del servidor (${res.status})`);
+        setSriFeedback(data?.error || `Error ${res.status}: No se pudo procesar la factura con el SRI.`);
+        return;
+      }
+
       if (data && data.sriStatus) {
         setSriStatus(data.sriStatus);
         setSriAuthNum(data.numeroAutorizacion);
@@ -467,8 +505,18 @@ export default function PublicInvoicePage({
       }
     }
 
+    let targetPhone = invoice.clientWhatsapp?.trim();
+    if (!targetPhone) {
+      const input = window.prompt(
+        'El cliente no tiene teléfono guardado.\n\n• Ingrese un número para enviárselo directamente, o\n• Presione "Aceptar" para elegir a cualquier contacto en su WhatsApp:',
+        ''
+      );
+      if (input === null) return;
+      targetPhone = input.trim();
+    }
+
     const link = generateWhatsAppOrderLink({
-      phone: invoice.clientWhatsapp,
+      phone: targetPhone,
       clientName: invoice.clientName,
       orderNumber: safeOrderNum,
       total: invoice.total,

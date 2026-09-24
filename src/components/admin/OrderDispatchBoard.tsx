@@ -165,8 +165,18 @@ export function OrderDispatchBoard() {
   const handleShareWhatsApp = (order: Order) => {
     const inv = invoices.find((i) => i.orderId === order.id || i.id === order.invoiceId);
 
+    let targetPhone = order.whatsappNumber?.trim();
+    if (!targetPhone) {
+      const input = window.prompt(
+        'El pedido no tiene teléfono guardado.\n\n• Ingrese un número para enviárselo directamente, o\n• Presione "Aceptar" para elegir a cualquier contacto en su WhatsApp:',
+        ''
+      );
+      if (input === null) return;
+      targetPhone = input.trim();
+    }
+
     const link = generateWhatsAppOrderLink({
-      phone: order.whatsappNumber,
+      phone: targetPhone,
       clientName: order.clientName,
       orderNumber: order.orderNumber,
       total: order.totalAmount,

@@ -180,8 +180,18 @@ export default function OrderDetailPage({
 
   const handleShareWhatsApp = () => {
     const inv = invoice;
+    let targetPhone = (order.whatsappNumber || client?.whatsappNumber || '').trim();
+    if (!targetPhone) {
+      const input = window.prompt(
+        'El pedido no tiene teléfono guardado.\n\n• Ingrese un número para enviárselo directamente, o\n• Presione "Aceptar" para elegir a cualquier contacto en su WhatsApp:',
+        ''
+      );
+      if (input === null) return;
+      targetPhone = input.trim();
+    }
+
     const url = generateWhatsAppOrderLink({
-      phone: order.whatsappNumber || client?.whatsappNumber || '',
+      phone: targetPhone,
       clientName: order.businessName || order.clientName,
       orderNumber: formatOrderNumber(order.orderNumber),
       total: order.totalAmount,
