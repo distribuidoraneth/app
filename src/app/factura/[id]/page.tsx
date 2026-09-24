@@ -127,19 +127,30 @@ export default function PublicInvoicePage({
   const [isLoadingDb, setIsLoadingDb] = useState<boolean>(!initialAvailable);
 
   React.useEffect(() => {
-    if (invoiceFromContext || localInvoice) {
-      setIsLoadingDb(false);
-      return;
-    }
-
     let isMounted = true;
-    setIsLoadingDb(!orderFromContext);
+    setIsLoadingDb(!invoiceFromContext && !localInvoice && !orderFromContext);
 
     getInvoiceByIdOrNumberFromDb(cleanId)
       .then((inv) => {
         if (isMounted) {
           if (inv) {
             setDbInvoice(inv);
+            // Sincronizar caché local para que futuras visitas tengan el estado oficial
+            try {
+              const storageKey = 'distribuidora_aneth_oficial_v12';
+              const saved = localStorage.getItem(storageKey);
+              if (saved) {
+                const parsed = JSON.parse(saved);
+                if (Array.isArray(parsed.invoices)) {
+                  parsed.invoices = parsed.invoices.map((existing: any) =>
+                    existing.id === inv.id || existing.invoiceNumber === inv.invoiceNumber
+                      ? { ...existing, ...inv }
+                      : existing
+                  );
+                  localStorage.setItem(storageKey, JSON.stringify(parsed));
+                }
+              }
+            } catch (_) {}
           }
           setIsLoadingDb(false);
         }
@@ -152,13 +163,28 @@ export default function PublicInvoicePage({
     return () => {
       isMounted = false;
     };
-  }, [invoiceFromContext, localInvoice, orderFromContext, cleanId]);
+  }, [cleanId, invoiceFromContext, localInvoice, orderFromContext]);
 
-  const invoice =
-    invoiceFromContext ||
-    localInvoice ||
-    dbInvoice ||
-    (orderFromContext ? reconstructInvoiceFromOrder(orderFromContext) : null);
+  const invoice = useMemo(() => {
+    const base =
+      invoiceFromContext ||
+      localInvoice ||
+      (orderFromContext ? reconstructInvoiceFromOrder(orderFromContext) : null);
+
+    if (!dbInvoice) return base;
+    if (!base) return dbInvoice;
+
+    // Priorizar datos oficiales actualizados de la base de datos (como AUTORIZADO)
+    return {
+      ...base,
+      ...dbInvoice,
+      sriStatus: dbInvoice.sriStatus || base.sriStatus,
+      sriAuthorizationNumber: dbInvoice.sriAuthorizationNumber || base.sriAuthorizationNumber,
+      sriAuthorizationDate: dbInvoice.sriAuthorizationDate || base.sriAuthorizationDate,
+      sriErrorMessage: dbInvoice.sriStatus === 'AUTORIZADO' ? undefined : (dbInvoice.sriErrorMessage ?? base.sriErrorMessage),
+      items: dbInvoice.items && dbInvoice.items.length > 0 ? dbInvoice.items : base.items,
+    };
+  }, [invoiceFromContext, localInvoice, orderFromContext, dbInvoice]);
 
   const claveAcceso = useMemo(() => {
     if (invoice?.claveAcceso) return invoice.claveAcceso;
@@ -211,10 +237,11 @@ export default function PublicInvoicePage({
       setSriAuthDate(invoice.sriAuthorizationDate || null);
       setSriErrorMsg(invoice.sriErrorMessage || null);
 
-      // Si el comprobante está en cola de autorización del SRI, consultar automáticamente para resolverlo
+      // Si el comprobante no está AUTORIZADO aún, consultar automáticamente para resolverlo
       if (
         invoice.claveAcceso &&
-        (invoice.sriStatus === 'EN PROCESO' || invoice.sriStatus === 'RECIBIDA')
+        invoice.sriStatus !== 'AUTORIZADO' &&
+        invoice.status !== 'anulada'
       ) {
         handleConsultarSri();
       }
@@ -239,15 +266,39 @@ export default function PublicInvoicePage({
         setSriStatus(data.estado);
         if (data.numeroAutorizacion) setSriAuthNum(data.numeroAutorizacion);
         if (data.fechaAutorizacion) setSriAuthDate(data.fechaAutorizacion);
-        if (data.error) setSriErrorMsg(data.error);
 
         if (data.estado === 'AUTORIZADO') {
+          setSriErrorMsg(null);
           setSriFeedback('¡Comprobante AUTORIZADO oficialmente por el SRI!');
         } else if (data.estado === 'RECIBIDA' || data.estado === 'EN PROCESO') {
           setSriFeedback('Comprobante recibido por el SRI (en cola de autorización).');
         } else {
+          setSriErrorMsg(data.error || 'No autorizado');
           setSriFeedback(data.error || 'Respuesta obtenida del SRI');
         }
+
+        // Sincronizar en localStorage
+        try {
+          const storageKey = 'distribuidora_aneth_oficial_v12';
+          const saved = localStorage.getItem(storageKey);
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed.invoices)) {
+              parsed.invoices = parsed.invoices.map((inv: any) =>
+                inv.id === invoice?.id || inv.invoiceNumber === invoice?.invoiceNumber
+                  ? {
+                      ...inv,
+                      sriStatus: data.estado,
+                      sriAuthorizationNumber: data.numeroAutorizacion || inv.sriAuthorizationNumber,
+                      sriAuthorizationDate: data.fechaAutorizacion || inv.sriAuthorizationDate,
+                      sriErrorMessage: data.estado === 'AUTORIZADO' ? undefined : (data.error || inv.sriErrorMessage),
+                    }
+                  : inv
+              );
+              localStorage.setItem(storageKey, JSON.stringify(parsed));
+            }
+          }
+        } catch (_) {}
 
         if (invoice) {
           saveInvoiceToDb({
@@ -255,7 +306,7 @@ export default function PublicInvoicePage({
             sriStatus: data.estado as any,
             sriAuthorizationNumber: data.numeroAutorizacion || invoice.sriAuthorizationNumber,
             sriAuthorizationDate: data.fechaAutorizacion || invoice.sriAuthorizationDate,
-            sriErrorMessage: data.error || invoice.sriErrorMessage,
+            sriErrorMessage: data.estado === 'AUTORIZADO' ? null : (data.error || invoice.sriErrorMessage || null),
           }).catch((e) => console.warn('Error al actualizar SRI en Supabase:', e));
         }
       } else {

@@ -102,10 +102,16 @@ export async function POST(req: NextRequest) {
     let sriRecepcion = await enviarRecepcionSRI(xml, ambiente);
     let sriAutorizacion = null;
 
-    // Si fue recibida, consultar autorización con reintentos para dar tiempo al SRI
-    if (sriRecepcion.estado === 'RECIBIDA') {
+    const isAlreadyRegistered =
+      sriRecepcion.error?.includes('REGISTRADA') ||
+      sriRecepcion.error?.includes('43');
+
+    // Si fue recibida o si ya estaba previamente registrada en el SRI, consultar autorización
+    if (sriRecepcion.estado === 'RECIBIDA' || isAlreadyRegistered) {
       for (let attempt = 1; attempt <= 3; attempt++) {
-        await new Promise((resolve) => setTimeout(resolve, attempt === 1 ? 2500 : 2000));
+        if (!isAlreadyRegistered) {
+          await new Promise((resolve) => setTimeout(resolve, attempt === 1 ? 2500 : 2000));
+        }
         sriAutorizacion = await consultarAutorizacionSRI(claveAcceso, ambiente);
         if (
           sriAutorizacion?.estado === 'AUTORIZADO' ||
@@ -113,6 +119,9 @@ export async function POST(req: NextRequest) {
           sriAutorizacion?.estado === 'NO AUTORIZADO'
         ) {
           break;
+        }
+        if (isAlreadyRegistered && attempt < 3) {
+          await new Promise((resolve) => setTimeout(resolve, 1500));
         }
       }
     }
@@ -125,10 +134,14 @@ export async function POST(req: NextRequest) {
         : 'DEVUELTA';
 
     const errorMessage =
-      sriRecepcion.estado === 'DEVUELTA'
+      finalStatus === 'AUTORIZADO'
+        ? undefined
+        : sriRecepcion.estado === 'DEVUELTA' && !isAlreadyRegistered
         ? sriRecepcion.error
         : sriAutorizacion?.estado === 'NO AUTORIZADO'
         ? sriAutorizacion.error
+        : isAlreadyRegistered && sriAutorizacion?.estado !== 'AUTORIZADO'
+        ? 'El comprobante ya fue recibido previamente por el SRI y se encuentra en validación.'
         : undefined;
 
     // Si se emitió o procesó un secuencial válido, asegurar persistencia en company_tax_profiles
