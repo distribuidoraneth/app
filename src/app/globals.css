@@ -41,6 +41,16 @@
     font-variant-numeric: tabular-nums;
   }
 
+  /* Centrado vertical estricto para tablas de facturación y documentos RIDE */
+  .invoice-web-view table td,
+  .invoice-web-view table th,
+  .invoice-pdf-page table td,
+  .invoice-pdf-page table th,
+  #invoice-printable-area table td,
+  #invoice-printable-area table th {
+    vertical-align: middle !important;
+  }
+
   /* Quitar flecha y chevron por defecto en campos de fecha (cumpleaños) */
   input[type="date"]::-webkit-calendar-picker-indicator,
   input[type="date"]::-webkit-inner-spin-button,

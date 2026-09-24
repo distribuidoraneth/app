@@ -277,56 +277,56 @@ export const InvoiceRideDocument: React.FC<InvoiceRideDocumentProps> = ({
           <table className="w-full min-w-[500px] sm:min-w-0 text-xs text-left border-collapse">
             <thead>
               <tr className="bg-blue-50/70 border-b border-blue-200/80 text-blue-950 text-[10px] sm:text-[10.5px] font-bold tracking-tight">
-                <th className="px-3 border-r border-blue-200/60 w-24 sm:w-28">
-                  <div className="min-h-[30px] flex items-center">Cod. Principal</div>
+                <th className="px-3 border-r border-blue-200/60 w-24 sm:w-28 align-middle">
+                  <div className="h-full min-h-[30px] flex items-center">Cod. Principal</div>
                 </th>
-                <th className="px-2 border-r border-blue-200/60 text-right w-14 sm:w-16">
-                  <div className="min-h-[30px] flex items-center justify-end">Cantidad</div>
+                <th className="px-2 border-r border-blue-200/60 text-right w-14 sm:w-16 align-middle">
+                  <div className="h-full min-h-[30px] flex items-center justify-end">Cantidad</div>
                 </th>
-                <th className="px-3 border-r border-blue-200/60">
-                  <div className="min-h-[30px] flex items-center">Descripción</div>
+                <th className="px-3 border-r border-blue-200/60 align-middle">
+                  <div className="h-full min-h-[30px] flex items-center">Descripción</div>
                 </th>
-                <th className="px-2.5 border-r border-blue-200/60 text-right w-20 sm:w-24">
-                  <div className="min-h-[30px] flex items-center justify-end">Precio Unitario</div>
+                <th className="px-2.5 border-r border-blue-200/60 text-right w-20 sm:w-24 align-middle">
+                  <div className="h-full min-h-[30px] flex items-center justify-end">Precio Unitario</div>
                 </th>
-                <th className="px-2 border-r border-blue-200/60 text-right w-14 sm:w-16">
-                  <div className="min-h-[30px] flex items-center justify-end">Descuento</div>
+                <th className="px-2 border-r border-blue-200/60 text-right w-14 sm:w-16 align-middle">
+                  <div className="h-full min-h-[30px] flex items-center justify-end">Descuento</div>
                 </th>
-                <th className="px-3 text-right w-20 sm:w-24">
-                  <div className="min-h-[30px] flex items-center justify-end">Precio Total</div>
+                <th className="px-3 text-right w-20 sm:w-24 align-middle">
+                  <div className="h-full min-h-[30px] flex items-center justify-end">Precio Total</div>
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 text-slate-800">
               {facturaLines.map((line, idx) => (
                 <tr key={idx} className="hover:bg-slate-50/50">
-                  <td className="px-3 border-r border-slate-200">
-                    <div className="min-h-[32px] flex items-center font-mono text-[10.5px] sm:text-[11px] font-semibold text-slate-800">
+                  <td className="px-3 border-r border-slate-200 align-middle">
+                    <div className="h-full min-h-[32px] flex items-center font-mono text-[10.5px] sm:text-[11px] font-semibold text-slate-800">
                       {line.codigoPrincipal}
                     </div>
                   </td>
-                  <td className="px-2 border-r border-slate-200">
-                    <div className="min-h-[32px] flex items-center justify-end font-mono text-[10.5px] sm:text-[11px]">
+                  <td className="px-2 border-r border-slate-200 align-middle">
+                    <div className="h-full min-h-[32px] flex items-center justify-end font-mono text-[10.5px] sm:text-[11px]">
                       {line.cantidad.toFixed(2)}
                     </div>
                   </td>
-                  <td className="px-3 border-r border-slate-200">
-                    <div className="min-h-[32px] py-1.5 flex items-center text-slate-900 text-xs font-medium leading-snug">
+                  <td className="px-3 border-r border-slate-200 align-middle">
+                    <div className="h-full min-h-[32px] py-1.5 flex items-center text-slate-900 text-xs font-medium leading-snug">
                       {line.descripcion}
                     </div>
                   </td>
-                  <td className="px-2.5 border-r border-slate-200">
-                    <div className="min-h-[32px] flex items-center justify-end font-mono text-[10.5px] sm:text-[11px]">
+                  <td className="px-2.5 border-r border-slate-200 align-middle">
+                    <div className="h-full min-h-[32px] flex items-center justify-end font-mono text-[10.5px] sm:text-[11px]">
                       {line.precioUnitarioSinIva.toFixed(4)}
                     </div>
                   </td>
-                  <td className="px-2 border-r border-slate-200">
-                    <div className="min-h-[32px] flex items-center justify-end font-mono text-[10.5px] sm:text-[11px] text-slate-500">
+                  <td className="px-2 border-r border-slate-200 align-middle">
+                    <div className="h-full min-h-[32px] flex items-center justify-end font-mono text-[10.5px] sm:text-[11px] text-slate-500">
                       0.00
                     </div>
                   </td>
-                  <td className="px-3">
-                    <div className="min-h-[32px] flex items-center justify-end font-mono font-semibold text-slate-900 text-[10.5px] sm:text-[11px]">
+                  <td className="px-3 align-middle">
+                    <div className="h-full min-h-[32px] flex items-center justify-end font-mono font-semibold text-slate-900 text-[10.5px] sm:text-[11px]">
                       {line.precioTotalSinImpuesto.toFixed(2)}
                     </div>
                   </td>
@@ -364,23 +364,23 @@ export const InvoiceRideDocument: React.FC<InvoiceRideDocumentProps> = ({
               <table className="w-full text-xs text-left border-collapse">
                 <thead>
                   <tr className="bg-blue-50/70 border-b border-blue-200/80 text-blue-950 text-[10.5px] font-bold tracking-tight">
-                    <th className="px-3 border-r border-blue-200/60">
-                      <div className="min-h-[28px] flex items-center">Forma de pago</div>
+                    <th className="px-3 border-r border-blue-200/60 align-middle">
+                      <div className="h-full min-h-[28px] flex items-center">Forma de pago</div>
                     </th>
-                    <th className="px-3 text-right w-24">
-                      <div className="min-h-[28px] flex items-center justify-end">Valor</div>
+                    <th className="px-3 text-right w-24 align-middle">
+                      <div className="h-full min-h-[28px] flex items-center justify-end">Valor</div>
                     </th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
-                    <td className="px-3 border-r border-slate-200">
-                      <div className="min-h-[32px] py-1 flex items-center text-[10.5px] sm:text-[11px] text-slate-800 leading-snug">
+                    <td className="px-3 border-r border-slate-200 align-middle">
+                      <div className="h-full min-h-[32px] py-1 flex items-center text-[10.5px] sm:text-[11px] text-slate-800 leading-snug">
                         {paymentInfo.name}
                       </div>
                     </td>
-                    <td className="px-3">
-                      <div className="min-h-[32px] flex items-center justify-end font-mono font-bold text-slate-900">
+                    <td className="px-3 align-middle">
+                      <div className="h-full min-h-[32px] flex items-center justify-end font-mono font-bold text-slate-900">
                         {formatCurrency(invoice.total)}
                       </div>
                     </td>
@@ -395,97 +395,97 @@ export const InvoiceRideDocument: React.FC<InvoiceRideDocumentProps> = ({
             <table className="w-full text-xs border-collapse">
               <tbody className="divide-y divide-slate-200">
                 <tr>
-                  <td className="px-3 border-r border-slate-200">
-                    <div className="min-h-[28px] flex items-center font-semibold text-slate-700 text-[11px]">
+                  <td className="px-3 border-r border-slate-200 align-middle">
+                    <div className="h-full min-h-[28px] flex items-center font-semibold text-slate-700 text-[11px]">
                       SUBTOTAL 15%
                     </div>
                   </td>
-                  <td className="px-3 w-28">
-                    <div className="min-h-[28px] flex items-center justify-end font-mono font-medium text-slate-900">
+                  <td className="px-3 w-28 align-middle">
+                    <div className="h-full min-h-[28px] flex items-center justify-end font-mono font-medium text-slate-900">
                       {subtotal15.toFixed(2)}
                     </div>
                   </td>
                 </tr>
                 <tr>
-                  <td className="px-3 border-r border-slate-200">
-                    <div className="min-h-[28px] flex items-center font-semibold text-slate-700 text-[11px]">
+                  <td className="px-3 border-r border-slate-200 align-middle">
+                    <div className="h-full min-h-[28px] flex items-center font-semibold text-slate-700 text-[11px]">
                       SUBTOTAL 0%
                     </div>
                   </td>
-                  <td className="px-3 w-28">
-                    <div className="min-h-[28px] flex items-center justify-end font-mono text-slate-500">
+                  <td className="px-3 w-28 align-middle">
+                    <div className="h-full min-h-[28px] flex items-center justify-end font-mono text-slate-500">
                       0.00
                     </div>
                   </td>
                 </tr>
                 <tr>
-                  <td className="px-3 border-r border-slate-200">
-                    <div className="min-h-[28px] flex items-center font-semibold text-slate-700 text-[11px]">
+                  <td className="px-3 border-r border-slate-200 align-middle">
+                    <div className="h-full min-h-[28px] flex items-center font-semibold text-slate-700 text-[11px]">
                       SUBTOTAL NO OBJETO DE IVA
                     </div>
                   </td>
-                  <td className="px-3 w-28">
-                    <div className="min-h-[28px] flex items-center justify-end font-mono text-slate-500">
+                  <td className="px-3 w-28 align-middle">
+                    <div className="h-full min-h-[28px] flex items-center justify-end font-mono text-slate-500">
                       0.00
                     </div>
                   </td>
                 </tr>
                 <tr>
-                  <td className="px-3 border-r border-slate-200">
-                    <div className="min-h-[28px] flex items-center font-semibold text-slate-700 text-[11px]">
+                  <td className="px-3 border-r border-slate-200 align-middle">
+                    <div className="h-full min-h-[28px] flex items-center font-semibold text-slate-700 text-[11px]">
                       SUBTOTAL EXENTO DE IVA
                     </div>
                   </td>
-                  <td className="px-3 w-28">
-                    <div className="min-h-[28px] flex items-center justify-end font-mono text-slate-500">
+                  <td className="px-3 w-28 align-middle">
+                    <div className="h-full min-h-[28px] flex items-center justify-end font-mono text-slate-500">
                       0.00
                     </div>
                   </td>
                 </tr>
                 <tr>
-                  <td className="px-3 border-r border-slate-200">
-                    <div className="min-h-[28px] flex items-center font-semibold text-slate-700 text-[11px]">
+                  <td className="px-3 border-r border-slate-200 align-middle">
+                    <div className="h-full min-h-[28px] flex items-center font-semibold text-slate-700 text-[11px]">
                       SUBTOTAL SIN IMPUESTOS
                     </div>
                   </td>
-                  <td className="px-3 w-28">
-                    <div className="min-h-[28px] flex items-center justify-end font-mono font-medium text-slate-900">
+                  <td className="px-3 w-28 align-middle">
+                    <div className="h-full min-h-[28px] flex items-center justify-end font-mono font-medium text-slate-900">
                       {subtotal15.toFixed(2)}
                     </div>
                   </td>
                 </tr>
                 <tr>
-                  <td className="px-3 border-r border-slate-200">
-                    <div className="min-h-[28px] flex items-center font-semibold text-slate-700 text-[11px]">
+                  <td className="px-3 border-r border-slate-200 align-middle">
+                    <div className="h-full min-h-[28px] flex items-center font-semibold text-slate-700 text-[11px]">
                       TOTAL DESCUENTO
                     </div>
                   </td>
-                  <td className="px-3 w-28">
-                    <div className="min-h-[28px] flex items-center justify-end font-mono text-slate-500">
+                  <td className="px-3 w-28 align-middle">
+                    <div className="h-full min-h-[28px] flex items-center justify-end font-mono text-slate-500">
                       0.00
                     </div>
                   </td>
                 </tr>
                 <tr>
-                  <td className="px-3 border-r border-slate-200">
-                    <div className="min-h-[28px] flex items-center font-semibold text-slate-700 text-[11px]">
+                  <td className="px-3 border-r border-slate-200 align-middle">
+                    <div className="h-full min-h-[28px] flex items-center font-semibold text-slate-700 text-[11px]">
                       IVA 15%
                     </div>
                   </td>
-                  <td className="px-3 w-28">
-                    <div className="min-h-[28px] flex items-center justify-end font-mono font-medium text-slate-900">
+                  <td className="px-3 w-28 align-middle">
+                    <div className="h-full min-h-[28px] flex items-center justify-end font-mono font-medium text-slate-900">
                       {totalIva15.toFixed(2)}
                     </div>
                   </td>
                 </tr>
                 <tr className="bg-blue-50/70 font-black text-slate-900">
-                  <td className="px-3 border-r border-blue-200/80">
-                    <div className="min-h-[34px] flex items-center text-blue-950 font-black text-xs sm:text-sm">
+                  <td className="px-3 border-r border-blue-200/80 align-middle">
+                    <div className="h-full min-h-[34px] flex items-center text-blue-950 font-black text-xs sm:text-sm">
                       VALOR TOTAL
                     </div>
                   </td>
-                  <td className="px-3 w-28">
-                    <div className="min-h-[34px] flex items-center justify-end font-mono font-black text-blue-900 text-sm sm:text-base">
+                  <td className="px-3 w-28 align-middle">
+                    <div className="h-full min-h-[34px] flex items-center justify-end font-mono font-black text-blue-900 text-sm sm:text-base">
                       ${invoice.total.toFixed(2)}
                     </div>
                   </td>
@@ -688,56 +688,56 @@ export const InvoiceRideDocument: React.FC<InvoiceRideDocumentProps> = ({
               <table className="w-full text-xs text-left border-collapse">
                 <thead>
                   <tr className="bg-blue-50/70 border-b border-blue-200/80 text-blue-950 text-[10px] font-bold tracking-tight">
-                    <th className="px-2.5 border-r border-blue-200/60 w-24">
-                      <div className="min-h-[28px] flex items-center">Cod. Principal</div>
+                    <th className="px-2.5 border-r border-blue-200/60 w-24 align-middle">
+                      <div className="h-full min-h-[28px] flex items-center">Cod. Principal</div>
                     </th>
-                    <th className="px-2 border-r border-blue-200/60 text-right w-14">
-                      <div className="min-h-[28px] flex items-center justify-end">Cantidad</div>
+                    <th className="px-2 border-r border-blue-200/60 text-right w-14 align-middle">
+                      <div className="h-full min-h-[28px] flex items-center justify-end">Cantidad</div>
                     </th>
-                    <th className="px-2.5 border-r border-blue-200/60">
-                      <div className="min-h-[28px] flex items-center">Descripción</div>
+                    <th className="px-2.5 border-r border-blue-200/60 align-middle">
+                      <div className="h-full min-h-[28px] flex items-center">Descripción</div>
                     </th>
-                    <th className="px-2 border-r border-blue-200/60 text-right w-20">
-                      <div className="min-h-[28px] flex items-center justify-end">Precio Unitario</div>
+                    <th className="px-2 border-r border-blue-200/60 text-right w-20 align-middle">
+                      <div className="h-full min-h-[28px] flex items-center justify-end">Precio Unitario</div>
                     </th>
-                    <th className="px-2 border-r border-blue-200/60 text-right w-14">
-                      <div className="min-h-[28px] flex items-center justify-end">Descuento</div>
+                    <th className="px-2 border-r border-blue-200/60 text-right w-14 align-middle">
+                      <div className="h-full min-h-[28px] flex items-center justify-end">Descuento</div>
                     </th>
-                    <th className="px-2.5 text-right w-20">
-                      <div className="min-h-[28px] flex items-center justify-end">Precio Total</div>
+                    <th className="px-2.5 text-right w-20 align-middle">
+                      <div className="h-full min-h-[28px] flex items-center justify-end">Precio Total</div>
                     </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 text-slate-800">
                   {page.lines.map((line, idx) => (
                     <tr key={idx} className="hover:bg-slate-50/50">
-                      <td className="px-2.5 border-r border-slate-200">
-                        <div className="min-h-[28px] flex items-center font-mono text-[10.5px] font-semibold text-slate-800">
+                      <td className="px-2.5 border-r border-slate-200 align-middle">
+                        <div className="h-full min-h-[28px] flex items-center font-mono text-[10.5px] font-semibold text-slate-800">
                           {line.codigoPrincipal}
                         </div>
                       </td>
-                      <td className="px-2 border-r border-slate-200">
-                        <div className="min-h-[28px] flex items-center justify-end font-mono text-[10.5px]">
+                      <td className="px-2 border-r border-slate-200 align-middle">
+                        <div className="h-full min-h-[28px] flex items-center justify-end font-mono text-[10.5px]">
                           {line.cantidad.toFixed(2)}
                         </div>
                       </td>
-                      <td className="px-2.5 border-r border-slate-200">
-                        <div className="min-h-[28px] py-1 flex items-center text-slate-900 text-[11px] font-medium leading-snug">
+                      <td className="px-2.5 border-r border-slate-200 align-middle">
+                        <div className="h-full min-h-[28px] py-1 flex items-center text-slate-900 text-[11px] font-medium leading-snug">
                           {line.descripcion}
                         </div>
                       </td>
-                      <td className="px-2 border-r border-slate-200">
-                        <div className="min-h-[28px] flex items-center justify-end font-mono text-[10.5px]">
+                      <td className="px-2 border-r border-slate-200 align-middle">
+                        <div className="h-full min-h-[28px] flex items-center justify-end font-mono text-[10.5px]">
                           {line.precioUnitarioSinIva.toFixed(4)}
                         </div>
                       </td>
-                      <td className="px-2 border-r border-slate-200">
-                        <div className="min-h-[28px] flex items-center justify-end font-mono text-[10.5px] text-slate-500">
+                      <td className="px-2 border-r border-slate-200 align-middle">
+                        <div className="h-full min-h-[28px] flex items-center justify-end font-mono text-[10.5px] text-slate-500">
                           0.00
                         </div>
                       </td>
-                      <td className="px-2.5">
-                        <div className="min-h-[28px] flex items-center justify-end font-mono font-semibold text-slate-900 text-[10.5px]">
+                      <td className="px-2.5 align-middle">
+                        <div className="h-full min-h-[28px] flex items-center justify-end font-mono font-semibold text-slate-900 text-[10.5px]">
                           {line.precioTotalSinImpuesto.toFixed(2)}
                         </div>
                       </td>
@@ -781,23 +781,23 @@ export const InvoiceRideDocument: React.FC<InvoiceRideDocumentProps> = ({
                     <table className="w-full text-xs text-left border-collapse">
                       <thead>
                         <tr className="bg-blue-50/70 border-b border-blue-200/80 text-blue-950 text-[10px] font-bold tracking-tight">
-                          <th className="px-3 border-r border-blue-200/60">
-                            <div className="min-h-[26px] flex items-center">Forma de pago</div>
+                          <th className="px-3 border-r border-blue-200/60 align-middle">
+                            <div className="h-full min-h-[26px] flex items-center">Forma de pago</div>
                           </th>
-                          <th className="px-3 text-right w-24">
-                            <div className="min-h-[26px] flex items-center justify-end">Valor</div>
+                          <th className="px-3 text-right w-24 align-middle">
+                            <div className="h-full min-h-[26px] flex items-center justify-end">Valor</div>
                           </th>
                         </tr>
                       </thead>
                       <tbody>
                         <tr>
-                          <td className="px-3 border-r border-slate-200">
-                            <div className="min-h-[28px] py-1 flex items-center text-[10.5px] text-slate-800 leading-snug">
+                          <td className="px-3 border-r border-slate-200 align-middle">
+                            <div className="h-full min-h-[28px] py-1 flex items-center text-[10.5px] text-slate-800 leading-snug">
                               {paymentInfo.name}
                             </div>
                           </td>
-                          <td className="px-3">
-                            <div className="min-h-[28px] flex items-center justify-end font-mono font-bold text-slate-900">
+                          <td className="px-3 align-middle">
+                            <div className="h-full min-h-[28px] flex items-center justify-end font-mono font-bold text-slate-900">
                               {formatCurrency(invoice.total)}
                             </div>
                           </td>
@@ -812,97 +812,97 @@ export const InvoiceRideDocument: React.FC<InvoiceRideDocumentProps> = ({
                   <table className="w-full text-xs border-collapse">
                     <tbody className="divide-y divide-slate-200">
                       <tr>
-                        <td className="px-2.5 border-r border-slate-200">
-                          <div className="min-h-[26px] flex items-center font-semibold text-slate-700 text-[10.5px]">
+                        <td className="px-2.5 border-r border-slate-200 align-middle">
+                          <div className="h-full min-h-[26px] flex items-center font-semibold text-slate-700 text-[10.5px]">
                             SUBTOTAL 15%
                           </div>
                         </td>
-                        <td className="px-2.5 w-24">
-                          <div className="min-h-[26px] flex items-center justify-end font-mono font-medium text-slate-900">
+                        <td className="px-2.5 w-24 align-middle">
+                          <div className="h-full min-h-[26px] flex items-center justify-end font-mono font-medium text-slate-900">
                             {subtotal15.toFixed(2)}
                           </div>
                         </td>
                       </tr>
                       <tr>
-                        <td className="px-2.5 border-r border-slate-200">
-                          <div className="min-h-[26px] flex items-center font-semibold text-slate-700 text-[10.5px]">
+                        <td className="px-2.5 border-r border-slate-200 align-middle">
+                          <div className="h-full min-h-[26px] flex items-center font-semibold text-slate-700 text-[10.5px]">
                             SUBTOTAL 0%
                           </div>
                         </td>
-                        <td className="px-2.5 w-24">
-                          <div className="min-h-[26px] flex items-center justify-end font-mono text-slate-500">
+                        <td className="px-2.5 w-24 align-middle">
+                          <div className="h-full min-h-[26px] flex items-center justify-end font-mono text-slate-500">
                             0.00
                           </div>
                         </td>
                       </tr>
                       <tr>
-                        <td className="px-2.5 border-r border-slate-200">
-                          <div className="min-h-[26px] flex items-center font-semibold text-slate-700 text-[10.5px]">
+                        <td className="px-2.5 border-r border-slate-200 align-middle">
+                          <div className="h-full min-h-[26px] flex items-center font-semibold text-slate-700 text-[10.5px]">
                             SUBTOTAL NO OBJETO DE IVA
                           </div>
                         </td>
-                        <td className="px-2.5 w-24">
-                          <div className="min-h-[26px] flex items-center justify-end font-mono text-slate-500">
+                        <td className="px-2.5 w-24 align-middle">
+                          <div className="h-full min-h-[26px] flex items-center justify-end font-mono text-slate-500">
                             0.00
                           </div>
                         </td>
                       </tr>
                       <tr>
-                        <td className="px-2.5 border-r border-slate-200">
-                          <div className="min-h-[26px] flex items-center font-semibold text-slate-700 text-[10.5px]">
+                        <td className="px-2.5 border-r border-slate-200 align-middle">
+                          <div className="h-full min-h-[26px] flex items-center font-semibold text-slate-700 text-[10.5px]">
                             SUBTOTAL EXENTO DE IVA
                           </div>
                         </td>
-                        <td className="px-2.5 w-24">
-                          <div className="min-h-[26px] flex items-center justify-end font-mono text-slate-500">
+                        <td className="px-2.5 w-24 align-middle">
+                          <div className="h-full min-h-[26px] flex items-center justify-end font-mono text-slate-500">
                             0.00
                           </div>
                         </td>
                       </tr>
                       <tr>
-                        <td className="px-2.5 border-r border-slate-200">
-                          <div className="min-h-[26px] flex items-center font-semibold text-slate-700 text-[10.5px]">
+                        <td className="px-2.5 border-r border-slate-200 align-middle">
+                          <div className="h-full min-h-[26px] flex items-center font-semibold text-slate-700 text-[10.5px]">
                             SUBTOTAL SIN IMPUESTOS
                           </div>
                         </td>
-                        <td className="px-2.5 w-24">
-                          <div className="min-h-[26px] flex items-center justify-end font-mono font-medium text-slate-900">
+                        <td className="px-2.5 w-24 align-middle">
+                          <div className="h-full min-h-[26px] flex items-center justify-end font-mono font-medium text-slate-900">
                             {subtotal15.toFixed(2)}
                           </div>
                         </td>
                       </tr>
                       <tr>
-                        <td className="px-2.5 border-r border-slate-200">
-                          <div className="min-h-[26px] flex items-center font-semibold text-slate-700 text-[10.5px]">
+                        <td className="px-2.5 border-r border-slate-200 align-middle">
+                          <div className="h-full min-h-[26px] flex items-center font-semibold text-slate-700 text-[10.5px]">
                             TOTAL DESCUENTO
                           </div>
                         </td>
-                        <td className="px-2.5 w-24">
-                          <div className="min-h-[26px] flex items-center justify-end font-mono text-slate-500">
+                        <td className="px-2.5 w-24 align-middle">
+                          <div className="h-full min-h-[26px] flex items-center justify-end font-mono text-slate-500">
                             0.00
                           </div>
                         </td>
                       </tr>
                       <tr>
-                        <td className="px-2.5 border-r border-slate-200">
-                          <div className="min-h-[26px] flex items-center font-semibold text-slate-700 text-[10.5px]">
+                        <td className="px-2.5 border-r border-slate-200 align-middle">
+                          <div className="h-full min-h-[26px] flex items-center font-semibold text-slate-700 text-[10.5px]">
                             IVA 15%
                           </div>
                         </td>
-                        <td className="px-2.5 w-24">
-                          <div className="min-h-[26px] flex items-center justify-end font-mono font-medium text-slate-900">
+                        <td className="px-2.5 w-24 align-middle">
+                          <div className="h-full min-h-[26px] flex items-center justify-end font-mono font-medium text-slate-900">
                             {totalIva15.toFixed(2)}
                           </div>
                         </td>
                       </tr>
                       <tr className="bg-blue-50/70 font-black text-slate-900 text-xs">
-                        <td className="px-2.5 border-r border-blue-200/80">
-                          <div className="min-h-[30px] flex items-center text-blue-950 font-black text-xs">
+                        <td className="px-2.5 border-r border-blue-200/80 align-middle">
+                          <div className="h-full min-h-[30px] flex items-center text-blue-950 font-black text-xs">
                             VALOR TOTAL
                           </div>
                         </td>
-                        <td className="px-2.5 w-24">
-                          <div className="min-h-[30px] flex items-center justify-end font-mono font-black text-blue-900 text-xs sm:text-sm">
+                        <td className="px-2.5 w-24 align-middle">
+                          <div className="h-full min-h-[30px] flex items-center justify-end font-mono font-black text-blue-900 text-xs sm:text-sm">
                             ${invoice.total.toFixed(2)}
                           </div>
                         </td>
