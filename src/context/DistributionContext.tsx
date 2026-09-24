@@ -1059,7 +1059,7 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
     const order = orders.find((o) => o.id === orderId);
     if (!order) return null;
 
-    const existing = invoices.find((inv) => inv.orderId === orderId);
+    const existing = invoices.find((inv) => inv.orderId === orderId && inv.status !== 'anulada');
     if (existing) return existing;
 
     const client = clients.find((c) => c.id === order.clientId);

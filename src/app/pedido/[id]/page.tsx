@@ -121,7 +121,12 @@ export default function OrderDetailPage({
 
   const invoice = useMemo(() => {
     if (!order) return null;
-    return invoices.find((inv) => inv.orderId === order.id) || null;
+    return invoices.find((inv) => inv.orderId === order.id && inv.status !== 'anulada') || null;
+  }, [invoices, order]);
+
+  const annulledInvoice = useMemo(() => {
+    if (!order) return null;
+    return invoices.find((inv) => inv.orderId === order.id && inv.status === 'anulada') || null;
   }, [invoices, order]);
 
   if (isCheckingOrder && !order) {
@@ -565,14 +570,21 @@ export default function OrderDetailPage({
                     <span>Factura #{invoice.invoiceNumber}</span>
                   </button>
                 ) : (
-                  <button
-                    type="button"
-                    onClick={handleGenerateInvoice}
-                    className="col-span-2 py-3 px-3 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center space-x-2 shadow-xs transition-all cursor-pointer"
-                  >
-                    <AppleReceiptIcon size={18} className="text-white" />
-                    <span>Generar Factura</span>
-                  </button>
+                  <div className="col-span-2 space-y-2">
+                    {annulledInvoice && (
+                      <div className="text-center text-[11px] text-amber-700 bg-amber-50/90 border border-amber-200/60 rounded-xl py-2 px-3">
+                        La factura anterior #{annulledInvoice.invoiceNumber} fue anulada. Puedes generar la nueva factura oficial con los datos correctos.
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleGenerateInvoice}
+                      className="w-full py-3 px-3 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center space-x-2 shadow-xs transition-all cursor-pointer"
+                    >
+                      <AppleReceiptIcon size={18} className="text-white" />
+                      <span>{annulledInvoice ? 'Generar Nueva Factura' : 'Generar Factura'}</span>
+                    </button>
+                  </div>
                 )}
 
                 {/* Botón Cancelar Pedido */}
