@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useDistribution } from '@/context/DistributionContext';
-import { formatCurrency } from '@/lib/utils/formatters';
+import { formatCurrency, sortCatalogProducts } from '@/lib/utils/formatters';
 import { Package } from 'lucide-react';
 
 export function CatalogManager() {
@@ -32,7 +32,7 @@ export function CatalogManager() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-800">
-              {catalog.map((item) => (
+              {sortCatalogProducts(catalog).map((item) => (
                 <tr key={item.id} className="hover:bg-slate-50/70">
                   <td className="py-3.5 px-4">
                     <div className="font-extrabold text-slate-900 text-sm sm:text-base">{item.beverageType}</div>

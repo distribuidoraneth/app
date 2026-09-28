@@ -82,12 +82,15 @@ ALTER TABLE public.products ADD COLUMN IF NOT EXISTS price_especial NUMERIC(10,2
 -- Actualizar/Insertar Catálogo Oficial con IVA incluido
 INSERT INTO public.products (id, brand, beverage_type, container, size, allowed_flavors, units_per_java, price_per_java, price_per_unit, description, stock_javas)
 VALUES
-  ('opt-colas-plastico-300', 'Fructi', 'Colas', 'Plástico', '300 ml', '["Piña", "Mandarina", "Uva", "Tamarindo", "Mora"]'::jsonb, 12, 3.60, 0.30, 'Pack de 12 botellas de 300 ml plástico', 120),
+  ('opt-colas-plastico-250', 'Fructi', 'Colas', 'Plástico', '250 ml', '["Piña"]'::jsonb, 12, 2.50, 0.2083, 'Pack de 12 botellas de 250 ml plástico. Sabor Piña.', 100),
+  ('opt-colas-plastico-300', 'Fructi', 'Colas', 'Plástico', '300 ml', '["Piña", "Mandarina", "Uva", "Tamarindo", "Mora"]'::jsonb, 12, 3.60, 0.3000, 'Pack de 12 botellas de 300 ml plástico', 120),
   ('opt-colas-plastico-500', 'Fructi', 'Colas', 'Plástico', '500 ml', '["Piña", "Mora"]'::jsonb, 12, 4.10, 0.3417, 'Pack de 12 botellas de 500 ml plástico', 95),
   ('opt-colas-plastico-1500', 'Fructi', 'Colas', 'Plástico', '1.5 Litros', '["Piña", "Mora"]'::jsonb, 12, 10.50, 0.8750, 'Pack de 12 botellas de 1.5 Litros plástico', 65),
   ('opt-colas-plastico-3000', 'Fructi', 'Colas', 'Plástico', '3.0 Litros', '["Piña"]'::jsonb, 6, 10.00, 1.6667, 'Pack de 6 botellas de 3.0 Litros plástico', 40),
   ('opt-colas-vidrio-300', 'Fructi', 'Colas', 'Vidrio', '300 ml', '["Piña", "Mandarina", "Tamarindo", "Mora"]'::jsonb, 24, 8.50, 0.3542, 'Java de 24 botellas de vidrio retornable de 300 ml', 110),
+  ('opt-tes-plastico-250', 'Fructi', 'Tés', 'Plástico', '250 ml', '["Lima Limón", "Flor de Jamaica"]'::jsonb, 12, 2.50, 0.2083, 'Pack de 12 botellas de té 250 ml. Sabores: Lima Limón y Flor de Jamaica.', 80),
   ('opt-tes-plastico-550', 'Fructi', 'Tés', 'Plástico', '550 ml', '["Lima Limón", "Flor de Jamaica"]'::jsonb, 12, 5.00, 0.4167, 'Pack de 12 botellas de té 550 ml', 60),
+  ('opt-tes-plastico-1500', 'Fructi', 'Tés', 'Plástico', '1.5 Litros', '["Lima Limón", "Flor de Jamaica"]'::jsonb, 6, 5.25, 0.8750, 'Pack de 6 botellas de té 1.5 Litros plástico. Sabores: Lima Limón y Flor de Jamaica.', 60),
   ('opt-aguas-forest-600', 'Forest', 'Aguas', 'Plástico', '600 ml', '["Sin Gas", "Con Gas"]'::jsonb, 12, 3.12, 0.2600, 'Pack de 12 botellas de agua Forest 600 ml', 90),
   ('opt-aguas-forest-1000', 'Forest', 'Aguas', 'Plástico', '1 Litro', '["Sin Gas", "Con Gas"]'::jsonb, 12, 3.96, 0.3300, 'Pack de 12 botellas de agua Forest 1 Litro', 70)
 ON CONFLICT (id) DO UPDATE SET

@@ -7,7 +7,7 @@ import {
   JavaProductOption,
   CartItem,
 } from '@/types';
-import { formatCurrency } from '@/lib/utils/formatters';
+import { formatCurrency, sortCatalogProducts } from '@/lib/utils/formatters';
 import confetti from 'canvas-confetti';
 import { Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -103,7 +103,7 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
   // Categorías de bebidas derivadas 100% del catálogo en base de datos
   const availableTypes = useMemo(() => {
     const presentTypes = Array.from(new Set(catalog.map((opt) => opt.beverageType)));
-    const preferredOrder: BeverageType[] = ['Colas', 'Aguas', 'Tés'];
+    const preferredOrder: BeverageType[] = ['Colas', 'Tés', 'Aguas'];
     const ordered = preferredOrder.filter((t) => presentTypes.includes(t));
     const remaining = presentTypes.filter((t) => !preferredOrder.includes(t as BeverageType));
     return (ordered.length > 0 || remaining.length > 0)
@@ -122,7 +122,7 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
   }, [availableTypes, selectedType]);
 
   const availableOptionsForType = useMemo(() => {
-    return catalog.filter((opt) => opt.beverageType === selectedType);
+    return sortCatalogProducts(catalog.filter((opt) => opt.beverageType === selectedType));
   }, [catalog, selectedType]);
 
   // Formato seleccionado

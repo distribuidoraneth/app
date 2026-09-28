@@ -236,12 +236,15 @@ export function formatProductSku(productOptionId?: string, unitType?: 'PAQ' | 'J
     .replace(/[^A-Z0-9.-]/g, '');
 
   const shortPrefixMap: Record<string, string> = {
+    'opt-colas-plastico-250': 'FRU-250',
     'opt-colas-plastico-300': 'FRU-300',
     'opt-colas-plastico-500': 'FRU-500',
     'opt-colas-plastico-1500': 'FRU-1.5L',
     'opt-colas-plastico-3000': 'FRU-3.0L',
     'opt-colas-vidrio-300': 'FRU-300-VID',
+    'opt-tes-plastico-250': 'TES-250',
     'opt-tes-plastico-550': 'TES-550',
+    'opt-tes-plastico-1500': 'TES-1.5L',
     'opt-agua-forest-600': 'AGUA-600',
     'opt-aguas-forest-600': 'AGUA-600',
     'opt-agua-forest-1000': 'AGUA-1L',
@@ -254,12 +257,15 @@ export function formatProductSku(productOptionId?: string, unitType?: 'PAQ' | 'J
   }
 
   const legacyMap: Record<string, string> = {
+    'opt-colas-plastico-250': 'FRU-250-PAQ',
     'opt-colas-plastico-300': 'FRU-300-PAQ',
     'opt-colas-plastico-500': 'FRU-500-PAQ',
     'opt-colas-plastico-1500': 'FRU-1.5L-PAQ',
     'opt-colas-plastico-3000': 'FRU-3.0L-PAQ',
     'opt-colas-vidrio-300': 'FRU-300-JAV',
+    'opt-tes-plastico-250': 'TES-250-PAQ',
     'opt-tes-plastico-550': 'TES-550-PAQ',
+    'opt-tes-plastico-1500': 'TES-1.5L-PAQ',
     'opt-agua-forest-600': 'AGUA-600-PAQ',
     'opt-aguas-forest-600': 'AGUA-600-PAQ',
     'opt-agua-forest-1000': 'AGUA-1L-PAQ',
@@ -634,3 +640,88 @@ export function cleanAddress(address?: string | null): string {
   }
   return trimmed;
 }
+
+export const PRODUCT_SORT_ORDER: Record<string, number> = {
+  // --- COLAS (FRUCTI) ---
+  'opt-colas-plastico-250': 1,
+  'opt-colas-plastico-300': 2,
+  'opt-colas-plastico-500': 3,
+  'opt-colas-plastico-1500': 4,
+  'opt-colas-plastico-3000': 5,
+  'opt-colas-vidrio-300': 6,
+  // --- TÉS (FRUCTI) ---
+  'opt-tes-plastico-250': 10,
+  'opt-tes-plastico-550': 11,
+  'opt-tes-plastico-1500': 12,
+  // --- AGUAS (FOREST) ---
+  'opt-aguas-forest-600': 20,
+  'opt-aguas-forest-1000': 21,
+  'opt-agua-forest-600': 20,
+  'opt-agua-forest-1000': 21,
+};
+
+export function parseSizeToMl(sizeStr?: string): number {
+  if (!sizeStr) return 0;
+  const s = sizeStr.toLowerCase().trim();
+  if (s.includes('3.0') || s.includes('3l') || s.includes('3 litro')) return 3000;
+  if (s.includes('1.5') || s.includes('1500') || s.includes('1.5l')) return 1500;
+  if (s.includes('1 litro') || s.includes('1l') || s.includes('1000')) return 1000;
+  if (s.includes('600')) return 600;
+  if (s.includes('550')) return 550;
+  if (s.includes('500')) return 500;
+  if (s.includes('300')) return 300;
+  if (s.includes('250')) return 250;
+  const match = s.match(/(\d+(\.\d+)?)/);
+  if (match) {
+    const val = parseFloat(match[1]);
+    if (s.includes('l') && !s.includes('ml')) return val * 1000;
+    return val;
+  }
+  return 0;
+}
+
+/**
+ * Ordena de manera consistente y determinista cualquier lista de productos del catálogo:
+ * 1. Por categoría de bebida: Colas -> Tés -> Aguas
+ * 2. Por ID predeterminado (opt-colas-plastico-250 -> 300 -> 500 -> 1.5L -> 3.0L -> Vidrio)
+ * 3. Por volumen en ml (de menor a mayor)
+ * 4. Por envase (Plástico antes que Vidrio)
+ */
+export function sortCatalogProducts<T extends { id?: string; size?: string; beverageType?: string; container?: string }>(
+  items: T[]
+): T[] {
+  const BEVERAGE_ORDER: Record<string, number> = {
+    'Colas': 1,
+    'Tés': 2,
+    'Aguas': 3,
+  };
+
+  return [...items].sort((a, b) => {
+    // 1. Por ID directo en PRODUCT_SORT_ORDER si ambos están contemplados
+    const orderA = a.id ? PRODUCT_SORT_ORDER[a.id] : undefined;
+    const orderB = b.id ? PRODUCT_SORT_ORDER[b.id] : undefined;
+    if (orderA !== undefined && orderB !== undefined) {
+      return orderA - orderB;
+    }
+    if (orderA !== undefined) return -1;
+    if (orderB !== undefined) return 1;
+
+    // 2. Por categoría de bebida
+    const typeA = a.beverageType ? (BEVERAGE_ORDER[a.beverageType] || 99) : 99;
+    const typeB = b.beverageType ? (BEVERAGE_ORDER[b.beverageType] || 99) : 99;
+    if (typeA !== typeB) return typeA - typeB;
+
+    // 3. Por volumen en ml (de menor a mayor)
+    const mlA = parseSizeToMl(a.size);
+    const mlB = parseSizeToMl(b.size);
+    if (mlA !== mlB) return mlA - mlB;
+
+    // 4. Por tipo de envase (Plástico antes que Vidrio)
+    const contA = (a.container || '').toLowerCase().includes('vid') ? 2 : 1;
+    const contB = (b.container || '').toLowerCase().includes('vid') ? 2 : 1;
+    if (contA !== contB) return contA - contB;
+
+    return (a.id || '').localeCompare(b.id || '');
+  });
+}
+

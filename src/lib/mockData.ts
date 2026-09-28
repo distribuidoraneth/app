@@ -17,6 +17,20 @@ export const INITIAL_CLIENTS: Client[] = [];
 export const JAVA_PRODUCT_CATALOG: JavaProductOption[] = [
   // --- COLAS (FRUCTI) ---
   {
+    id: 'opt-colas-plastico-250',
+    brand: 'Fructi',
+    beverageType: 'Colas',
+    container: 'Plástico',
+    size: '250 ml',
+    allowedFlavors: ['Piña'],
+    unitsPerJava: 12,
+    pricePerJava: 2.50,
+    pricePerUnit: 0.2083,
+    imageUrl: 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=600&auto=format&fit=crop&q=80',
+    description: 'Pack de 12 botellas de 250 ml plástico. Sabor Piña.',
+    stockJavas: 100,
+  },
+  {
     id: 'opt-colas-plastico-300',
     brand: 'Fructi',
     beverageType: 'Colas',
@@ -89,6 +103,20 @@ export const JAVA_PRODUCT_CATALOG: JavaProductOption[] = [
 
   // --- TÉS (FRUCTI) ---
   {
+    id: 'opt-tes-plastico-250',
+    brand: 'Fructi',
+    beverageType: 'Tés',
+    container: 'Plástico',
+    size: '250 ml',
+    allowedFlavors: ['Lima Limón', 'Flor de Jamaica'],
+    unitsPerJava: 12,
+    pricePerJava: 2.50,
+    pricePerUnit: 0.2083,
+    imageUrl: 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=600&auto=format&fit=crop&q=80',
+    description: 'Pack de 12 botellas de té 250 ml. Sabores: Lima Limón y Flor de Jamaica.',
+    stockJavas: 80,
+  },
+  {
     id: 'opt-tes-plastico-550',
     brand: 'Fructi',
     beverageType: 'Tés',
@@ -100,6 +128,20 @@ export const JAVA_PRODUCT_CATALOG: JavaProductOption[] = [
     pricePerUnit: 0.4167,
     imageUrl: 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=600&auto=format&fit=crop&q=80',
     description: 'Pack de 12 botellas de té 550 ml. Sabores: Lima Limón y Flor de Jamaica.',
+    stockJavas: 60,
+  },
+  {
+    id: 'opt-tes-plastico-1500',
+    brand: 'Fructi',
+    beverageType: 'Tés',
+    container: 'Plástico',
+    size: '1.5 Litros',
+    allowedFlavors: ['Lima Limón', 'Flor de Jamaica'],
+    unitsPerJava: 6,
+    pricePerJava: 5.25,
+    pricePerUnit: 0.875,
+    imageUrl: 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=600&auto=format&fit=crop&q=80',
+    description: 'Pack de 6 botellas de té 1.5 Litros plástico. Sabores: Lima Limón y Flor de Jamaica.',
     stockJavas: 60,
   },
 

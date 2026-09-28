@@ -18,7 +18,7 @@ import {
   INITIAL_ORDERS,
   INITIAL_INVOICES,
 } from '@/lib/mockData';
-import { formatOrderNumber, generateOrderNumber, expandCartItemsToFacturaLines } from '@/lib/utils/formatters';
+import { formatOrderNumber, generateOrderNumber, expandCartItemsToFacturaLines, sortCatalogProducts } from '@/lib/utils/formatters';
 import { generarClaveAcceso } from '@/lib/sri/claveAcceso';
 import { DEFAULT_TAX_PROFILE } from '@/lib/sri/xmlBuilder';
 import {
@@ -109,7 +109,21 @@ interface DistributionContextType {
 
 const DistributionContext = createContext<DistributionContextType | undefined>(undefined);
 
-export const STORAGE_KEY = 'distribuidora_aneth_oficial_v12';
+export const STORAGE_KEY = 'distribuidora_aneth_oficial_v13';
+const PREVIOUS_STORAGE_KEYS = ['distribuidora_aneth_oficial_v12', 'distribuidora_aneth_oficial_v11'];
+
+function getSavedStorageData(): any {
+  if (typeof window === 'undefined') return null;
+  try {
+    const primary = localStorage.getItem(STORAGE_KEY);
+    if (primary) return JSON.parse(primary);
+    for (const oldKey of PREVIOUS_STORAGE_KEYS) {
+      const fallback = localStorage.getItem(oldKey);
+      if (fallback) return JSON.parse(fallback);
+    }
+  } catch {}
+  return null;
+}
 export const MIN_INVOICE_SEQUENCE_BASE = 119;
 export const SEQUENCE_STORAGE_KEY = 'distribuidora_aneth_last_sequence_prod';
 
@@ -166,66 +180,42 @@ export function recordUsedInvoiceSequence(seq: number): void {
 
 export function DistributionProvider({ children }: { children: React.ReactNode }) {
   const [clients, setClients] = useState<Client[]>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed.clients)) return parsed.clients;
-        }
-      } catch {}
-    }
+    const data = getSavedStorageData();
+    if (data && Array.isArray(data.clients)) return data.clients;
     return [];
   });
 
   const [catalog, setCatalog] = useState<JavaProductOption[]>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed.catalog) && parsed.catalog.length > 0) return parsed.catalog;
-        }
-      } catch {}
+    const data = getSavedStorageData();
+    if (data && Array.isArray(data.catalog) && data.catalog.length > 0) {
+      const existingIds = new Set(data.catalog.map((c: any) => c.id));
+      const missingOfficial = JAVA_PRODUCT_CATALOG.filter((c) => !existingIds.has(c.id));
+      return sortCatalogProducts([...data.catalog, ...missingOfficial]);
     }
-    return JAVA_PRODUCT_CATALOG;
+    return sortCatalogProducts(JAVA_PRODUCT_CATALOG);
   });
 
   const [orders, setOrders] = useState<Order[]>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed.orders)) {
-            const now = new Date();
-            return parsed.orders.filter((o: Order) => {
-              if (o.status === 'pending') return true;
-              if (!o.createdAt) return false;
-              const d = new Date(o.createdAt);
-              return (
-                d.getFullYear() === now.getFullYear() &&
-                d.getMonth() === now.getMonth() &&
-                d.getDate() === now.getDate()
-              );
-            });
-          }
-        }
-      } catch {}
+    const data = getSavedStorageData();
+    if (data && Array.isArray(data.orders)) {
+      const now = new Date();
+      return data.orders.filter((o: Order) => {
+        if (o.status === 'pending') return true;
+        if (!o.createdAt) return false;
+        const d = new Date(o.createdAt);
+        return (
+          d.getFullYear() === now.getFullYear() &&
+          d.getMonth() === now.getMonth() &&
+          d.getDate() === now.getDate()
+        );
+      });
     }
     return INITIAL_ORDERS;
   });
 
   const [invoices, setInvoices] = useState<Invoice[]>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed.invoices)) return parsed.invoices;
-        }
-      } catch {}
-    }
+    const data = getSavedStorageData();
+    if (data && Array.isArray(data.invoices)) return data.invoices;
     return INITIAL_INVOICES;
   });
 
@@ -283,7 +273,11 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
       if (isPortal) {
         // En portales públicos de clientes (/p/...), solo cargar el catálogo para privacidad y velocidad
         const dbProducts = await getProductsFromDb();
-        if (dbProducts !== null) setCatalog(dbProducts);
+        if (dbProducts !== null) {
+          const existingIds = new Set(dbProducts.map((c) => c.id));
+          const missingOfficial = JAVA_PRODUCT_CATALOG.filter((c) => !existingIds.has(c.id));
+          setCatalog(sortCatalogProducts([...dbProducts, ...missingOfficial]));
+        }
         return;
       }
 
@@ -302,7 +296,9 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
       }
 
       if (dbProducts !== null) {
-        setCatalog(dbProducts);
+        const existingIds = new Set(dbProducts.map((c) => c.id));
+        const missingOfficial = JAVA_PRODUCT_CATALOG.filter((c) => !existingIds.has(c.id));
+        setCatalog(sortCatalogProducts([...dbProducts, ...missingOfficial]));
       }
       if (dbClients !== null) {
         setClients((prev) => {
@@ -348,11 +344,12 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
     const isPortal = typeof window !== 'undefined' && window.location.pathname.startsWith('/p/');
     if (!isPortal) {
       try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-          const parsed = JSON.parse(saved);
+        const parsed = getSavedStorageData();
+        if (parsed) {
           if (Array.isArray(parsed.clients)) setClients(parsed.clients);
-          if (Array.isArray(parsed.catalog) && parsed.catalog.length > 0) setCatalog(parsed.catalog);
+          const existingIds = new Set((parsed.catalog || []).map((c: any) => c.id));
+          const missingOfficial = JAVA_PRODUCT_CATALOG.filter((c) => !existingIds.has(c.id));
+          setCatalog(sortCatalogProducts([...(parsed.catalog || []), ...missingOfficial]));
           if (Array.isArray(parsed.invoices)) {
             // Filtrar facturas corruptas o huérfanas con números >= 3000 que no estén autorizadas
             const cleanInvs = parsed.invoices.filter((inv: Invoice) => {
