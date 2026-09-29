@@ -17,7 +17,16 @@ import {
 import { Order, Invoice } from '@/types';
 import { InvoiceModal } from '@/components/invoice/InvoiceModal';
 import { ThermalReceiptModal } from '@/components/receipt/ThermalReceiptModal';
-import { AppleMapPinIcon, AppleWhatsAppIcon, AppleCheckmarkSealIcon, AppleShippingBoxIcon, AppleCalendarIcon, ApplePrinterIcon } from '@/components/ui/AppleIcons';
+import {
+  AppleMapPinIcon,
+  AppleWhatsAppIcon,
+  AppleCheckmarkSealIcon,
+  AppleShippingBoxIcon,
+  AppleCalendarIcon,
+  ApplePrinterIcon,
+  AppleReceiptIcon,
+} from '@/components/ui/AppleIcons';
+import { getInvoiceByIdOrNumberFromDb } from '@/lib/supabase/syncService';
 import {
   Clock,
   XCircle,
@@ -155,10 +164,54 @@ export function OrderDispatchBoard() {
     return true;
   });
 
-  const handleGenerateInvoice = (order: Order) => {
-    const inv = generateInvoice(order.id);
-    if (inv) {
-      setSelectedInvoice(inv);
+  const getOrderInvoice = (order: Order): Invoice | null => {
+    return (
+      invoices.find(
+        (inv) =>
+          (inv.orderId === order.id ||
+            (order.invoiceId && inv.id === order.invoiceId) ||
+            (order.invoiceNumber && inv.invoiceNumber === order.invoiceNumber)) &&
+          (inv as any).status !== 'anulada'
+      ) || null
+    );
+  };
+
+  const handleInvoiceAction = async (order: Order) => {
+    // 1. Si ya existe la factura activa en memoria -> Solamente visualizarla
+    const existing = getOrderInvoice(order);
+    if (existing) {
+      setSelectedInvoice(existing);
+      return;
+    }
+
+    // 2. Si el pedido ya tiene factura registrada previa -> Buscarla y solo visualizarla
+    if (order.invoiceId || order.invoiceNumber) {
+      try {
+        const fetched = await getInvoiceByIdOrNumberFromDb(order.invoiceId || order.invoiceNumber!);
+        if (fetched) {
+          setSelectedInvoice(fetched);
+          return;
+        }
+      } catch (err) {
+        console.warn('Error al buscar factura en base de datos:', err);
+      }
+
+      if (order.invoiceNumber) {
+        router.push(`/factura/${order.invoiceNumber}`);
+        return;
+      }
+    }
+
+    // Si el pedido está cancelado y no tenía factura previa, advertir
+    if (order.status === 'cancelled') {
+      alert('No se puede generar factura para un pedido cancelado.');
+      return;
+    }
+
+    // 3. Si NO está facturado -> Generar la factura oficial y abrirla inmediatamente para visualizarla
+    const newInv = generateInvoice(order.id);
+    if (newInv) {
+      setSelectedInvoice(newInv);
     }
   };
 
@@ -379,6 +432,9 @@ export function OrderDispatchBoard() {
             const isPending = order.status === 'pending';
             const isCancelled = order.status === 'cancelled';
             const hasGps = Boolean(order.latitude && order.longitude);
+            const orderInvoice = getOrderInvoice(order);
+            const isFacturado = Boolean(orderInvoice || order.invoiceNumber || order.invoiceId);
+            const invoiceNum = orderInvoice?.invoiceNumber || order.invoiceNumber;
 
             return (
               <div
@@ -491,6 +547,28 @@ export function OrderDispatchBoard() {
                       title="Ver / Imprimir Recibo"
                     >
                       <ApplePrinterIcon size={16} className="text-blue-700" />
+                    </button>
+
+                    {/* Botón Facturar / Ver Factura */}
+                    <button
+                      type="button"
+                      onClick={() => handleInvoiceAction(order)}
+                      className={`w-8 h-8 rounded-xl transition-all active:scale-95 cursor-pointer flex items-center justify-center shadow-2xs ${
+                        isFacturado
+                          ? 'bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200/80'
+                          : 'bg-slate-100/80 hover:bg-purple-50 text-slate-500 hover:text-purple-700 border border-slate-200/70'
+                      }`}
+                      title={
+                        isFacturado
+                          ? `Ver Factura ${invoiceNum ? `#${invoiceNum}` : ''}`.trim()
+                          : 'Facturar pedido (Generar Factura)'
+                      }
+                      aria-label={isFacturado ? 'Ver Factura' : 'Facturar pedido'}
+                    >
+                      <AppleReceiptIcon
+                        size={16}
+                        className={isFacturado ? 'text-purple-700' : 'text-slate-500 hover:text-purple-700'}
+                      />
                     </button>
 
                     {/* Botón Rápido de Entrega (solo si pendiente) */}
