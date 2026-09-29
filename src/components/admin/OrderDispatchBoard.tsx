@@ -462,10 +462,10 @@ export function OrderDispatchBoard() {
                           e.stopPropagation();
                           handleInvoiceAction(order);
                         }}
-                        className="inline-flex items-center text-[11px] font-bold text-blue-700 bg-blue-50/90 hover:bg-blue-100 px-2 py-0.5 rounded-md border border-blue-200/80 transition-colors cursor-pointer shrink-0 shadow-2xs"
+                        className="inline-flex items-center text-[11px] font-bold text-purple-700 bg-purple-50/90 hover:bg-purple-100 px-2 py-0.5 rounded-md border border-purple-200/80 transition-colors cursor-pointer shrink-0 shadow-2xs"
                         title="Clic para ver la Factura Oficial"
                       >
-                        <AppleReceiptIcon size={12} className="mr-1 text-blue-600 shrink-0" />
+                        <AppleReceiptIcon size={12} className="mr-1 text-purple-600 shrink-0" />
                         {invoiceNum ? `Factura #${invoiceNum.replace(/^001-001-0*/, '')}` : 'Facturado'}
                       </span>
                     ) : (
@@ -582,8 +582,8 @@ export function OrderDispatchBoard() {
                       onClick={() => handleInvoiceAction(order)}
                       className={`w-8 h-8 rounded-xl transition-all active:scale-95 cursor-pointer flex items-center justify-center shadow-2xs ${
                         isFacturado
-                          ? 'bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200/90'
-                          : 'bg-slate-100/80 hover:bg-blue-50 text-slate-500 hover:text-blue-700 border border-slate-200/70'
+                          ? 'bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200/80'
+                          : 'bg-slate-100/80 hover:bg-purple-50 text-slate-500 hover:text-purple-700 border border-slate-200/70'
                       }`}
                       title={
                         isFacturado
@@ -594,7 +594,7 @@ export function OrderDispatchBoard() {
                     >
                       <AppleReceiptIcon
                         size={16}
-                        className={isFacturado ? 'text-blue-700' : 'text-slate-500 hover:text-blue-700'}
+                        className={isFacturado ? 'text-purple-700' : 'text-slate-500 hover:text-purple-700'}
                       />
                     </button>
 
