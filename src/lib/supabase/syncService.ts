@@ -1084,30 +1084,33 @@ export async function getInvoiceByIdOrNumberFromDb(
     // 0. Comprobar caché local síncrona si está disponible en el navegador (0ms latencia)
     if (typeof window !== 'undefined') {
       try {
-        const stored = localStorage.getItem('distribuidora_aneth_oficial_v12');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed.invoices)) {
-            const foundInv = parsed.invoices.find(
-              (i: Invoice) =>
-                i.invoiceNumber === clean ||
-                i.id === clean ||
-                i.orderId === clean ||
-                i.orderNumber === clean ||
-                i.claveAcceso === clean
-            );
-            if (foundInv) return foundInv;
-          }
-          if (Array.isArray(parsed.orders)) {
-            const foundOrder = parsed.orders.find(
-              (o: Order) =>
-                o.orderNumber === clean ||
-                o.id === clean ||
-                o.invoiceId === clean ||
-                o.invoiceNumber === clean
-            );
-            if (foundOrder && foundOrder.invoiceNumber && foundOrder.invoiceNumber.includes('001-001-')) {
-              return reconstructInvoiceFromOrder(foundOrder);
+        const storageKeys = ['distribuidora_aneth_oficial_v13', 'distribuidora_aneth_oficial_v12', 'distribuidora_aneth_oficial_v11'];
+        for (const k of storageKeys) {
+          const stored = localStorage.getItem(k);
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            if (Array.isArray(parsed.invoices)) {
+              const foundInv = parsed.invoices.find(
+                (i: Invoice) =>
+                  i.invoiceNumber === clean ||
+                  i.id === clean ||
+                  i.orderId === clean ||
+                  i.orderNumber === clean ||
+                  i.claveAcceso === clean
+              );
+              if (foundInv) return foundInv;
+            }
+            if (Array.isArray(parsed.orders)) {
+              const foundOrder = parsed.orders.find(
+                (o: Order) =>
+                  o.orderNumber === clean ||
+                  o.id === clean ||
+                  o.invoiceId === clean ||
+                  o.invoiceNumber === clean
+              );
+              if (foundOrder && foundOrder.invoiceNumber && foundOrder.invoiceNumber.includes('001-001-')) {
+                return reconstructInvoiceFromOrder(foundOrder);
+              }
             }
           }
         }

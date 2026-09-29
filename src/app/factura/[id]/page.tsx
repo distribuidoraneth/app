@@ -5,6 +5,7 @@ import {
   useDistribution,
   getNextInvoiceSequence,
   recordUsedInvoiceSequence,
+  STORAGE_KEY,
 } from '@/context/DistributionContext';
 import {
   formatCurrency,
@@ -91,30 +92,33 @@ export default function PublicInvoicePage({
   const [localInvoice] = useState<Invoice | null>(() => {
     if (typeof window === 'undefined') return null;
     try {
-      const stored = localStorage.getItem('distribuidora_aneth_oficial_v12');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed.invoices)) {
-          const found = parsed.invoices.find(
-            (i: Invoice) =>
-              i.invoiceNumber === cleanId ||
-              i.id === cleanId ||
-              i.orderId === cleanId ||
-              i.orderNumber === cleanId ||
-              i.claveAcceso === cleanId
-          );
-          if (found) return found;
-        }
-        if (Array.isArray(parsed.orders)) {
-          const foundOrder = parsed.orders.find(
-            (o: Order) =>
-              o.id === cleanId ||
-              o.orderNumber === cleanId ||
-              o.invoiceId === cleanId ||
-              o.invoiceNumber === cleanId
-          );
-          if (foundOrder) {
-            return reconstructInvoiceFromOrder(foundOrder);
+      const keys = [STORAGE_KEY, 'distribuidora_aneth_oficial_v12', 'distribuidora_aneth_oficial_v11'];
+      for (const k of keys) {
+        const stored = localStorage.getItem(k);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed.invoices)) {
+            const found = parsed.invoices.find(
+              (i: Invoice) =>
+                i.invoiceNumber === cleanId ||
+                i.id === cleanId ||
+                i.orderId === cleanId ||
+                i.orderNumber === cleanId ||
+                i.claveAcceso === cleanId
+            );
+            if (found) return found;
+          }
+          if (Array.isArray(parsed.orders)) {
+            const foundOrder = parsed.orders.find(
+              (o: Order) =>
+                o.id === cleanId ||
+                o.orderNumber === cleanId ||
+                o.invoiceId === cleanId ||
+                o.invoiceNumber === cleanId
+            );
+            if (foundOrder) {
+              return reconstructInvoiceFromOrder(foundOrder);
+            }
           }
         }
       }
@@ -137,8 +141,7 @@ export default function PublicInvoicePage({
             setDbInvoice(inv);
             // Sincronizar caché local para que futuras visitas tengan el estado oficial
             try {
-              const storageKey = 'distribuidora_aneth_oficial_v12';
-              const saved = localStorage.getItem(storageKey);
+              const saved = localStorage.getItem(STORAGE_KEY);
               if (saved) {
                 const parsed = JSON.parse(saved);
                 if (Array.isArray(parsed.invoices)) {
@@ -147,7 +150,7 @@ export default function PublicInvoicePage({
                       ? { ...existing, ...inv }
                       : existing
                   );
-                  localStorage.setItem(storageKey, JSON.stringify(parsed));
+                  localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
                 }
               }
             } catch (_) {}
@@ -395,8 +398,7 @@ export default function PublicInvoicePage({
 
         // Actualizar invoice en localStorage para que refleje el nuevo número y estado
         try {
-          const storageKey = 'distribuidora_aneth_oficial_v12';
-          const saved = localStorage.getItem(storageKey);
+          const saved = localStorage.getItem(STORAGE_KEY);
           if (saved) {
             const parsed = JSON.parse(saved);
             if (Array.isArray(parsed.invoices)) {
@@ -414,7 +416,7 @@ export default function PublicInvoicePage({
                     }
                   : inv
               );
-              localStorage.setItem(storageKey, JSON.stringify(parsed));
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
             }
           }
         } catch (_) {}

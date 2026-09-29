@@ -168,38 +168,39 @@ export function OrderDispatchBoard() {
     return (
       invoices.find(
         (inv) =>
-          (inv.orderId === order.id ||
-            (order.invoiceId && inv.id === order.invoiceId) ||
-            (order.invoiceNumber && inv.invoiceNumber === order.invoiceNumber)) &&
+          ((order.invoiceId && inv.id === order.invoiceId) ||
+            inv.orderId === order.id ||
+            (order.orderNumber && inv.orderNumber === order.orderNumber) ||
+            (order.invoiceNumber && inv.invoiceNumber === order.invoiceNumber) ||
+            (order.orderNumber && inv.orderNumber && formatOrderNumber(inv.orderNumber) === formatOrderNumber(order.orderNumber))) &&
           (inv as any).status !== 'anulada'
       ) || null
     );
   };
 
   const handleInvoiceAction = async (order: Order) => {
-    // 1. Si ya existe la factura activa en memoria -> Solamente visualizarla
+    // 1. Si ya existe la factura activa o número registrado -> Entrar a ver la factura directamente
     const existing = getOrderInvoice(order);
-    if (existing) {
-      setSelectedInvoice(existing);
+    const invoiceTarget = existing?.invoiceNumber || order.invoiceNumber || existing?.id || order.invoiceId;
+
+    if (invoiceTarget) {
+      router.push(`/factura/${invoiceTarget}`);
       return;
     }
 
-    // 2. Si el pedido ya tiene factura registrada previa -> Buscarla y solo visualizarla
-    if (order.invoiceId || order.invoiceNumber) {
+    // 2. Si el pedido tiene invoiceId en BD pero aún no se había enlazado el número
+    if (order.invoiceId) {
       try {
-        const fetched = await getInvoiceByIdOrNumberFromDb(order.invoiceId || order.invoiceNumber!);
+        const fetched = await getInvoiceByIdOrNumberFromDb(order.invoiceId);
         if (fetched) {
-          setSelectedInvoice(fetched);
+          router.push(`/factura/${fetched.invoiceNumber || fetched.id}`);
           return;
         }
       } catch (err) {
         console.warn('Error al buscar factura en base de datos:', err);
       }
-
-      if (order.invoiceNumber) {
-        router.push(`/factura/${order.invoiceNumber}`);
-        return;
-      }
+      router.push(`/factura/${order.invoiceId}`);
+      return;
     }
 
     // Si el pedido está cancelado y no tenía factura previa, advertir
@@ -208,10 +209,15 @@ export function OrderDispatchBoard() {
       return;
     }
 
-    // 3. Si NO está facturado -> Generar la factura oficial y abrirla inmediatamente para visualizarla
-    const newInv = generateInvoice(order.id);
-    if (newInv) {
-      setSelectedInvoice(newInv);
+    // 3. Si NO está facturado -> Generar la factura oficial y entrar de inmediato a verla
+    try {
+      const newInv = generateInvoice(order.id);
+      if (newInv) {
+        router.push(`/factura/${newInv.invoiceNumber || newInv.id}`);
+      }
+    } catch (err) {
+      console.error('Error al facturar pedido:', err);
+      alert('Ocurrió un error al generar la factura.');
     }
   };
 
@@ -442,11 +448,32 @@ export function OrderDispatchBoard() {
                 onClick={() => router.push(`/pedido/${order.id}`)}
                 className="bg-white rounded-2xl border border-slate-200/80 p-3.5 sm:p-4 shadow-xs hover:border-slate-300 active:scale-[0.99] transition-all cursor-pointer select-none space-y-2.5"
               >
-                {/* Header Fila 1: Número de orden y Estado */}
+                {/* Header Fila 1: Número de orden, Badge Factura y Estado */}
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-mono font-bold text-xs sm:text-[13px] text-slate-800 bg-slate-100/90 px-2.5 py-1 rounded-lg border border-slate-200/80 tracking-tight select-all">
-                    {formatOrderNumber(order.orderNumber)}
-                  </span>
+                  <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
+                    <span className="font-mono font-bold text-xs sm:text-[13px] text-slate-800 bg-slate-100/90 px-2.5 py-1 rounded-lg border border-slate-200/80 tracking-tight select-all">
+                      {formatOrderNumber(order.orderNumber)}
+                    </span>
+
+                    {/* Badge claro de Factura: Permite saber al instante si está facturado */}
+                    {isFacturado ? (
+                      <span
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleInvoiceAction(order);
+                        }}
+                        className="inline-flex items-center text-[11px] font-bold text-blue-700 bg-blue-50/90 hover:bg-blue-100 px-2 py-0.5 rounded-md border border-blue-200/80 transition-colors cursor-pointer shrink-0 shadow-2xs"
+                        title="Clic para ver la Factura Oficial"
+                      >
+                        <AppleReceiptIcon size={12} className="mr-1 text-blue-600 shrink-0" />
+                        {invoiceNum ? `Factura #${invoiceNum.replace(/^001-001-0*/, '')}` : 'Facturado'}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center text-[10.5px] font-medium text-slate-400 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200/60 shrink-0">
+                        Sin facturar
+                      </span>
+                    )}
+                  </div>
 
                   <div className="shrink-0">
                     {isCancelled ? (
@@ -555,8 +582,8 @@ export function OrderDispatchBoard() {
                       onClick={() => handleInvoiceAction(order)}
                       className={`w-8 h-8 rounded-xl transition-all active:scale-95 cursor-pointer flex items-center justify-center shadow-2xs ${
                         isFacturado
-                          ? 'bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200/80'
-                          : 'bg-slate-100/80 hover:bg-purple-50 text-slate-500 hover:text-purple-700 border border-slate-200/70'
+                          ? 'bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200/90'
+                          : 'bg-slate-100/80 hover:bg-blue-50 text-slate-500 hover:text-blue-700 border border-slate-200/70'
                       }`}
                       title={
                         isFacturado
@@ -567,7 +594,7 @@ export function OrderDispatchBoard() {
                     >
                       <AppleReceiptIcon
                         size={16}
-                        className={isFacturado ? 'text-purple-700' : 'text-slate-500 hover:text-purple-700'}
+                        className={isFacturado ? 'text-blue-700' : 'text-slate-500 hover:text-blue-700'}
                       />
                     </button>
 

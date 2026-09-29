@@ -256,7 +256,19 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
           const recentInFlight = prev.filter(
             (o) => !dbOrderIds.has(o.id) && o.createdAt && Date.now() - new Date(o.createdAt).getTime() < 60000
           );
-          return [...dbOrders, ...recentInFlight];
+          const combined = [...dbOrders, ...recentInFlight];
+          const invList = invoices;
+          const invoiceMap = new Map((invList || []).map((inv) => [inv.id, inv.invoiceNumber]));
+          const invoiceOrderMap = new Map((invList || []).map((inv) => [inv.orderId, inv.invoiceNumber]));
+          const invoiceOrderNumMap = new Map((invList || []).filter((inv) => inv.orderNumber).map((inv) => [inv.orderNumber!, inv.invoiceNumber]));
+
+          return combined.map((o) => {
+            const foundNum = (o.invoiceId ? invoiceMap.get(o.invoiceId) : null) ||
+                             invoiceOrderMap.get(o.id) ||
+                             (o.orderNumber ? invoiceOrderNumMap.get(o.orderNumber) : null) ||
+                             o.invoiceNumber;
+            return foundNum ? { ...o, invoiceNumber: foundNum } : o;
+          });
         });
       }
     } catch (err) {
