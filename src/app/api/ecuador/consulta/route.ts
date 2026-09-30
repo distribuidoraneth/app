@@ -62,8 +62,7 @@ export async function GET(req: NextRequest) {
         addressReference: address,
         status: rucData?.status || 'ACTIVO',
         taxpayerType: rucData?.taxpayer_type || 'PERSONA NATURAL',
-        economicActivity: rucData?.economic_activity || '',
-        gender: rucData?.taxpayer_type?.includes('JURIDICA') ? 'Empresa' : 'Hombre',
+        gender: (taxId.charAt(2) === '9' || taxId.charAt(2) === '6' || rucData?.taxpayer_type?.includes('JURIDICA') || rucData?.taxpayer_type?.includes('SOCIEDAD') || rucData?.taxpayer_type?.includes('PUBLICA')) ? 'Empresa' : 'Hombre',
         birthDate: '',
       });
     } else if (taxId.length === 10) {

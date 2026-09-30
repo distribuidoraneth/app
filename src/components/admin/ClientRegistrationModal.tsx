@@ -224,8 +224,11 @@ export function ClientRegistrationModal({
       if (data.success) {
         if (data.fullName) setFullName(data.fullName);
         if (data.businessName) setBusinessName(data.businessName);
-        if (data.gender) setGender(data.gender);
+        if (data.gender) setGender(data.gender === 'Empresa' || data.gender === 'Otro' ? 'Otro' : data.gender);
         if (data.taxIdType) setTaxIdType(data.taxIdType === '04' ? '04' : '05');
+        if (data.addressReference && (!addressReference || addressReference.length < 5)) {
+          setAddressReference(data.addressReference);
+        }
         if (data.birthDate) {
           const parts = data.birthDate.split('/');
           if (parts.length === 3) {
@@ -256,17 +259,40 @@ export function ClientRegistrationModal({
     }
   };
 
-  const isCedula = taxIdType === '05';
-  const expectedLength = isCedula ? 10 : 13;
-  const currentLength = taxId.replace(/\D/g, '').length;
-  const taxValidation = isCedula ? validateEcuadorianCedula(taxId) : validateEcuadorianRuc(taxId);
+  const cleanTaxId = taxId.replace(/\D/g, '');
+  const currentLength = cleanTaxId.length;
+
+  // Detección proactiva de RUC de Empresa (3er dígito 6 o 9, o longitud de 13 dígitos)
+  const isCompanyFormat = currentLength >= 3 && (cleanTaxId[2] === '9' || cleanTaxId[2] === '6');
+  const isExplicitRuc = taxIdType === '04' || currentLength === 13 || isCompanyFormat;
+  const isCedula = !isExplicitRuc;
+  const expectedLength = isExplicitRuc ? 13 : 10;
+
+  // Validación sin bloquear: si tiene 13 dígitos valida RUC, si tiene 10 cédula
+  const taxValidation = isExplicitRuc
+    ? (currentLength === 13
+        ? validateEcuadorianRuc(cleanTaxId)
+        : {
+            isValid: false,
+            type: '04' as const,
+            cleanDigits: cleanTaxId,
+            error: isCompanyFormat
+              ? `RUC de empresa (${currentLength}/13 dígitos)`
+              : `RUC (${currentLength}/13 dígitos)`,
+          })
+    : validateEcuadorianCedula(cleanTaxId);
 
   const handleTaxIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const raw = e.target.value.replace(/\D/g, '').slice(0, expectedLength);
+    // Permitir ingresar o pegar hasta 13 dígitos directamente
+    const raw = e.target.value.replace(/\D/g, '').slice(0, 13);
     setTaxId(raw);
     if (apiFeedback) setApiFeedback(null);
-    if (raw.length === 13 && taxIdType !== '04') {
-      setTaxIdType('04');
+
+    // Auto-conmutar a RUC si escribe más de 10 dígitos o si el 3er dígito es 9 o 6
+    if (raw.length > 10 || (raw.length >= 3 && (raw[2] === '9' || raw[2] === '6'))) {
+      if (taxIdType !== '04') {
+        setTaxIdType('04');
+      }
     }
   };
 
@@ -325,7 +351,7 @@ export function ClientRegistrationModal({
           longitude: coords.lng,
           addressReference: addressReference.trim(),
           taxId: taxId.trim() || undefined,
-          taxIdType,
+          taxIdType: (taxId.trim().replace(/\D/g, '').length === 13 || isExplicitRuc) ? '04' : taxIdType,
           email: email.trim() || undefined,
           birthDate: birthDate || undefined,
         };
@@ -344,7 +370,7 @@ export function ClientRegistrationModal({
         longitude: coords.lng,
         addressReference: addressReference.trim(),
         taxId: taxId.trim() || undefined,
-        taxIdType,
+        taxIdType: (taxId.trim().replace(/\D/g, '').length === 13 || isExplicitRuc) ? '04' : taxIdType,
         email: email.trim() || undefined,
         creditLimit: 0,
         birthDate: birthDate || undefined,
@@ -422,9 +448,12 @@ export function ClientRegistrationModal({
                 <div className="flex items-center bg-slate-200/90 p-1 rounded-xl text-xs sm:text-sm font-black border border-slate-300/70">
                   <button
                     type="button"
-                    onClick={() => setTaxIdType('05')}
+                    onClick={() => {
+                      setTaxIdType('05');
+                      if (taxId.length > 10) setTaxId(taxId.slice(0, 10));
+                    }}
                     className={`px-3 sm:px-4 py-1.5 rounded-lg transition-all cursor-pointer ${
-                      taxIdType === '05'
+                      taxIdType === '05' && !isCompanyFormat
                         ? 'bg-white text-blue-700 shadow-xs font-black'
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
@@ -435,7 +464,7 @@ export function ClientRegistrationModal({
                     type="button"
                     onClick={() => setTaxIdType('04')}
                     className={`px-3 sm:px-4 py-1.5 rounded-lg transition-all cursor-pointer ${
-                      taxIdType === '04'
+                      taxIdType === '04' || isCompanyFormat
                         ? 'bg-white text-blue-700 shadow-xs font-black'
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
@@ -450,23 +479,29 @@ export function ClientRegistrationModal({
                   <input
                     type="text"
                     inputMode="numeric"
-                    maxLength={expectedLength}
+                    maxLength={13}
                     value={taxId}
                     disabled={isOfficialDataLocked}
                     onChange={handleTaxIdChange}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
-                        if (taxValidation.isValid) handleLookup();
+                        if (currentLength === 10 || currentLength === 13) handleLookup();
                       }
                     }}
-                    placeholder={isCedula ? 'Cédula (10 dígitos)' : 'RUC (13 dígitos)'}
+                    placeholder={
+                      isCompanyFormat
+                        ? 'RUC Empresa (13 dígitos)'
+                        : isExplicitRuc
+                        ? 'RUC (13 dígitos)'
+                        : 'Cédula (10 dígitos) o RUC'
+                    }
                     className={`w-full text-base px-4 pr-14 py-3 bg-white border rounded-xl font-mono focus:ring-2 focus:ring-blue-600 focus:outline-hidden transition-all ${
                       isOfficialDataLocked
                         ? 'bg-slate-100 border-slate-200 text-slate-500 cursor-not-allowed'
                         : taxValidation.isValid
                         ? 'border-emerald-500 focus:border-emerald-600 text-slate-900 font-bold'
-                        : currentLength === expectedLength
+                        : currentLength === expectedLength && !taxValidation.isValid
                         ? 'border-rose-400 focus:border-rose-500 text-rose-900 font-bold'
                         : 'border-slate-300 text-slate-900 font-bold placeholder:font-normal'
                     }`}
@@ -478,7 +513,7 @@ export function ClientRegistrationModal({
                       className={`text-xs font-mono font-black ${
                         taxValidation.isValid
                           ? 'text-emerald-600'
-                          : currentLength === expectedLength
+                          : currentLength === expectedLength && !taxValidation.isValid
                           ? 'text-rose-500'
                           : 'text-slate-400'
                       }`}
@@ -501,9 +536,13 @@ export function ClientRegistrationModal({
                   <button
                     type="button"
                     onClick={handleLookup}
-                    disabled={!taxValidation.isValid || isSearchingApi}
+                    disabled={isSearchingApi || (currentLength !== 10 && currentLength !== 13)}
                     className="h-12 w-12 sm:w-auto sm:px-4 shrink-0 bg-blue-600 hover:bg-blue-700 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl flex items-center justify-center space-x-2 transition-all shadow-xs cursor-pointer"
-                    title={taxValidation.isValid ? 'Consultar en SRI / Registro Civil' : 'Ingresa los dígitos completos para consultar'}
+                    title={
+                      currentLength === 10 || currentLength === 13
+                        ? 'Consultar en SRI / Registro Civil'
+                        : 'Ingresa los 10 dígitos de Cédula o 13 del RUC para consultar'
+                    }
                   >
                     {isSearchingApi ? (
                       <Loader2 className="w-5 h-5 animate-spin" />

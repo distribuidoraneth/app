@@ -268,10 +268,10 @@ export function validateEcuadorianCedula(input: string): TaxIdValidationResult {
     };
   }
 
-  // 1. Validar código de provincia (01 - 24 o 30)
+  // 1. Validar código de provincia (01 - 24 o 30, 50)
   const provCode = digits.substring(0, 2);
   const provNum = parseInt(provCode, 10);
-  if (!((provNum >= 1 && provNum <= 24) || provNum === 30)) {
+  if (!((provNum >= 1 && provNum <= 24) || provNum === 30 || provNum === 50)) {
     return {
       isValid: false,
       type: '05',
@@ -289,7 +289,7 @@ export function validateEcuadorianCedula(input: string): TaxIdValidationResult {
       isValid: false,
       type: '05',
       cleanDigits: digits,
-      error: 'El tercer dígito de una cédula debe estar entre 0 y 5',
+      error: 'El tercer dígito de una cédula debe estar entre 0 y 5 (si es empresa, ingresa los 13 dígitos del RUC)',
     };
   }
 
@@ -349,10 +349,10 @@ export function validateEcuadorianRuc(input: string): TaxIdValidationResult {
     };
   }
 
-  // 1. Validar código de provincia
+  // 1. Validar código de provincia (01 - 24, o códigos especiales SRI como 30, 50, 80, 90)
   const provCode = digits.substring(0, 2);
   const provNum = parseInt(provCode, 10);
-  if (!((provNum >= 1 && provNum <= 24) || provNum === 30)) {
+  if (!((provNum >= 1 && provNum <= 24) || provNum === 30 || provNum === 50 || provNum === 80 || provNum === 90)) {
     return {
       isValid: false,
       type: '04',
@@ -361,7 +361,7 @@ export function validateEcuadorianRuc(input: string): TaxIdValidationResult {
     };
   }
 
-  const provinceName = ECUADOR_PROVINCES[provCode] || 'Provincia Especial';
+  const provinceName = ECUADOR_PROVINCES[provCode] || 'Entidad / Jurisdicción Especial';
   const thirdDigit = parseInt(digits.charAt(2), 10);
 
   // CASO 1: Persona Natural (Tercer dígito: 0 a 5)
@@ -408,10 +408,16 @@ export function validateEcuadorianRuc(input: string): TaxIdValidationResult {
     }
 
     const remainder = sum % 11;
-    const expectedVerifier = remainder === 0 ? 0 : 11 - remainder;
+    let expectedVerifier = remainder === 0 ? 0 : 11 - remainder;
+    if (expectedVerifier === 11) expectedVerifier = 0;
+    if (expectedVerifier === 10) expectedVerifier = 1;
     const actualVerifier = parseInt(digits.charAt(8), 10);
 
-    if (expectedVerifier !== actualVerifier) {
+    const isVerifierValid =
+      expectedVerifier === actualVerifier ||
+      (remainder === 1 && (actualVerifier === 1 || actualVerifier === 0));
+
+    if (!isVerifierValid) {
       return {
         isValid: false,
         type: '04',
@@ -450,10 +456,16 @@ export function validateEcuadorianRuc(input: string): TaxIdValidationResult {
     }
 
     const remainder = sum % 11;
-    const expectedVerifier = remainder === 0 ? 0 : 11 - remainder;
+    let expectedVerifier = remainder === 0 ? 0 : 11 - remainder;
+    if (expectedVerifier === 11) expectedVerifier = 0;
+    if (expectedVerifier === 10) expectedVerifier = 1;
     const actualVerifier = parseInt(digits.charAt(9), 10);
 
-    if (expectedVerifier !== actualVerifier) {
+    const isVerifierValid =
+      expectedVerifier === actualVerifier ||
+      (remainder === 1 && (actualVerifier === 1 || actualVerifier === 0));
+
+    if (!isVerifierValid) {
       return {
         isValid: false,
         type: '04',
@@ -483,7 +495,28 @@ export function validateEcuadorianRuc(input: string): TaxIdValidationResult {
     };
   }
 
-  // Si el tercer dígito es 7 u 8
+  // CASO 4: Tercer dígito especial (7 u 8: Embajadas, convenios o entes internacionales)
+  if (thirdDigit === 7 || thirdDigit === 8) {
+    const establishment = digits.substring(10, 13);
+    if (establishment === '000') {
+      return {
+        isValid: false,
+        type: '04',
+        cleanDigits: digits,
+        error: 'El establecimiento del RUC no puede ser 000',
+        province: provinceName,
+      };
+    }
+
+    return {
+      isValid: true,
+      type: '04',
+      cleanDigits: digits,
+      province: provinceName,
+      taxpayerType: 'privada',
+    };
+  }
+
   return {
     isValid: false,
     type: '04',
