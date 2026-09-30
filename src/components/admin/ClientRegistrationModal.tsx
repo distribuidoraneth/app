@@ -496,14 +496,14 @@ export function ClientRegistrationModal({
                         ? 'RUC (13 dígitos)'
                         : 'Cédula (10 dígitos) o RUC'
                     }
-                    className={`w-full text-base px-4 pr-14 py-3 bg-white border rounded-xl font-mono focus:ring-2 focus:ring-blue-600 focus:outline-hidden transition-all ${
+                    className={`w-full text-base px-4 pr-14 py-3 bg-white border rounded-xl font-mono focus:ring-2 focus:ring-blue-600 focus:outline-hidden transition-all text-slate-900 font-bold ${
                       isOfficialDataLocked
                         ? 'bg-slate-100 border-slate-200 text-slate-500 cursor-not-allowed'
                         : taxValidation.isValid
-                        ? 'border-emerald-500 focus:border-emerald-600 text-slate-900 font-bold'
-                        : currentLength === expectedLength && !taxValidation.isValid
-                        ? 'border-rose-400 focus:border-rose-500 text-rose-900 font-bold'
-                        : 'border-slate-300 text-slate-900 font-bold placeholder:font-normal'
+                        ? 'border-emerald-500 focus:border-emerald-600'
+                        : currentLength === expectedLength
+                        ? 'border-blue-400 focus:border-blue-600'
+                        : 'border-slate-300 placeholder:font-normal'
                     }`}
                   />
 
@@ -513,8 +513,8 @@ export function ClientRegistrationModal({
                       className={`text-xs font-mono font-black ${
                         taxValidation.isValid
                           ? 'text-emerald-600'
-                          : currentLength === expectedLength && !taxValidation.isValid
-                          ? 'text-rose-500'
+                          : currentLength === expectedLength
+                          ? 'text-blue-600'
                           : 'text-slate-400'
                       }`}
                     >

@@ -366,19 +366,6 @@ export function validateEcuadorianRuc(input: string): TaxIdValidationResult {
 
   // CASO 1: Persona Natural (Tercer dígito: 0 a 5)
   if (thirdDigit < 6) {
-    const cedulaPart = digits.substring(0, 10);
-    const cedulaRes = validateEcuadorianCedula(cedulaPart);
-
-    if (!cedulaRes.isValid) {
-      return {
-        isValid: false,
-        type: '04',
-        cleanDigits: digits,
-        error: cedulaRes.error || 'La base de cédula del RUC no es válida',
-        province: provinceName,
-      };
-    }
-
     const establishment = digits.substring(10, 13);
     if (establishment === '000') {
       return {
@@ -401,32 +388,6 @@ export function validateEcuadorianRuc(input: string): TaxIdValidationResult {
 
   // CASO 2: Sociedad Pública / Institución Estatal (Tercer dígito = 6)
   if (thirdDigit === 6) {
-    const coefficients = [3, 2, 7, 6, 5, 4, 3, 2];
-    let sum = 0;
-    for (let i = 0; i < 8; i++) {
-      sum += parseInt(digits.charAt(i), 10) * coefficients[i];
-    }
-
-    const remainder = sum % 11;
-    let expectedVerifier = remainder === 0 ? 0 : 11 - remainder;
-    if (expectedVerifier === 11) expectedVerifier = 0;
-    if (expectedVerifier === 10) expectedVerifier = 1;
-    const actualVerifier = parseInt(digits.charAt(8), 10);
-
-    const isVerifierValid =
-      expectedVerifier === actualVerifier ||
-      (remainder === 1 && (actualVerifier === 1 || actualVerifier === 0));
-
-    if (!isVerifierValid) {
-      return {
-        isValid: false,
-        type: '04',
-        cleanDigits: digits,
-        error: 'Dígito verificador de institución pública incorrecto',
-        province: provinceName,
-      };
-    }
-
     const establishment = digits.substring(9, 13);
     if (establishment === '0000') {
       return {
@@ -449,32 +410,6 @@ export function validateEcuadorianRuc(input: string): TaxIdValidationResult {
 
   // CASO 3: Sociedad Privada / Jurídica / Extranjeros (Tercer dígito = 9)
   if (thirdDigit === 9) {
-    const coefficients = [4, 3, 2, 7, 6, 5, 4, 3, 2];
-    let sum = 0;
-    for (let i = 0; i < 9; i++) {
-      sum += parseInt(digits.charAt(i), 10) * coefficients[i];
-    }
-
-    const remainder = sum % 11;
-    let expectedVerifier = remainder === 0 ? 0 : 11 - remainder;
-    if (expectedVerifier === 11) expectedVerifier = 0;
-    if (expectedVerifier === 10) expectedVerifier = 1;
-    const actualVerifier = parseInt(digits.charAt(9), 10);
-
-    const isVerifierValid =
-      expectedVerifier === actualVerifier ||
-      (remainder === 1 && (actualVerifier === 1 || actualVerifier === 0));
-
-    if (!isVerifierValid) {
-      return {
-        isValid: false,
-        type: '04',
-        cleanDigits: digits,
-        error: 'Dígito verificador de sociedad privada incorrecto',
-        province: provinceName,
-      };
-    }
-
     const establishment = digits.substring(10, 13);
     if (establishment === '000') {
       return {
