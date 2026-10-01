@@ -49,6 +49,7 @@ export interface CartItem {
   totalBottles: number;
   subtotal: number;
   imageUrl: string;
+  isPromo?: boolean;
 }
 
 export interface Client {

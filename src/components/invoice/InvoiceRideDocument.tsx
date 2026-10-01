@@ -298,40 +298,48 @@ export const InvoiceRideDocument: React.FC<InvoiceRideDocumentProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 text-slate-800">
-              {facturaLines.map((line, idx) => (
-                <tr key={idx} className="hover:bg-slate-50/50">
-                  <td className="px-3 border-r border-slate-200 align-middle">
-                    <div className="h-full min-h-[32px] flex items-center font-mono text-[10.5px] sm:text-[11px] font-semibold text-slate-800">
-                      {line.codigoPrincipal}
-                    </div>
-                  </td>
-                  <td className="px-2 border-r border-slate-200 align-middle">
-                    <div className="h-full min-h-[32px] flex items-center justify-end font-mono text-[10.5px] sm:text-[11px]">
-                      {line.cantidad.toFixed(2)}
-                    </div>
-                  </td>
-                  <td className="px-3 border-r border-slate-200 align-middle">
-                    <div className="h-full min-h-[32px] py-1.5 flex items-center text-slate-900 text-xs font-medium leading-snug">
-                      {line.descripcion}
-                    </div>
-                  </td>
-                  <td className="px-2.5 border-r border-slate-200 align-middle">
-                    <div className="h-full min-h-[32px] flex items-center justify-end font-mono text-[10.5px] sm:text-[11px]">
-                      {line.precioUnitarioSinIva.toFixed(4)}
-                    </div>
-                  </td>
-                  <td className="px-2 border-r border-slate-200 align-middle">
-                    <div className="h-full min-h-[32px] flex items-center justify-end font-mono text-[10.5px] sm:text-[11px] text-slate-500">
-                      0.00
-                    </div>
-                  </td>
-                  <td className="px-3 align-middle">
-                    <div className="h-full min-h-[32px] flex items-center justify-end font-mono font-semibold text-slate-900 text-[10.5px] sm:text-[11px]">
-                      {line.precioTotalSinImpuesto.toFixed(2)}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {facturaLines.map((line, idx) => {
+                const isPromoLine = Boolean(line.isPromo) || line.precioTotalSinImpuesto === 0 || line.descripcion.includes('[BONIFICACIÓN GRATIS]');
+                return (
+                  <tr key={idx} className={`hover:bg-slate-50/50 ${isPromoLine ? 'bg-emerald-50/25' : ''}`}>
+                    <td className="px-3 border-r border-slate-200 align-middle">
+                      <div className="h-full min-h-[32px] flex items-center font-mono text-[10.5px] sm:text-[11px] font-semibold text-slate-800">
+                        {line.codigoPrincipal}
+                      </div>
+                    </td>
+                    <td className="px-2 border-r border-slate-200 align-middle">
+                      <div className="h-full min-h-[32px] flex items-center justify-end font-mono text-[10.5px] sm:text-[11px]">
+                        {line.cantidad.toFixed(2)}
+                      </div>
+                    </td>
+                    <td className="px-3 border-r border-slate-200 align-middle">
+                      <div className="h-full min-h-[32px] py-1.5 flex items-center flex-wrap gap-1.5 text-slate-900 text-xs font-medium leading-snug">
+                        <span>{line.descripcion.replace(/\s*\[BONIFICACIÓN GRATIS\]/g, '')}</span>
+                        {isPromoLine && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300">
+                            PROMO GRATIS
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-2.5 border-r border-slate-200 align-middle">
+                      <div className={`h-full min-h-[32px] flex items-center justify-end font-mono text-[10.5px] sm:text-[11px] ${isPromoLine ? 'text-emerald-700 font-bold' : ''}`}>
+                        {isPromoLine ? '0.00' : line.precioUnitarioSinIva.toFixed(4)}
+                      </div>
+                    </td>
+                    <td className="px-2 border-r border-slate-200 align-middle">
+                      <div className="h-full min-h-[32px] flex items-center justify-end font-mono text-[10.5px] sm:text-[11px] text-slate-500">
+                        0.00
+                      </div>
+                    </td>
+                    <td className="px-3 align-middle">
+                      <div className={`h-full min-h-[32px] flex items-center justify-end font-mono font-semibold text-[10.5px] sm:text-[11px] ${isPromoLine ? 'text-emerald-700 font-bold' : 'text-slate-900'}`}>
+                        {isPromoLine ? '0.00' : line.precioTotalSinImpuesto.toFixed(2)}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -709,40 +717,48 @@ export const InvoiceRideDocument: React.FC<InvoiceRideDocumentProps> = ({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 text-slate-800">
-                  {page.lines.map((line, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50/50">
-                      <td className="px-2.5 border-r border-slate-200 align-middle">
-                        <div className="h-full min-h-[28px] flex items-center font-mono text-[10.5px] font-semibold text-slate-800">
-                          {line.codigoPrincipal}
-                        </div>
-                      </td>
-                      <td className="px-2 border-r border-slate-200 align-middle">
-                        <div className="h-full min-h-[28px] flex items-center justify-end font-mono text-[10.5px]">
-                          {line.cantidad.toFixed(2)}
-                        </div>
-                      </td>
-                      <td className="px-2.5 border-r border-slate-200 align-middle">
-                        <div className="h-full min-h-[28px] py-1 flex items-center text-slate-900 text-[11px] font-medium leading-snug">
-                          {line.descripcion}
-                        </div>
-                      </td>
-                      <td className="px-2 border-r border-slate-200 align-middle">
-                        <div className="h-full min-h-[28px] flex items-center justify-end font-mono text-[10.5px]">
-                          {line.precioUnitarioSinIva.toFixed(4)}
-                        </div>
-                      </td>
-                      <td className="px-2 border-r border-slate-200 align-middle">
-                        <div className="h-full min-h-[28px] flex items-center justify-end font-mono text-[10.5px] text-slate-500">
-                          0.00
-                        </div>
-                      </td>
-                      <td className="px-2.5 align-middle">
-                        <div className="h-full min-h-[28px] flex items-center justify-end font-mono font-semibold text-slate-900 text-[10.5px]">
-                          {line.precioTotalSinImpuesto.toFixed(2)}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                  {page.lines.map((line, idx) => {
+                    const isPromoLine = Boolean(line.isPromo) || line.precioTotalSinImpuesto === 0 || line.descripcion.includes('[BONIFICACIÓN GRATIS]');
+                    return (
+                      <tr key={idx} className={`hover:bg-slate-50/50 ${isPromoLine ? 'bg-emerald-50/20' : ''}`}>
+                        <td className="px-2.5 border-r border-slate-200 align-middle">
+                          <div className="h-full min-h-[28px] flex items-center font-mono text-[10.5px] font-semibold text-slate-800">
+                            {line.codigoPrincipal}
+                          </div>
+                        </td>
+                        <td className="px-2 border-r border-slate-200 align-middle">
+                          <div className="h-full min-h-[28px] flex items-center justify-end font-mono text-[10.5px]">
+                            {line.cantidad.toFixed(2)}
+                          </div>
+                        </td>
+                        <td className="px-2.5 border-r border-slate-200 align-middle">
+                          <div className="h-full min-h-[28px] py-1 flex items-center flex-wrap gap-1 text-slate-900 text-[11px] font-medium leading-snug">
+                            <span>{line.descripcion.replace(/\s*\[BONIFICACIÓN GRATIS\]/g, '')}</span>
+                            {isPromoLine && (
+                              <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[9.5px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                BONIFICACIÓN GRATIS
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-2 border-r border-slate-200 align-middle">
+                          <div className={`h-full min-h-[28px] flex items-center justify-end font-mono text-[10.5px] ${isPromoLine ? 'text-emerald-700 font-bold' : ''}`}>
+                            {isPromoLine ? '0.00' : line.precioUnitarioSinIva.toFixed(4)}
+                          </div>
+                        </td>
+                        <td className="px-2 border-r border-slate-200 align-middle">
+                          <div className="h-full min-h-[28px] flex items-center justify-end font-mono text-[10.5px] text-slate-500">
+                            0.00
+                          </div>
+                        </td>
+                        <td className="px-2.5 align-middle">
+                          <div className={`h-full min-h-[28px] flex items-center justify-end font-mono font-semibold text-[10.5px] ${isPromoLine ? 'text-emerald-700 font-bold' : 'text-slate-900'}`}>
+                            {isPromoLine ? '0.00' : line.precioTotalSinImpuesto.toFixed(2)}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
 

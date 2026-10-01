@@ -1,4 +1,4 @@
-import { Client, JavaProductOption, Order, Invoice } from '@/types';
+import type { Client, JavaProductOption, Order, Invoice } from '@/types';
 
 export const INITIAL_CLIENTS: Client[] = [];
 

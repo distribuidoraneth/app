@@ -155,10 +155,12 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
   // VENTA MIXTA: Javas y Unidades Sueltas (inician en 0 para exigir confirmación con +)
   const [javasCount, setJavasCount] = useState<number>(0);
   const [unitsCount, setUnitsCount] = useState<number>(0);
+  const [isPromo, setIsPromo] = useState<boolean>(false);
 
   const resetQuantities = () => {
     setJavasCount(0);
     setUnitsCount(0);
+    setIsPromo(false);
   };
 
   const handleTypeChange = (type: BeverageType) => {
@@ -202,7 +204,7 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
 
   // Subtotal Actual Dinámico con auto-conversión si las unidades completan paquetes
   const currentTotalSubtotal = useMemo(() => {
-    if (!currentOption) return 0;
+    if (!currentOption || isPromo) return 0;
     const extraJavas = Math.floor(unitsCount / currentOption.unitsPerJava);
     const effectiveUnits = unitsCount % currentOption.unitsPerJava;
     const effectiveJavas = javasCount + extraJavas;
@@ -210,7 +212,7 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
     const javasVal = effectiveJavas * effectivePricePerJava;
     const unitsVal = effectiveUnits * unitPrice;
     return Number((javasVal + unitsVal).toFixed(2));
-  }, [currentOption, javasCount, unitsCount, effectivePricePerJava, unitPrice]);
+  }, [currentOption, javasCount, unitsCount, effectivePricePerJava, unitPrice, isPromo]);
 
   const handleIncrementUnits = () => {
     if (!currentOption) return;
@@ -233,6 +235,12 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
     const finalUnits = unitsCount % currentOption.unitsPerJava;
     const finalJavas = javasCount + extraJavas;
 
+    const finalPricePerJava = isPromo ? 0 : effectivePricePerJava;
+    const finalPricePerUnit = isPromo ? 0 : unitPrice;
+    const finalSubtotal = isPromo
+      ? 0
+      : Number(((finalJavas * effectivePricePerJava) + (finalUnits * unitPrice)).toFixed(2));
+
     const newItem: CartItem = {
       id: `cart-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       productOptionId: currentOption.id,
@@ -245,11 +253,12 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
       quantityJavas: finalJavas,
       quantityUnits: finalUnits,
       unitsPerJava: currentOption.unitsPerJava,
-      pricePerJava: effectivePricePerJava,
-      pricePerUnit: unitPrice,
+      pricePerJava: finalPricePerJava,
+      pricePerUnit: finalPricePerUnit,
       totalBottles: (finalJavas * currentOption.unitsPerJava) + finalUnits,
-      subtotal: Number(((finalJavas * effectivePricePerJava) + (finalUnits * unitPrice)).toFixed(2)),
+      subtotal: finalSubtotal,
       imageUrl: currentOption.imageUrl,
+      isPromo,
     };
 
     addToCart(newItem);
@@ -485,6 +494,32 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
           {/* PASO 3: CANTIDAD, TOTAL Y AGREGAR */}
           {currentOption && (
             <div className="pt-3.5 border-t border-slate-100 space-y-3 sm:space-y-3.5">
+              {/* Modalidad de Venta: Normal vs Promoción / Bonificación Gratis */}
+              <div className="bg-slate-100/90 p-1 rounded-2xl flex items-center gap-1 border border-slate-200/80">
+                <button
+                  type="button"
+                  onClick={() => setIsPromo(false)}
+                  className={`flex-1 py-2 px-3 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                    !isPromo
+                      ? 'bg-white text-slate-900 shadow-xs'
+                      : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  <span>💵 Venta Normal</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsPromo(true)}
+                  className={`flex-1 py-2 px-3 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                    isPromo
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'text-emerald-700 hover:bg-emerald-50'
+                  }`}
+                >
+                  <span>🎁 Promo Gratis ($0.00)</span>
+                </button>
+              </div>
+
               {/* 1. Botones de Packs/Javas y Unidades en dos filas simétricas a la misma altura */}
               <div className="space-y-2.5">
                 {/* Fila 1: Javas / Packs */}
@@ -514,7 +549,9 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
                     <button
                       type="button"
                       onClick={() => setJavasCount((c) => c + 1)}
-                      className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-blue-600 text-white hover:bg-blue-700 active:scale-95 flex items-center justify-center transition-all shadow-xs cursor-pointer select-none"
+                      className={`w-10 h-10 sm:w-11 sm:h-11 rounded-xl text-white active:scale-95 flex items-center justify-center transition-all shadow-xs cursor-pointer select-none ${
+                        isPromo ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-blue-600 hover:bg-blue-700'
+                      }`}
                       aria-label="Sumar java"
                     >
                       <ApplePlusIcon size={16} className="text-white" />
@@ -546,7 +583,9 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
                     <button
                       type="button"
                       onClick={handleIncrementUnits}
-                      className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-blue-600 text-white hover:bg-blue-700 active:scale-95 flex items-center justify-center transition-all shadow-xs cursor-pointer select-none"
+                      className={`w-10 h-10 sm:w-11 sm:h-11 rounded-xl text-white active:scale-95 flex items-center justify-center transition-all shadow-xs cursor-pointer select-none ${
+                        isPromo ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-blue-600 hover:bg-blue-700'
+                      }`}
                       aria-label="Sumar unidad"
                     >
                       <ApplePlusIcon size={16} className="text-white" />
@@ -561,22 +600,30 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
                   <span className="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider block">
                     Total a Pagar
                   </span>
-                  <div className="text-2xl sm:text-3xl font-black text-slate-900 font-mono tracking-tight leading-none mt-1">
-                    {javasCount === 0 && unitsCount === 0 ? '$0.00' : formatCurrency(currentTotalSubtotal)}
+                  <div className={`text-2xl sm:text-3xl font-black font-mono tracking-tight leading-none mt-1 ${isPromo ? 'text-emerald-600' : 'text-slate-900'}`}>
+                    {isPromo ? '$0.00' : (javasCount === 0 && unitsCount === 0 ? '$0.00' : formatCurrency(currentTotalSubtotal))}
                   </div>
                 </div>
 
-                {/* Badges de tarifas si aplica */}
+                {/* Badges de tarifas o Promo */}
                 <div className="flex items-center gap-1.5">
-                  {clientTier === 'distribuidor' && (
-                    <span className="text-xs font-black text-purple-700 bg-purple-100 border border-purple-200 px-3 py-1 rounded-xl">
-                      Tarifa Distribuidor
+                  {isPromo ? (
+                    <span className="text-xs font-black text-emerald-800 bg-emerald-100 border border-emerald-300 px-3 py-1 rounded-xl">
+                      PROMO GRATIS ($0.00)
                     </span>
-                  )}
-                  {clientTier === 'especial' && (
-                    <span className="text-xs font-black text-amber-700 bg-amber-100 border border-amber-200 px-3 py-1 rounded-xl">
-                      Tarifa Especial
-                    </span>
+                  ) : (
+                    <>
+                      {clientTier === 'distribuidor' && (
+                        <span className="text-xs font-black text-purple-700 bg-purple-100 border border-purple-200 px-3 py-1 rounded-xl">
+                          Tarifa Distribuidor
+                        </span>
+                      )}
+                      {clientTier === 'especial' && (
+                        <span className="text-xs font-black text-amber-700 bg-amber-100 border border-amber-200 px-3 py-1 rounded-xl">
+                          Tarifa Especial
+                        </span>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
@@ -588,12 +635,14 @@ export function BeverageOrderPasarela({ onGoToCheckout }: BeverageOrderPasarelaP
                 onClick={handleAddToCart}
                 className={`w-full py-3.5 sm:py-4 px-6 rounded-2xl font-black text-base sm:text-lg flex items-center justify-center space-x-2 transition-all select-none ${
                   canAddToCart
-                    ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md active:scale-[0.99] cursor-pointer'
+                    ? isPromo
+                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md active:scale-[0.99] cursor-pointer'
+                      : 'bg-blue-600 hover:bg-blue-700 text-white shadow-md active:scale-[0.99] cursor-pointer'
                     : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-none'
                 }`}
               >
                 {canAddToCart && <ApplePlusIcon size={18} className="text-white mr-1.5" />}
-                <span>Agregar</span>
+                <span>{isPromo ? 'Agregar como Promoción Gratis' : 'Agregar'}</span>
               </button>
             </div>
           )}

@@ -70,6 +70,7 @@ export function CartDrawer({
     cart,
     removeFromCart,
     updateCartQuantity,
+    toggleCartItemPromo,
     cartTotalAmount,
     cartTotalJavas,
     cartTotalUnits,
@@ -573,6 +574,7 @@ export function CartDrawer({
                 </span>
 
                 {cart.map((item) => {
+                  const isPromo = Boolean(item.isPromo);
                   const totalUnits = (item.quantityJavas * item.unitsPerJava) + item.quantityUnits;
                   const packs = Math.floor(totalUnits / item.unitsPerJava);
                   const loose = totalUnits % item.unitsPerJava;
@@ -585,7 +587,9 @@ export function CartDrawer({
                   return (
                     <div
                       key={item.id}
-                      className="p-3.5 bg-white rounded-2xl border border-slate-200/90 shadow-2xs space-y-2.5"
+                      className={`p-3.5 bg-white rounded-2xl border shadow-2xs space-y-2.5 transition-all ${
+                        isPromo ? 'border-emerald-300 ring-1 ring-emerald-500/20 bg-emerald-50/15' : 'border-slate-200/90'
+                      }`}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="space-y-1 min-w-0">
@@ -594,6 +598,11 @@ export function CartDrawer({
                               <span>{formatItemTitle(item)}</span>
                               {item.flavorType !== 'surtido' && item.selectedFlavor && renderFlavorThumbnail(item.selectedFlavor, 20)}
                             </span>
+                            {isPromo && (
+                              <span className="bg-emerald-600 text-white text-[10.5px] font-black px-2 py-0.5 rounded-full tracking-wide uppercase shadow-2xs">
+                                PROMO GRATIS
+                              </span>
+                            )}
                             <span className="bg-slate-100 text-slate-600 border border-slate-200 text-xs font-bold px-2 py-0.5 rounded-md">
                               {item.unitsPerJava} und
                             </span>
@@ -619,9 +628,21 @@ export function CartDrawer({
                           )}
                         </div>
 
-                        <div className="text-right flex items-center space-x-2.5">
-                          <span className="text-base sm:text-lg font-mono font-black text-blue-700 block">
-                            {formatCurrency(item.subtotal)}
+                        <div className="text-right flex items-center space-x-2 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => toggleCartItemPromo(item.id, activeClient?.id)}
+                            className={`text-xs px-2.5 py-1 rounded-lg font-bold border transition-all cursor-pointer ${
+                              isPromo
+                                ? 'bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-200'
+                                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                            }`}
+                            title={isPromo ? "Cambiar a producto con costo normal" : "Conmutar a promoción gratis ($0.00)"}
+                          >
+                            {isPromo ? '🎁 Gratis' : '💵 Con costo'}
+                          </button>
+                          <span className={`text-base sm:text-lg font-mono font-black block ${isPromo ? 'text-emerald-600' : 'text-blue-700'}`}>
+                            {isPromo ? '$0.00' : formatCurrency(item.subtotal)}
                           </span>
                           <button
                             type="button"
@@ -637,7 +658,14 @@ export function CartDrawer({
                       {/* Clear Breakdown: Packs and Loose units */}
                       <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs sm:text-sm">
                         <div className="flex items-center flex-wrap gap-x-2 gap-y-1 text-slate-600 font-medium">
-                          {packs > 0 && loose > 0 ? (
+                          {isPromo ? (
+                            <span className="font-bold text-emerald-700">
+                              {packs > 0 ? `${packs} ${packLabel}` : ''}
+                              {packs > 0 && loose > 0 ? ' + ' : ''}
+                              {loose > 0 ? `${loose} ${loose === 1 ? 'Unidad' : 'Unidades'}` : ''}
+                              {' '}• Bonificación sin costo ($0.00)
+                            </span>
+                          ) : packs > 0 && loose > 0 ? (
                             <>
                               <span className="font-bold text-slate-800">
                                 {packs} {packLabel} <span className="text-slate-500 font-normal">({formatCurrency(packSubtotal)})</span>

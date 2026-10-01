@@ -61,6 +61,7 @@ interface DistributionContextType {
   addToCart: (item: CartItem) => void;
   removeFromCart: (itemId: string) => void;
   updateCartQuantity: (itemId: string, quantityJavas: number, quantityUnits?: number) => void;
+  toggleCartItemPromo: (itemId: string, clientId?: string) => void;
   clearCart: () => void;
   cartTotalAmount: number;
   cartTotalJavas: number;
@@ -485,15 +486,21 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
       const itemExtraJavas = Math.floor((newItem.quantityUnits || 0) / (newItem.unitsPerJava || 12));
       const normalizedUnits = (newItem.quantityUnits || 0) % (newItem.unitsPerJava || 12);
       const normalizedJavas = newItem.quantityJavas + itemExtraJavas;
+      const isPromo = Boolean(newItem.isPromo) || (Number(newItem.subtotal || 0) === 0 && Number(newItem.pricePerJava || 0) === 0);
 
       const normalizedItem: CartItem = {
         ...newItem,
         quantityJavas: normalizedJavas,
         quantityUnits: normalizedUnits,
         totalBottles: (normalizedJavas * (newItem.unitsPerJava || 12)) + normalizedUnits,
-        subtotal: Number(
-          ((normalizedJavas * newItem.pricePerJava) + (normalizedUnits * newItem.pricePerUnit)).toFixed(2)
-        ),
+        pricePerJava: isPromo ? 0 : newItem.pricePerJava,
+        pricePerUnit: isPromo ? 0 : newItem.pricePerUnit,
+        subtotal: isPromo
+          ? 0
+          : Number(
+              ((normalizedJavas * newItem.pricePerJava) + (normalizedUnits * newItem.pricePerUnit)).toFixed(2)
+            ),
+        isPromo,
       };
 
       const existingIndex = prev.findIndex(
@@ -501,6 +508,7 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
           item.productOptionId === normalizedItem.productOptionId &&
           item.flavorType === normalizedItem.flavorType &&
           item.selectedFlavor === normalizedItem.selectedFlavor &&
+          Boolean(item.isPromo) === Boolean(normalizedItem.isPromo) &&
           JSON.stringify(item.surtidoDetails || {}) === JSON.stringify(normalizedItem.surtidoDetails || {})
       );
 
@@ -512,9 +520,11 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
         const combinedUnits = rawUnits % (existing.unitsPerJava || 12);
         const combinedJavas = existing.quantityJavas + normalizedItem.quantityJavas + extraJavas;
         const combinedBottles = (combinedJavas * existing.unitsPerJava) + combinedUnits;
-        const combinedSubtotal = Number(
-          ((combinedJavas * existing.pricePerJava) + (combinedUnits * existing.pricePerUnit)).toFixed(2)
-        );
+        const combinedSubtotal = isPromo
+          ? 0
+          : Number(
+              ((combinedJavas * existing.pricePerJava) + (combinedUnits * existing.pricePerUnit)).toFixed(2)
+            );
 
         updated[existingIndex] = {
           ...existing,
@@ -522,6 +532,7 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
           quantityUnits: combinedUnits,
           totalBottles: combinedBottles,
           subtotal: combinedSubtotal,
+          isPromo,
         };
         return updated;
       }
@@ -552,7 +563,8 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
           const qU = rawUnits % (item.unitsPerJava || 12);
           const qJ = Math.max(0, quantityJavas) + extraJavas;
           const totalBottles = (qJ * item.unitsPerJava) + qU;
-          const subtotal = Number(((qJ * item.pricePerJava) + (qU * item.pricePerUnit)).toFixed(2));
+          const isPromo = Boolean(item.isPromo);
+          const subtotal = isPromo ? 0 : Number(((qJ * item.pricePerJava) + (qU * item.pricePerUnit)).toFixed(2));
           return {
             ...item,
             quantityJavas: qJ,
@@ -564,6 +576,94 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
         return item;
       })
     );
+  };
+
+  const toggleCartItemPromo = (itemId: string, targetClientId?: string) => {
+    setCart((prev) => {
+      const targetIndex = prev.findIndex((i) => i.id === itemId);
+      if (targetIndex === -1) return prev;
+
+      const item = prev[targetIndex];
+      const willBePromo = !item.isPromo;
+
+      let updatedItem: CartItem;
+      if (willBePromo) {
+        updatedItem = {
+          ...item,
+          isPromo: true,
+          pricePerJava: 0,
+          pricePerUnit: 0,
+          subtotal: 0,
+        };
+      } else {
+        const effectiveClientId = targetClientId || selectedClientId;
+        const activeClient = clients.find((c) => c.id === effectiveClientId) || clients[0];
+        const clientTier = activeClient?.clientTier || 'normal';
+        const cat = catalog.find((c) => c.id === item.productOptionId);
+        const unitsPerJava = cat?.unitsPerJava || item.unitsPerJava || 12;
+
+        let pricePerJava = cat?.pricePerJava || item.pricePerJava || 0;
+        if (clientTier === 'distribuidor' && cat?.priceDistribuidor) {
+          pricePerJava = cat.priceDistribuidor;
+        } else if (clientTier === 'especial' && cat?.priceEspecial) {
+          pricePerJava = cat.priceEspecial;
+        }
+
+        const pricePerUnit = cat?.pricePerUnit || Number((pricePerJava / unitsPerJava).toFixed(4));
+        const subtotal = Number(
+          ((item.quantityJavas * pricePerJava) + ((item.quantityUnits || 0) * pricePerUnit)).toFixed(2)
+        );
+
+        updatedItem = {
+          ...item,
+          isPromo: false,
+          pricePerJava,
+          pricePerUnit,
+          subtotal,
+        };
+      }
+
+      // Si existe otro ítem con los mismos atributos y el mismo estado promo, fusionar
+      const duplicateIndex = prev.findIndex(
+        (it, idx) =>
+          idx !== targetIndex &&
+          it.productOptionId === updatedItem.productOptionId &&
+          it.flavorType === updatedItem.flavorType &&
+          it.selectedFlavor === updatedItem.selectedFlavor &&
+          Boolean(it.isPromo) === Boolean(updatedItem.isPromo) &&
+          JSON.stringify(it.surtidoDetails || {}) === JSON.stringify(updatedItem.surtidoDetails || {})
+      );
+
+      if (duplicateIndex > -1) {
+        const existing = prev[duplicateIndex];
+        const rawUnits = (existing.quantityUnits || 0) + (updatedItem.quantityUnits || 0);
+        const extraJavas = Math.floor(rawUnits / (existing.unitsPerJava || 12));
+        const combinedUnits = rawUnits % (existing.unitsPerJava || 12);
+        const combinedJavas = existing.quantityJavas + updatedItem.quantityJavas + extraJavas;
+        const combinedBottles = (combinedJavas * existing.unitsPerJava) + combinedUnits;
+        const isPromoState = Boolean(updatedItem.isPromo);
+        const combinedSubtotal = isPromoState
+          ? 0
+          : Number(
+              ((combinedJavas * existing.pricePerJava) + (combinedUnits * existing.pricePerUnit)).toFixed(2)
+            );
+
+        const merged: CartItem = {
+          ...existing,
+          quantityJavas: combinedJavas,
+          quantityUnits: combinedUnits,
+          totalBottles: combinedBottles,
+          subtotal: combinedSubtotal,
+          isPromo: isPromoState,
+        };
+
+        return prev
+          .filter((_, idx) => idx !== targetIndex)
+          .map((it) => (it.id === existing.id ? merged : it));
+      }
+
+      return prev.map((it) => (it.id === itemId ? updatedItem : it));
+    });
   };
 
   const clearCart = () => {
@@ -1449,6 +1549,7 @@ export function DistributionProvider({ children }: { children: React.ReactNode }
         addToCart,
         removeFromCart,
         updateCartQuantity,
+        toggleCartItemPromo,
         clearCart,
         cartTotalAmount,
         cartTotalJavas,

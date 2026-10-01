@@ -344,6 +344,7 @@ function mapDbOrder(o: any): Order {
       pricePerUnit: Number(it.price_per_unit || 0),
       totalBottles: Number(it.total_bottles || 0),
       subtotal: Number(it.subtotal || 0),
+      isPromo: Boolean(it.is_promo) || (Number(it.subtotal || 0) === 0 && Number(it.price_per_java || 0) === 0),
     })),
     totalJavas: Number(o.total_javas || 0),
     totalUnits: Number(o.total_units || 0),
@@ -494,28 +495,32 @@ export async function saveOrderToDb(order: Order): Promise<{ success: boolean; d
 
     // Insert order items
     if (insertedOrder && order.items && order.items.length > 0) {
-      const itemsToInsert = order.items.map((item) => ({
-        order_id: insertedOrder.id,
-        product_option_id: item.productOptionId || null,
-        brand: item.brand || 'Fructi',
-        beverage_type: item.beverageType,
-        container: item.container,
-        size: item.size,
-        flavor_type: item.flavorType,
-        selected_flavor: item.selectedFlavor,
-        surtido_details: item.surtidoDetails,
-        quantity_javas: item.quantityJavas,
-        quantity_units: item.quantityUnits || 0,
-        units_per_java: item.unitsPerJava,
-        price_per_java: item.pricePerJava,
-        price_per_unit: item.pricePerUnit || Number((item.pricePerJava / item.unitsPerJava).toFixed(4)),
-        total_bottles: item.totalBottles || ((item.quantityJavas * item.unitsPerJava) + (item.quantityUnits || 0)),
-        subtotal: item.subtotal,
-      }));
+      const itemsToInsert = order.items.map((item) => {
+        const isPromo = Boolean(item.isPromo) || (Number(item.subtotal || 0) === 0 && Number(item.pricePerJava || 0) === 0);
+        return {
+          order_id: insertedOrder.id,
+          product_option_id: item.productOptionId || null,
+          brand: item.brand || 'Fructi',
+          beverage_type: item.beverageType,
+          container: item.container,
+          size: item.size,
+          flavor_type: item.flavorType,
+          selected_flavor: item.selectedFlavor,
+          surtido_details: item.surtidoDetails,
+          quantity_javas: item.quantityJavas,
+          quantity_units: item.quantityUnits || 0,
+          units_per_java: item.unitsPerJava,
+          price_per_java: isPromo ? 0 : item.pricePerJava,
+          price_per_unit: isPromo ? 0 : (item.pricePerUnit || Number(((item.pricePerJava || 0) / (item.unitsPerJava || 12)).toFixed(4))),
+          total_bottles: item.totalBottles || ((item.quantityJavas * (item.unitsPerJava || 12)) + (item.quantityUnits || 0)),
+          subtotal: isPromo ? 0 : item.subtotal,
+          is_promo: isPromo,
+        };
+      });
 
       let { error: itemsErr } = await supabase.from('order_items').insert(itemsToInsert);
       if (itemsErr && (itemsErr.code === '42703' || itemsErr.code === '23503')) {
-        const fallbackItems = itemsToInsert.map(({ brand, product_option_id, ...rest }: any) => ({
+        const fallbackItems = itemsToInsert.map(({ brand, product_option_id, is_promo, ...rest }: any) => ({
           ...rest,
           product_option_id: itemsErr?.code === '23503' ? null : product_option_id,
         }));
@@ -792,15 +797,18 @@ function mapDbInvoice(i: any): Invoice {
       cat?.unitsPerJava ||
       (isVidrio ? 24 : size.includes('3.0') || size.includes('3L') ? 6 : 12);
 
-    const pricePerUnit = Number(it.unit_price) || cat?.pricePerUnit || 0;
-    const pricePerJava =
-      cat?.pricePerJava || Number((pricePerUnit * unitsPerJava).toFixed(2));
+    const isPromo = Boolean(it.is_promo) ||
+      (Number(it.subtotal || 0) === 0 && Number(it.unit_price || 0) <= 0.001) ||
+      Boolean(it.description?.includes('[BONIFICACIÓN GRATIS]'));
+
+    const pricePerUnit = isPromo ? 0 : (Number(it.unit_price) || cat?.pricePerUnit || 0);
+    const pricePerJava = isPromo ? 0 : (cat?.pricePerJava || Number((pricePerUnit * unitsPerJava).toFixed(2)));
 
     let selectedFlavor = 'Original';
     if (it.description) {
       const parts = it.description.split('-');
       if (parts.length > 1) {
-        selectedFlavor = parts[1].replace(/\(.*\)/, '').trim();
+        selectedFlavor = parts[1].replace(/\(.*\)/, '').replace(/\[.*\]/, '').trim();
       }
     }
 
@@ -819,7 +827,8 @@ function mapDbInvoice(i: any): Invoice {
       pricePerJava,
       pricePerUnit,
       totalBottles: Math.max(0, Number(it.total_quantity || 0)),
-      subtotal: Math.max(0, Number(it.subtotal || 0)),
+      subtotal: isPromo ? 0 : Math.max(0, Number(it.subtotal || 0)),
+      isPromo,
     };
   });
 
@@ -989,25 +998,36 @@ export async function saveInvoiceToDb(
           cat?.unitsPerJava ||
           it.unitsPerJava ||
           (isVidrio ? 24 : size.includes('3.0') || size.includes('3L') ? 6 : 12);
-        const pricePerJava = it.pricePerJava > 0 ? itemPrice(it.pricePerJava) : (cat?.pricePerJava || 0);
-        function itemPrice(p: any) { return Number(p) || 0; }
-        const pricePerUnit =
-          it.pricePerUnit > 0
-            ? it.pricePerUnit
-            : cat?.pricePerUnit || Number(((pricePerJava || 0) / unitsPerJava).toFixed(4));
+        const isPromo = Boolean(it.isPromo) ||
+          (Number(it.subtotal || 0) === 0 && Number(it.pricePerJava || 0) === 0);
 
-        const itemSubtotal =
-          it.subtotal > 0
-            ? it.subtotal
-            : it.quantityJavas * pricePerJava + (it.quantityUnits || 0) * pricePerUnit;
-        const itemTotal = Number((itemSubtotal * 1.15).toFixed(2));
+        function itemPrice(p: any) { return Number(p) || 0; }
+        const pricePerJava = isPromo
+          ? 0
+          : (it.pricePerJava > 0 ? itemPrice(it.pricePerJava) : (cat?.pricePerJava || 0));
+
+        const pricePerUnit = isPromo
+          ? 0
+          : (it.pricePerUnit > 0
+              ? it.pricePerUnit
+              : cat?.pricePerUnit || Number(((pricePerJava || 0) / unitsPerJava).toFixed(4)));
+
+        const itemSubtotal = isPromo
+          ? 0
+          : (it.subtotal > 0
+              ? it.subtotal
+              : it.quantityJavas * pricePerJava + (it.quantityUnits || 0) * pricePerUnit);
+        const itemTotal = isPromo ? 0 : Number((itemSubtotal * 1.15).toFixed(2));
         const totalQty =
           it.quantityJavas * unitsPerJava + (it.quantityUnits || 0);
 
         const itemCode = it.productOptionId || cat?.id || 'PROD';
-        const description = `${brand} ${container} ${size} - ${
+        let description = `${brand} ${container} ${size} - ${
           it.selectedFlavor || it.flavorType || 'Original'
         }`;
+        if (isPromo && !description.includes('[BONIFICACIÓN GRATIS]')) {
+          description += ' [BONIFICACIÓN GRATIS]';
+        }
 
         return {
           invoice_id: effectiveInvoiceId,
@@ -1016,7 +1036,7 @@ export async function saveInvoiceToDb(
           quantity_javas: it.quantityJavas || 0,
           quantity_units: it.quantityUnits || 0,
           total_quantity: totalQty,
-          unit_price: pricePerUnit,
+          unit_price: isPromo ? 0 : pricePerUnit,
           discount: 0,
           iva_rate: 15,
           subtotal: Number(itemSubtotal.toFixed(2)),

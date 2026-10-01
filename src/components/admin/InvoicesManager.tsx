@@ -95,6 +95,10 @@ export function InvoicesManager() {
     return matchNumber || matchClient || matchTax;
   });
 
+  const isSriPruebas =
+    process.env.NEXT_PUBLIC_SRI_ENVIRONMENT === '1' ||
+    process.env.NEXT_PUBLIC_SRI_AMBIENTE === '1';
+
   return (
     <div className="space-y-4 sm:space-y-5">
       {/* Cabecera y Buscador */}
@@ -106,9 +110,17 @@ export function InvoicesManager() {
                 <Receipt className="w-6 h-6 text-blue-600" />
                 <span>Comprobantes Electrónicos SRI</span>
               </h2>
-              <span className="text-[11px] font-black uppercase tracking-wider bg-amber-100 text-amber-900 px-2 py-0.5 rounded-full border border-amber-300">
-                Ambiente: Pruebas
-              </span>
+              {isSriPruebas ? (
+                <span className="text-[11px] font-black uppercase tracking-wider bg-amber-100 text-amber-900 px-2.5 py-0.5 rounded-full border border-amber-300 inline-flex items-center gap-1.5 shadow-2xs">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                  Ambiente SRI: PRUEBAS (Celcer)
+                </span>
+              ) : (
+                <span className="text-[11px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-900 px-2.5 py-0.5 rounded-full border border-emerald-300 inline-flex items-center gap-1.5 shadow-2xs">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                  Ambiente SRI: PRODUCCIÓN
+                </span>
+              )}
             </div>
             <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
               Facturación automática al despachar • Anulación legal mediante Nota de Crédito (Doc 04).

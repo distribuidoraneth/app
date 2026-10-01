@@ -2,7 +2,7 @@
  * Generador de XML para Facturación Electrónica SRI Ecuador (Esquema v1.1.0)
  */
 
-import { CartItem, CompanyTaxProfile } from '@/types';
+import type { CartItem, CompanyTaxProfile } from '@/types';
 import { formatProductSku, expandCartItemsToFacturaLines } from '@/lib/utils/formatters';
 
 export const DEFAULT_TAX_PROFILE: CompanyTaxProfile = {
@@ -260,12 +260,21 @@ export function buildFacturaXml(params: {
   <detalles>`;
 
   lines.forEach((line) => {
+    const isPromoLine = Boolean(line.isPromo) || line.precioTotalSinImpuesto === 0;
+    const precioUnitario = isPromoLine
+      ? (line.precioUnitarioSinIva > 0 ? line.precioUnitarioSinIva : 0.0001)
+      : line.precioUnitarioSinIva;
+    let desc = line.descripcion;
+    if (isPromoLine && !desc.includes('[BONIFICACIÓN GRATIS]')) {
+      desc += ' [BONIFICACIÓN GRATIS]';
+    }
+
     xml += `
     <detalle>
       <codigoPrincipal>${escapeXml(line.codigoPrincipal)}</codigoPrincipal>
-      <descripcion>${escapeXml(line.descripcion)}</descripcion>
+      <descripcion>${escapeXml(desc)}</descripcion>
       <cantidad>${line.cantidad.toFixed(2)}</cantidad>
-      <precioUnitario>${line.precioUnitarioSinIva.toFixed(4)}</precioUnitario>
+      <precioUnitario>${precioUnitario.toFixed(4)}</precioUnitario>
       <descuento>0.00</descuento>
       <precioTotalSinImpuesto>${line.precioTotalSinImpuesto.toFixed(2)}</precioTotalSinImpuesto>
       <impuestos>
@@ -400,12 +409,21 @@ export function buildNotaCreditoXml(params: {
   const lines = expandCartItemsToFacturaLines(items, ivaRate);
 
   lines.forEach((line) => {
+    const isPromoLine = Boolean(line.isPromo) || line.precioTotalSinImpuesto === 0;
+    const precioUnitario = isPromoLine
+      ? (line.precioUnitarioSinIva > 0 ? line.precioUnitarioSinIva : 0.0001)
+      : line.precioUnitarioSinIva;
+    let desc = line.descripcion;
+    if (isPromoLine && !desc.includes('[BONIFICACIÓN GRATIS]')) {
+      desc += ' [BONIFICACIÓN GRATIS]';
+    }
+
     xml += `
     <detalle>
       <codigoInterno>${escapeXml(line.codigoPrincipal)}</codigoInterno>
-      <descripcion>${escapeXml(line.descripcion)}</descripcion>
+      <descripcion>${escapeXml(desc)}</descripcion>
       <cantidad>${line.cantidad.toFixed(2)}</cantidad>
-      <precioUnitario>${line.precioUnitarioSinIva.toFixed(4)}</precioUnitario>
+      <precioUnitario>${precioUnitario.toFixed(4)}</precioUnitario>
       <descuento>0.00</descuento>
       <precioTotalSinImpuesto>${line.precioTotalSinImpuesto.toFixed(2)}</precioTotalSinImpuesto>
       <impuestos>

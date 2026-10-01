@@ -44,6 +44,8 @@ export function AdminHeader() {
     router.push('/');
   };
 
+  const isSriPruebas = process.env.NEXT_PUBLIC_SRI_ENVIRONMENT === '1' || process.env.NEXT_PUBLIC_SRI_AMBIENTE === '1';
+
   return (
     <header className="bg-white border-b border-slate-200/90 sticky top-0 z-40 shadow-xs print:hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-2 sm:gap-3">
@@ -54,6 +56,13 @@ export function AdminHeader() {
           <Link href="/admin/pedidos" className="sm:hidden hover:opacity-90 transition-opacity">
             <AnethIsotype size="md" variant="color" />
           </Link>
+          {isSriPruebas && (
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 border border-amber-300 rounded-xl text-xs font-black text-amber-900 shadow-2xs">
+              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0"></span>
+              <span className="hidden sm:inline">Ambiente SRI: PRUEBAS (Celcer)</span>
+              <span className="sm:hidden text-[11px]">SRI: Pruebas</span>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center space-x-1.5 sm:space-x-2">

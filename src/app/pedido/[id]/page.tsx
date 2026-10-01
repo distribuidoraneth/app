@@ -364,16 +364,21 @@ export default function OrderDetailPage({
 
           <div className="divide-y divide-slate-100">
             {order.items.map((item) => {
+              const isPromo = Boolean(item.isPromo) || (Number(item.subtotal || 0) === 0 && Number(item.pricePerJava || 0) === 0);
               const hasJavas = item.quantityJavas > 0;
               const hasUnits = (item.quantityUnits || 0) > 0;
-              const effectivePricePerUnit = item.pricePerUnit > 0
-                ? item.pricePerUnit
-                : Number(((item.pricePerJava || 0) / (item.unitsPerJava || 12)).toFixed(4));
+              const effectivePricePerUnit = isPromo
+                ? 0
+                : (item.pricePerUnit > 0
+                    ? item.pricePerUnit
+                    : Number(((item.pricePerJava || 0) / (item.unitsPerJava || 12)).toFixed(4)));
 
-              const packSubtotal = Number((item.quantityJavas * item.pricePerJava).toFixed(2));
-              const unitSubtotal = hasJavas
-                ? Number((item.subtotal - packSubtotal).toFixed(2))
-                : Number(((item.quantityUnits || 0) * effectivePricePerUnit).toFixed(2));
+              const packSubtotal = isPromo ? 0 : Number((item.quantityJavas * item.pricePerJava).toFixed(2));
+              const unitSubtotal = isPromo
+                ? 0
+                : (hasJavas
+                    ? Number((item.subtotal - packSubtotal).toFixed(2))
+                    : Number(((item.quantityUnits || 0) * effectivePricePerUnit).toFixed(2)));
 
               return (
                 <React.Fragment key={item.id}>
@@ -388,6 +393,11 @@ export default function OrderDetailPage({
                           <span>
                             {item.brand || 'Fructi'} {item.container === 'Vidrio' ? 'Java' : 'Pack'} {item.size}
                           </span>
+                          {isPromo && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300 ml-1.5 align-middle">
+                              PROMO GRATIS
+                            </span>
+                          )}
                           {item.flavorType === 'single' && item.selectedFlavor && (
                             <span className="inline-flex items-center gap-1.5 ml-1.5 align-middle">
                               <span className="text-slate-400 font-normal">•</span>
@@ -420,12 +430,12 @@ export default function OrderDetailPage({
                         )}
 
                         <p className="text-xs text-slate-400">
-                          {formatCurrency(item.pricePerJava)} c/paquete
+                          {isPromo ? 'Bonificación gratuita ($0.00)' : `${formatCurrency(item.pricePerJava)} c/paquete`}
                         </p>
                       </div>
 
-                      <span className="font-mono font-bold text-sm text-slate-900 shrink-0">
-                        {formatCurrency(packSubtotal)}
+                      <span className={`font-mono font-bold text-sm shrink-0 ${isPromo ? 'text-emerald-700' : 'text-slate-900'}`}>
+                        {isPromo ? '$0.00' : formatCurrency(packSubtotal)}
                       </span>
                     </div>
                   )}
@@ -441,6 +451,11 @@ export default function OrderDetailPage({
                           <span>
                             {item.brand || 'Fructi'} {item.size} {item.container}
                           </span>
+                          {isPromo && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300 ml-1.5 align-middle">
+                              PROMO GRATIS
+                            </span>
+                          )}
                           {item.flavorType === 'single' && item.selectedFlavor && (
                             <span className="inline-flex items-center gap-1.5 ml-1.5 align-middle">
                               <span className="text-slate-400 font-normal">•</span>
@@ -451,12 +466,12 @@ export default function OrderDetailPage({
                         </div>
 
                         <p className="text-xs text-slate-400">
-                          {formatUnitPrice(effectivePricePerUnit)} c/unidad
+                          {isPromo ? 'Bonificación gratuita ($0.00)' : `${formatUnitPrice(effectivePricePerUnit)} c/unidad`}
                         </p>
                       </div>
 
-                      <span className="font-mono font-bold text-sm text-slate-900 shrink-0">
-                        {formatCurrency(unitSubtotal)}
+                      <span className={`font-mono font-bold text-sm shrink-0 ${isPromo ? 'text-emerald-700' : 'text-slate-900'}`}>
+                        {isPromo ? '$0.00' : formatCurrency(unitSubtotal)}
                       </span>
                     </div>
                   )}
@@ -468,13 +483,18 @@ export default function OrderDetailPage({
                         <div className="text-sm font-bold text-slate-900">
                           <span className="font-mono text-slate-500 mr-2">{item.totalBottles || 1}x</span>
                           {formatItemTitle(item)}
+                          {isPromo && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300 ml-1.5 align-middle">
+                              PROMO GRATIS
+                            </span>
+                          )}
                         </div>
                         <p className="text-xs text-slate-400">
-                          {formatCurrency(item.pricePerJava)} c/paquete
+                          {isPromo ? 'Bonificación gratuita ($0.00)' : `${formatCurrency(item.pricePerJava)} c/paquete`}
                         </p>
                       </div>
-                      <span className="font-mono font-bold text-sm text-slate-900 shrink-0">
-                        {formatCurrency(item.subtotal)}
+                      <span className={`font-mono font-bold text-sm shrink-0 ${isPromo ? 'text-emerald-700' : 'text-slate-900'}`}>
+                        {isPromo ? '$0.00' : formatCurrency(item.subtotal)}
                       </span>
                     </div>
                   )}

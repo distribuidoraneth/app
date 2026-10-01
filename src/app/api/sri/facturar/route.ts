@@ -56,7 +56,8 @@ export async function POST(req: NextRequest) {
       console.warn('[API facturar] Error al consultar company_tax_profiles:', profErr);
     }
 
-    const ambiente: '1' | '2' = (activeProfile.ambiente || process.env.NEXT_PUBLIC_SRI_ENVIRONMENT || process.env.SRI_ENVIRONMENT || '2') === '1' ? '1' : '2';
+    const envAmbiente = process.env.SRI_AMBIENTE || process.env.SRI_ENVIRONMENT || process.env.NEXT_PUBLIC_SRI_ENVIRONMENT;
+    const ambiente: '1' | '2' = envAmbiente === '1' ? '1' : ((activeProfile.ambiente || '2') === '1' ? '1' : '2');
     activeProfile.ambiente = ambiente;
 
     let claveAcceso = customClaveAcceso;

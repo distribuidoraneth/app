@@ -163,7 +163,10 @@ export function ThermalReceiptModal({
         : it.selectedFlavor
         ? ` ${it.selectedFlavor}`
         : '';
-    return `${brand}${sizeStr}${glass}${flavor}`.trim();
+    const isPromo = Boolean(it.isPromo) ||
+      (Number(it.subtotal || 0) === 0 && Number(it.pricePerJava || 0) === 0);
+    const promoTag = isPromo ? ' [PROMO GRATIS]' : '';
+    return `${brand}${sizeStr}${glass}${flavor}${promoTag}`.trim();
   };
 
   const modalContent = (
@@ -377,19 +380,24 @@ export function ThermalReceiptModal({
           {/* LISTA DE ITEMS */}
           <div className="space-y-1 text-[9.5px] sm:text-[10px]">
             {order.items.map((it, idx) => {
+              const isPromo = Boolean(it.isPromo) || (Number(it.subtotal || 0) === 0 && Number(it.pricePerJava || 0) === 0);
               const hasJavas = it.quantityJavas > 0;
               const hasUnits = (it.quantityUnits || 0) > 0;
-              const effectivePricePerUnit = it.pricePerUnit > 0
-                ? it.pricePerUnit
-                : Number(((it.pricePerJava || 0) / (it.unitsPerJava || 12)).toFixed(4));
+              const effectivePricePerUnit = isPromo
+                ? 0
+                : (it.pricePerUnit > 0
+                    ? it.pricePerUnit
+                    : Number(((it.pricePerJava || 0) / (it.unitsPerJava || 12)).toFixed(4)));
 
-              const packSubtotal = Math.max(0, Number((it.quantityJavas * it.pricePerJava).toFixed(2)));
-              let unitSubtotal = Math.max(
-                0,
-                Number(((it.quantityUnits || 0) * effectivePricePerUnit).toFixed(2))
-              );
+              const packSubtotal = isPromo ? 0 : Math.max(0, Number((it.quantityJavas * it.pricePerJava).toFixed(2)));
+              let unitSubtotal = isPromo
+                ? 0
+                : Math.max(
+                    0,
+                    Number(((it.quantityUnits || 0) * effectivePricePerUnit).toFixed(2))
+                  );
 
-              if (it.subtotal > 0 && hasJavas && hasUnits) {
+              if (!isPromo && it.subtotal > 0 && hasJavas && hasUnits) {
                 const sum = Number((packSubtotal + unitSubtotal).toFixed(2));
                 const diff = Number((it.subtotal - sum).toFixed(2));
                 if (Math.abs(diff) <= 0.05) {

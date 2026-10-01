@@ -1,4 +1,4 @@
-import { CartItem } from '@/types';
+import type { CartItem } from '@/types';
 import { JAVA_PRODUCT_CATALOG } from '@/lib/mockData';
 
 export function formatCurrency(amount: number): string {
@@ -283,6 +283,7 @@ export function formatInvoiceItemDescription(
     selectedFlavor?: string;
     unitsPerJava?: number;
     productOptionId?: string;
+    isPromo?: boolean;
   },
   type: 'pack' | 'unit'
 ): string {
@@ -312,11 +313,15 @@ export function formatInvoiceItemDescription(
 
   const baseTitle = `${brand} ${size} ${container} - ${flavor}`.replace(/\s+/g, ' ').trim();
 
-  if (type === 'pack') {
-    return `${baseTitle} (${packName} x ${effectiveUnits})`;
-  } else {
-    return baseTitle;
+  let formattedTitle = type === 'pack'
+    ? `${baseTitle} (${packName} x ${effectiveUnits})`
+    : baseTitle;
+
+  if (item.isPromo && !formattedTitle.includes('[BONIFICACIÓN GRATIS]')) {
+    formattedTitle += ' [BONIFICACIÓN GRATIS]';
   }
+
+  return formattedTitle;
 }
 
 export interface FacturaItemLine {
@@ -330,6 +335,7 @@ export interface FacturaItemLine {
   subtotalConIva: number;
   tipo: 'pack' | 'unit';
   unidadMedida: 'pack' | 'java' | 'und';
+  isPromo?: boolean;
 }
 
 export type FacturaLine = FacturaItemLine;
@@ -373,17 +379,24 @@ export function expandCartItemsToFacturaLines(
       item.unitsPerJava ||
       (isVidrio ? 24 : size.includes('3.0') || size.includes('3L') ? 6 : 12);
 
-    const pricePerJava = item.pricePerJava > 0 ? item.pricePerJava : (cat?.pricePerJava || 0);
-    const pricePerUnit =
-      item.pricePerUnit > 0
-        ? item.pricePerUnit
-        : cat?.pricePerUnit || Number(((pricePerJava || 0) / unitsPerJava).toFixed(4));
+    const isPromo = Boolean(item.isPromo) ||
+      (Number(item.subtotal || 0) === 0 && Number(item.pricePerJava || 0) === 0);
+
+    const pricePerJava = isPromo
+      ? 0
+      : (item.pricePerJava > 0 ? item.pricePerJava : (cat?.pricePerJava || 0));
+
+    const pricePerUnit = isPromo
+      ? 0
+      : (item.pricePerUnit > 0
+          ? item.pricePerUnit
+          : cat?.pricePerUnit || Number(((pricePerJava || 0) / unitsPerJava).toFixed(4)));
 
     const quantityJavas = Math.max(0, Number(item.quantityJavas) || 0);
     const quantityUnits = Math.max(0, Number(item.quantityUnits) || 0);
     const hasJavas = quantityJavas > 0;
     const hasUnits = quantityUnits > 0;
-    const subtotal = Math.max(0, Number(item.subtotal) || 0);
+    const subtotal = isPromo ? 0 : Math.max(0, Number(item.subtotal) || 0);
 
     const resolvedItem = {
       ...item,
@@ -393,132 +406,216 @@ export function expandCartItemsToFacturaLines(
       unitsPerJava,
       pricePerJava,
       pricePerUnit,
+      isPromo,
     };
 
     // Caso 1: Mixto (Packs y Unidades sueltas en el mismo producto)
     if (hasJavas && hasUnits) {
-      // Línea 1: Packs (estrictamente no negativo)
-      const subtotalPacksConIva = Math.max(0, Number((quantityJavas * pricePerJava).toFixed(2)));
-      const baseImponiblePack =
-        ivaRate > 0
-          ? Math.max(0, Number((subtotalPacksConIva / (1 + ivaRate / 100)).toFixed(2)))
-          : subtotalPacksConIva;
-      const ivaPack = Math.max(0, Number((subtotalPacksConIva - baseImponiblePack).toFixed(2)));
-      const pUnitPackSinIva = Number((baseImponiblePack / quantityJavas).toFixed(4));
+      if (isPromo) {
+        lines.push({
+          codigoPrincipal: formatProductSku(item.productOptionId, packSkuType),
+          descripcion: formatInvoiceItemDescription(resolvedItem, 'pack'),
+          cantidad: quantityJavas,
+          precioUnitarioSinIva: 0.0001,
+          descuento: 0,
+          precioTotalSinImpuesto: 0,
+          iva: 0,
+          subtotalConIva: 0,
+          tipo: 'pack',
+          unidadMedida: packUnitMedida,
+          isPromo: true,
+        });
 
-      lines.push({
-        codigoPrincipal: formatProductSku(item.productOptionId, packSkuType),
-        descripcion: formatInvoiceItemDescription(resolvedItem, 'pack'),
-        cantidad: quantityJavas,
-        precioUnitarioSinIva: pUnitPackSinIva,
-        descuento: 0,
-        precioTotalSinImpuesto: baseImponiblePack,
-        iva: ivaPack,
-        subtotalConIva: subtotalPacksConIva,
-        tipo: 'pack',
-        unidadMedida: packUnitMedida,
-      });
+        lines.push({
+          codigoPrincipal: formatProductSku(item.productOptionId, 'UND'),
+          descripcion: formatInvoiceItemDescription(resolvedItem, 'unit'),
+          cantidad: quantityUnits,
+          precioUnitarioSinIva: 0.0001,
+          descuento: 0,
+          precioTotalSinImpuesto: 0,
+          iva: 0,
+          subtotalConIva: 0,
+          tipo: 'unit',
+          unidadMedida: 'und',
+          isPromo: true,
+        });
+      } else {
+        // Línea 1: Packs (estrictamente no negativo)
+        const subtotalPacksConIva = Math.max(0, Number((quantityJavas * pricePerJava).toFixed(2)));
+        const baseImponiblePack =
+          ivaRate > 0
+            ? Math.max(0, Number((subtotalPacksConIva / (1 + ivaRate / 100)).toFixed(2)))
+            : subtotalPacksConIva;
+        const ivaPack = Math.max(0, Number((subtotalPacksConIva - baseImponiblePack).toFixed(2)));
+        const pUnitPackSinIva = Number((baseImponiblePack / quantityJavas).toFixed(4));
 
-      // Línea 2: Unidades Sueltas (calculada directamente por cantidad * unit_price, NUNCA por resta ciega)
-      let subtotalUnitsConIva = Math.max(0, Number((quantityUnits * pricePerUnit).toFixed(2)));
+        lines.push({
+          codigoPrincipal: formatProductSku(item.productOptionId, packSkuType),
+          descripcion: formatInvoiceItemDescription(resolvedItem, 'pack'),
+          cantidad: quantityJavas,
+          precioUnitarioSinIva: pUnitPackSinIva,
+          descuento: 0,
+          precioTotalSinImpuesto: baseImponiblePack,
+          iva: ivaPack,
+          subtotalConIva: subtotalPacksConIva,
+          tipo: 'pack',
+          unidadMedida: packUnitMedida,
+          isPromo: false,
+        });
 
-      // Ajuste fino de 1 o 2 centavos si difiere del subtotal total de la orden
-      if (subtotal > 0) {
-        const sumWithPacks = Number((subtotalPacksConIva + subtotalUnitsConIva).toFixed(2));
-        const diff = Number((subtotal - sumWithPacks).toFixed(2));
-        if (Math.abs(diff) <= 0.05) {
-          subtotalUnitsConIva = Math.max(0, Number((subtotalUnitsConIva + diff).toFixed(2)));
+        // Línea 2: Unidades Sueltas (calculada directamente por cantidad * unit_price, NUNCA por resta ciega)
+        let subtotalUnitsConIva = Math.max(0, Number((quantityUnits * pricePerUnit).toFixed(2)));
+
+        // Ajuste fino de 1 o 2 centavos si difiere del subtotal total de la orden
+        if (subtotal > 0) {
+          const sumWithPacks = Number((subtotalPacksConIva + subtotalUnitsConIva).toFixed(2));
+          const diff = Number((subtotal - sumWithPacks).toFixed(2));
+          if (Math.abs(diff) <= 0.05) {
+            subtotalUnitsConIva = Math.max(0, Number((subtotalUnitsConIva + diff).toFixed(2)));
+          }
         }
+
+        const baseImponibleUnits =
+          ivaRate > 0
+            ? Math.max(0, Number((subtotalUnitsConIva / (1 + ivaRate / 100)).toFixed(2)))
+            : subtotalUnitsConIva;
+        const ivaUnits = Math.max(0, Number((subtotalUnitsConIva - baseImponibleUnits).toFixed(2)));
+        const pUnitUndSinIva = Number((baseImponibleUnits / quantityUnits).toFixed(4));
+
+        lines.push({
+          codigoPrincipal: formatProductSku(item.productOptionId, 'UND'),
+          descripcion: formatInvoiceItemDescription(resolvedItem, 'unit'),
+          cantidad: quantityUnits,
+          precioUnitarioSinIva: pUnitUndSinIva,
+          descuento: 0,
+          precioTotalSinImpuesto: baseImponibleUnits,
+          iva: ivaUnits,
+          subtotalConIva: subtotalUnitsConIva,
+          tipo: 'unit',
+          unidadMedida: 'und',
+          isPromo: false,
+        });
       }
-
-      const baseImponibleUnits =
-        ivaRate > 0
-          ? Math.max(0, Number((subtotalUnitsConIva / (1 + ivaRate / 100)).toFixed(2)))
-          : subtotalUnitsConIva;
-      const ivaUnits = Math.max(0, Number((subtotalUnitsConIva - baseImponibleUnits).toFixed(2)));
-      const pUnitUndSinIva = Number((baseImponibleUnits / quantityUnits).toFixed(4));
-
-      lines.push({
-        codigoPrincipal: formatProductSku(item.productOptionId, 'UND'),
-        descripcion: formatInvoiceItemDescription(resolvedItem, 'unit'),
-        cantidad: quantityUnits,
-        precioUnitarioSinIva: pUnitUndSinIva,
-        descuento: 0,
-        precioTotalSinImpuesto: baseImponibleUnits,
-        iva: ivaUnits,
-        subtotalConIva: subtotalUnitsConIva,
-        tipo: 'unit',
-        unidadMedida: 'und',
-      });
     } else if (hasJavas) {
       // Caso 2: Solo Packs / Javas
-      const subtotalConIva =
-        subtotal > 0 ? subtotal : Math.max(0, Number((quantityJavas * pricePerJava).toFixed(2)));
-      const baseImponible =
-        ivaRate > 0
-          ? Math.max(0, Number((subtotalConIva / (1 + ivaRate / 100)).toFixed(2)))
-          : subtotalConIva;
-      const iva = Math.max(0, Number((subtotalConIva - baseImponible).toFixed(2)));
-      const pUnitSinIva = Number((baseImponible / quantityJavas).toFixed(4));
+      if (isPromo) {
+        lines.push({
+          codigoPrincipal: formatProductSku(item.productOptionId, packSkuType),
+          descripcion: formatInvoiceItemDescription(resolvedItem, 'pack'),
+          cantidad: quantityJavas,
+          precioUnitarioSinIva: 0.0001,
+          descuento: 0,
+          precioTotalSinImpuesto: 0,
+          iva: 0,
+          subtotalConIva: 0,
+          tipo: 'pack',
+          unidadMedida: packUnitMedida,
+          isPromo: true,
+        });
+      } else {
+        const subtotalConIva =
+          subtotal > 0 ? subtotal : Math.max(0, Number((quantityJavas * pricePerJava).toFixed(2)));
+        const baseImponible =
+          ivaRate > 0
+            ? Math.max(0, Number((subtotalConIva / (1 + ivaRate / 100)).toFixed(2)))
+            : subtotalConIva;
+        const iva = Math.max(0, Number((subtotalConIva - baseImponible).toFixed(2)));
+        const pUnitSinIva = Number((baseImponible / quantityJavas).toFixed(4));
 
-      lines.push({
-        codigoPrincipal: formatProductSku(item.productOptionId, packSkuType),
-        descripcion: formatInvoiceItemDescription(resolvedItem, 'pack'),
-        cantidad: quantityJavas,
-        precioUnitarioSinIva: pUnitSinIva,
-        descuento: 0,
-        precioTotalSinImpuesto: baseImponible,
-        iva,
-        subtotalConIva,
-        tipo: 'pack',
-        unidadMedida: packUnitMedida,
-      });
+        lines.push({
+          codigoPrincipal: formatProductSku(item.productOptionId, packSkuType),
+          descripcion: formatInvoiceItemDescription(resolvedItem, 'pack'),
+          cantidad: quantityJavas,
+          precioUnitarioSinIva: pUnitSinIva,
+          descuento: 0,
+          precioTotalSinImpuesto: baseImponible,
+          iva,
+          subtotalConIva,
+          tipo: 'pack',
+          unidadMedida: packUnitMedida,
+          isPromo: false,
+        });
+      }
     } else if (hasUnits) {
       // Caso 3: Solo Unidades Sueltas
-      const subtotalConIva =
-        subtotal > 0 ? subtotal : Math.max(0, Number((quantityUnits * pricePerUnit).toFixed(2)));
-      const baseImponible =
-        ivaRate > 0
-          ? Math.max(0, Number((subtotalConIva / (1 + ivaRate / 100)).toFixed(2)))
-          : subtotalConIva;
-      const iva = Math.max(0, Number((subtotalConIva - baseImponible).toFixed(2)));
-      const pUnitSinIva = Number((baseImponible / quantityUnits).toFixed(4));
+      if (isPromo) {
+        lines.push({
+          codigoPrincipal: formatProductSku(item.productOptionId, 'UND'),
+          descripcion: formatInvoiceItemDescription(resolvedItem, 'unit'),
+          cantidad: quantityUnits,
+          precioUnitarioSinIva: 0.0001,
+          descuento: 0,
+          precioTotalSinImpuesto: 0,
+          iva: 0,
+          subtotalConIva: 0,
+          tipo: 'unit',
+          unidadMedida: 'und',
+          isPromo: true,
+        });
+      } else {
+        const subtotalConIva =
+          subtotal > 0 ? subtotal : Math.max(0, Number((quantityUnits * pricePerUnit).toFixed(2)));
+        const baseImponible =
+          ivaRate > 0
+            ? Math.max(0, Number((subtotalConIva / (1 + ivaRate / 100)).toFixed(2)))
+            : subtotalConIva;
+        const iva = Math.max(0, Number((subtotalConIva - baseImponible).toFixed(2)));
+        const pUnitSinIva = Number((baseImponible / quantityUnits).toFixed(4));
 
-      lines.push({
-        codigoPrincipal: formatProductSku(item.productOptionId, 'UND'),
-        descripcion: formatInvoiceItemDescription(resolvedItem, 'unit'),
-        cantidad: quantityUnits,
-        precioUnitarioSinIva: pUnitSinIva,
-        descuento: 0,
-        precioTotalSinImpuesto: baseImponible,
-        iva,
-        subtotalConIva,
-        tipo: 'unit',
-        unidadMedida: 'und',
-      });
+        lines.push({
+          codigoPrincipal: formatProductSku(item.productOptionId, 'UND'),
+          descripcion: formatInvoiceItemDescription(resolvedItem, 'unit'),
+          cantidad: quantityUnits,
+          precioUnitarioSinIva: pUnitSinIva,
+          descuento: 0,
+          precioTotalSinImpuesto: baseImponible,
+          iva,
+          subtotalConIva,
+          tipo: 'unit',
+          unidadMedida: 'und',
+          isPromo: false,
+        });
+      }
     } else {
       // Caso 4: Fallback
       const cant = item.totalBottles && item.totalBottles > 0 ? item.totalBottles : 1;
-      const subtotalConIva = Math.max(0, subtotal);
-      const baseImponible =
-        ivaRate > 0
-          ? Math.max(0, Number((subtotalConIva / (1 + ivaRate / 100)).toFixed(2)))
-          : subtotalConIva;
-      const iva = Math.max(0, Number((subtotalConIva - baseImponible).toFixed(2)));
-      const pUnitSinIva = Number((baseImponible / cant).toFixed(4));
+      if (isPromo) {
+        lines.push({
+          codigoPrincipal: formatProductSku(item.productOptionId, 'UND'),
+          descripcion: formatInvoiceItemDescription(resolvedItem, 'unit'),
+          cantidad: cant,
+          precioUnitarioSinIva: 0.0001,
+          descuento: 0,
+          precioTotalSinImpuesto: 0,
+          iva: 0,
+          subtotalConIva: 0,
+          tipo: 'unit',
+          unidadMedida: 'und',
+          isPromo: true,
+        });
+      } else {
+        const subtotalConIva = Math.max(0, subtotal);
+        const baseImponible =
+          ivaRate > 0
+            ? Math.max(0, Number((subtotalConIva / (1 + ivaRate / 100)).toFixed(2)))
+            : subtotalConIva;
+        const iva = Math.max(0, Number((subtotalConIva - baseImponible).toFixed(2)));
+        const pUnitSinIva = Number((baseImponible / cant).toFixed(4));
 
-      lines.push({
-        codigoPrincipal: formatProductSku(item.productOptionId, 'UND'),
-        descripcion: formatInvoiceItemDescription(resolvedItem, 'unit'),
-        cantidad: cant,
-        precioUnitarioSinIva: pUnitSinIva,
-        descuento: 0,
-        precioTotalSinImpuesto: baseImponible,
-        iva,
-        subtotalConIva,
-        tipo: 'unit',
-        unidadMedida: 'und',
-      });
+        lines.push({
+          codigoPrincipal: formatProductSku(item.productOptionId, 'UND'),
+          descripcion: formatInvoiceItemDescription(resolvedItem, 'unit'),
+          cantidad: cant,
+          precioUnitarioSinIva: pUnitSinIva,
+          descuento: 0,
+          precioTotalSinImpuesto: baseImponible,
+          iva,
+          subtotalConIva,
+          tipo: 'unit',
+          unidadMedida: 'und',
+          isPromo: false,
+        });
+      }
     }
   }
 
