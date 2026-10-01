@@ -344,7 +344,7 @@ function mapDbOrder(o: any): Order {
       pricePerUnit: Number(it.price_per_unit || 0),
       totalBottles: Number(it.total_bottles || 0),
       subtotal: Number(it.subtotal || 0),
-      isPromo: Boolean(it.is_promo) || (Number(it.subtotal || 0) === 0 && Number(it.price_per_java || 0) === 0),
+      isPromo: Boolean(it.is_promo) || Boolean(it.surtido_details?.is_promo) || (Number(it.subtotal || 0) === 0 && Number(it.price_per_java || 0) === 0),
     })),
     totalJavas: Number(o.total_javas || 0),
     totalUnits: Number(o.total_units || 0),
@@ -500,13 +500,12 @@ export async function saveOrderToDb(order: Order): Promise<{ success: boolean; d
         return {
           order_id: insertedOrder.id,
           product_option_id: item.productOptionId || null,
-          brand: item.brand || 'Fructi',
           beverage_type: item.beverageType,
           container: item.container,
           size: item.size,
           flavor_type: item.flavorType,
           selected_flavor: item.selectedFlavor,
-          surtido_details: item.surtidoDetails,
+          surtido_details: { ...(item.surtidoDetails || {}), ...(isPromo ? { is_promo: true } : {}) },
           quantity_javas: item.quantityJavas,
           quantity_units: item.quantityUnits || 0,
           units_per_java: item.unitsPerJava,
@@ -514,13 +513,14 @@ export async function saveOrderToDb(order: Order): Promise<{ success: boolean; d
           price_per_unit: isPromo ? 0 : (item.pricePerUnit || Number(((item.pricePerJava || 0) / (item.unitsPerJava || 12)).toFixed(4))),
           total_bottles: item.totalBottles || ((item.quantityJavas * (item.unitsPerJava || 12)) + (item.quantityUnits || 0)),
           subtotal: isPromo ? 0 : item.subtotal,
-          is_promo: isPromo,
         };
       });
 
       let { error: itemsErr } = await supabase.from('order_items').insert(itemsToInsert);
-      if (itemsErr && (itemsErr.code === '42703' || itemsErr.code === '23503')) {
-        const fallbackItems = itemsToInsert.map(({ brand, product_option_id, is_promo, ...rest }: any) => ({
+      if (itemsErr) {
+        console.warn('Advertencia al insertar order_items en Supabase, reintentando:', itemsErr.message);
+        // Fallback: remover claves opcionales como product_option_id si hay error de llave foránea
+        const fallbackItems = itemsToInsert.map(({ product_option_id, ...rest }: any) => ({
           ...rest,
           product_option_id: itemsErr?.code === '23503' ? null : product_option_id,
         }));
