@@ -1041,12 +1041,18 @@ export async function saveInvoiceToDb(
           iva_rate: 15,
           subtotal: Number(itemSubtotal.toFixed(2)),
           total: itemTotal,
+          is_promo: isPromo,
         };
       });
 
       // Limpiar items anteriores si era upsert y re-insertar
       await supabase.from('invoice_items').delete().eq('invoice_id', effectiveInvoiceId);
-      await supabase.from('invoice_items').insert(itemsToInsert);
+      const { error: invItemsErr } = await supabase.from('invoice_items').insert(itemsToInsert);
+      if (invItemsErr) {
+        console.warn('Advertencia al insertar invoice_items, reintentando:', invItemsErr.message);
+        const cleanItems = itemsToInsert.map(({ is_promo, ...rest }: any) => rest);
+        await supabase.from('invoice_items').insert(cleanItems);
+      }
     }
 
     // Vincular invoice_id en la orden si es UUID
