@@ -71,7 +71,7 @@ export async function enviarRecepcionSRI(
         SOAPAction: '',
       },
       body: soapEnvelope,
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(25000),
     });
 
     const responseText = await response.text();
@@ -133,7 +133,7 @@ export async function consultarAutorizacionSRI(
         SOAPAction: '',
       },
       body: soapEnvelope,
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(25000),
     });
 
     const responseText = await response.text();

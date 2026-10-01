@@ -14,9 +14,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Auto-detectar ambiente desde el dígito 24 (índice 23) de la clave de acceso del SRI
-    const claveAmbiente = claveAcceso.charAt(23) === '2' ? '2' : claveAcceso.charAt(23) === '1' ? '1' : null;
-    const envAmbiente = process.env.SRI_AMBIENTE || process.env.SRI_ENVIRONMENT || process.env.NEXT_PUBLIC_SRI_ENVIRONMENT;
-    const ambiente: '1' | '2' = requestedAmbiente || claveAmbiente || (envAmbiente === '1' ? '1' : '2');
+    const claveAmbiente = claveAcceso.charAt(23) === '1' ? '1' : claveAcceso.charAt(23) === '2' ? '2' : null;
+    const ambiente: '1' | '2' = (claveAmbiente as '1' | '2') || requestedAmbiente || '2';
 
     const resultado = await consultarAutorizacionSRI(claveAcceso, ambiente);
 

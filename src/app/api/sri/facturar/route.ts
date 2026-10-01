@@ -56,8 +56,15 @@ export async function POST(req: NextRequest) {
       console.warn('[API facturar] Error al consultar company_tax_profiles:', profErr);
     }
 
-    const envAmbiente = process.env.SRI_AMBIENTE || process.env.SRI_ENVIRONMENT || process.env.NEXT_PUBLIC_SRI_ENVIRONMENT;
-    const ambiente: '1' | '2' = envAmbiente === '1' ? '1' : ((activeProfile.ambiente || '2') === '1' ? '1' : '2');
+    // La base de datos (company_tax_profiles) es la fuente oficial. Si viene customClaveAcceso,
+    // sincronizar estrictamente con el dígito 24 para garantizar coincidencia al 100% con el XML.
+    let ambiente: '1' | '2' = (activeProfile.ambiente || '2') === '1' ? '1' : '2';
+    if (customClaveAcceso && typeof customClaveAcceso === 'string' && customClaveAcceso.length === 49) {
+      const charAmb = customClaveAcceso.charAt(23);
+      if (charAmb === '1' || charAmb === '2') {
+        ambiente = charAmb;
+      }
+    }
     activeProfile.ambiente = ambiente;
 
     let claveAcceso = customClaveAcceso;
